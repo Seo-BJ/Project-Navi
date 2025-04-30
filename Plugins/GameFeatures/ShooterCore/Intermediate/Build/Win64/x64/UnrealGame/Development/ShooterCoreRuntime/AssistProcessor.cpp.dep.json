@@ -1,0 +1,34 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "c:\\users\\betidestudio\\documents\\unreal projects\\lyrasteamintegration\\plugins\\gamefeatures\\shootercore\\source\\shootercoreruntime\\private\\messageprocessors\\assistprocessor.cpp",
+        "ProvidedModule": "",
+        "PCH": "c:\\users\\betidestudio\\documents\\unreal projects\\lyrasteamintegration\\intermediate\\build\\win64\\x64\\lyragame\\development\\engine\\sharedpch.engine.project.valapi.cpp20.h.pch",
+        "Includes": [
+            "c:\\users\\betidestudio\\documents\\unreal projects\\lyrasteamintegration\\plugins\\gamefeatures\\shootercore\\intermediate\\build\\win64\\x64\\unrealgame\\development\\shootercoreruntime\\definitions.shootercoreruntime.h",
+            "c:\\users\\betidestudio\\documents\\unreal projects\\lyrasteamintegration\\plugins\\gamefeatures\\shootercore\\source\\shootercoreruntime\\public\\messageprocessors\\assistprocessor.h",
+            "c:\\users\\betidestudio\\documents\\unreal projects\\lyrasteamintegration\\source\\lyragame\\messages\\gameplaymessageprocessor.h",
+            "c:\\users\\betidestudio\\documents\\unreal projects\\lyrasteamintegration\\plugins\\gameplaymessagerouter\\source\\gameplaymessageruntime\\public\\gameframework\\gameplaymessagesubsystem.h",
+            "c:\\users\\betidestudio\\documents\\unreal projects\\lyrasteamintegration\\plugins\\gameplaymessagerouter\\source\\gameplaymessageruntime\\public\\gameframework\\gameplaymessagetypes2.h",
+            "j:\\launcherengines\\ue_5.5\\engine\\source\\runtime\\gameplaytags\\classes\\gameplaytagcontainer.h",
+            "j:\\launcherengines\\ue_5.5\\engine\\source\\runtime\\core\\public\\misc\\comparisonutility.h",
+            "j:\\launcherengines\\ue_5.5\\engine\\intermediate\\build\\win64\\unrealgame\\inc\\gameplaytags\\uht\\gameplaytagcontainer.generated.h",
+            "c:\\users\\betidestudio\\documents\\unreal projects\\lyrasteamintegration\\plugins\\gameplaymessagerouter\\intermediate\\build\\win64\\unrealgame\\inc\\gameplaymessageruntime\\uht\\gameplaymessagetypes2.generated.h",
+            "c:\\users\\betidestudio\\documents\\unreal projects\\lyrasteamintegration\\plugins\\gameplaymessagerouter\\intermediate\\build\\win64\\unrealgame\\inc\\gameplaymessageruntime\\uht\\gameplaymessagesubsystem.generated.h",
+            "c:\\users\\betidestudio\\documents\\unreal projects\\lyrasteamintegration\\intermediate\\build\\win64\\unrealgame\\inc\\lyragame\\uht\\gameplaymessageprocessor.generated.h",
+            "c:\\users\\betidestudio\\documents\\unreal projects\\lyrasteamintegration\\plugins\\gamefeatures\\shootercore\\intermediate\\build\\win64\\unrealgame\\inc\\shootercoreruntime\\uht\\assistprocessor.generated.h",
+            "j:\\launcherengines\\ue_5.5\\engine\\source\\runtime\\engine\\classes\\gameframework\\playerstate.h",
+            "j:\\launcherengines\\ue_5.5\\engine\\intermediate\\build\\win64\\unrealgame\\inc\\engine\\uht\\playerstate.generated.h",
+            "c:\\users\\betidestudio\\documents\\unreal projects\\lyrasteamintegration\\source\\lyragame\\messages\\lyraverbmessage.h",
+            "c:\\users\\betidestudio\\documents\\unreal projects\\lyrasteamintegration\\intermediate\\build\\win64\\unrealgame\\inc\\lyragame\\uht\\lyraverbmessage.generated.h",
+            "c:\\users\\betidestudio\\documents\\unreal projects\\lyrasteamintegration\\source\\lyragame\\messages\\lyraverbmessagehelpers.h",
+            "c:\\users\\betidestudio\\documents\\unreal projects\\lyrasteamintegration\\intermediate\\build\\win64\\unrealgame\\inc\\lyragame\\uht\\lyraverbmessagehelpers.generated.h",
+            "j:\\launcherengines\\ue_5.5\\engine\\source\\runtime\\gameplaytags\\public\\nativegameplaytags.h",
+            "j:\\launcherengines\\ue_5.5\\engine\\source\\runtime\\gameplaytags\\classes\\gameplaytagsmanager.h",
+            "j:\\launcherengines\\ue_5.5\\engine\\intermediate\\build\\win64\\unrealgame\\inc\\gameplaytags\\uht\\gameplaytagsmanager.generated.h",
+            "c:\\users\\betidestudio\\documents\\unreal projects\\lyrasteamintegration\\plugins\\gamefeatures\\shootercore\\intermediate\\build\\win64\\unrealgame\\inc\\shootercoreruntime\\uht\\assistprocessor.gen.cpp"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}
