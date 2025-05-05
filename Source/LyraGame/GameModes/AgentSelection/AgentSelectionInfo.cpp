@@ -5,13 +5,12 @@
 #include "NaviAgentSelectionManagerComponent.h"
 #include "LyraLogChannels.h"
 #include "NiagaraValidationRule.h"
+#include "GameFramework/GameplayMessageSubsystem.h"
 
 void FAgentSelectionInfo::PreReplicatedRemove(const FAgentSelectionInfoArray& InArraySerializer)
 {
 	if (InArraySerializer.Owner)
 	{
-		// UE_LOG(LogLyraDedicatedServer, Verbose, TEXT("%s: OnRemoveAbility (Non-Auth): [%s] %s. Level: %d"), *GetNameSafe(InArraySerializer.Owner->GetOwner()), *Handle.ToString(), *GetNameSafe(Ability), Level)
-		// UE_VLOG(InArraySerializer.Owner->GetOwner(), VLogAbilitySystem, Verbose, TEXT("OnRemoveAbility (Non-Auth): [%s] %s. Level: %d"), *Handle.ToString(), *GetNameSafe(Ability), Level);
 		InArraySerializer.Owner->OnAgentSelectionInfoRemoved(*this);
 	}
 }
@@ -28,7 +27,18 @@ void FAgentSelectionInfo::PostReplicatedChange(const FAgentSelectionInfoArray& I
 {
 	if (InArraySerializer.Owner)
 	{
-		InArraySerializer.Owner->OnAgentSelectionInfoChanged(*this);
+		if (this->bConfirmSelection == true)
+		{
+			InArraySerializer.Owner->OnAgentSelectionConfirmed(*this);
+			if (InArraySerializer.HasAllPlayerConfirmedAgentSelection())
+			{
+				InArraySerializer.Owner->OnAllPlayerConfirmedAgentSelection(*this);
+			}
+		}
+		else
+		{
+			InArraySerializer.Owner->OnAgentSelectionInfoChanged(*this);
+		}
 	}
 }
 
@@ -36,9 +46,10 @@ void FAgentSelectionInfo::PostReplicatedChange(const FAgentSelectionInfoArray& I
 
 
 
-void FAgentSelectionInfoArray::RegisterWithOwner(UNaviAgentSelectionManagerComponent* InOwner)
+void FAgentSelectionInfoArray::RegisterWithOwner(UNaviAgentSelectionManagerComponent* InOwner, int InTotalPlayerNum)
 {
 	Owner = InOwner;
+	TotalPlayerNum = InTotalPlayerNum;
 }
 
 void FAgentSelectionInfoArray::AddAgentSelectionInfo(const FAgentSelectionInfo& AgentSelectionInfo)
@@ -60,18 +71,9 @@ void FAgentSelectionInfoArray::AddAgentSelectionInfo(const FAgentSelectionInfo& 
 	
 	if (ConflictingEntry)
 	{
-		// UE_LOG(LogAgentSelection, Warning, TEXT("AddAgentSelectionInfo: 사용자 '%s'의 에이전트 태그 '%s' 추가 불가. 플레이어 '%s'가 이미 해당 에이전트를 확정했습니다."),
-		//     *AgentSelectionInfo.Username,
-		//     *AgentSelectionInfo.AgentTag.ToString(), // FGameplayTag를 문자열로 변환
-		//     *ConflictingEntry->Username);
 		return; 
 	}
-
-	// 5. 충돌이 없으면 새로운 정보를 배열에 추가합니다.
-	// UE_LOG(LogAgentSelection, Log, TEXT("AddAgentSelectionInfo: 새로운 사용자 '%s' (에이전트 태그: '%s')를 추가합니다."), *AgentSelectionInfo.Username, *AgentSelectionInfo.AgentTag.ToString());
 	Items.Add(AgentSelectionInfo);
-
-	// 6. 배열 구조가 변경되었으므로 Serializer에게 알립니다.
 	MarkArrayDirty();
 }
 void FAgentSelectionInfoArray::RemoveAgentSelectionInfo(const FString& UserName)
@@ -125,4 +127,47 @@ void FAgentSelectionInfoArray::ChangeAgentSelectionInfo(const FAgentSelectionInf
 	{
 		// UE_LOG(LogAgentSelection, Warning, TEXT("ChangeAgentSelectionInfo: 업데이트할 사용자 '%s'를 찾지 못했습니다."), *AgentSelectionInfo.Username);
 	}
+}
+
+
+void FAgentSelectionInfoArray::ConfirmAgentSelection(const FString& UserName)
+{
+	// 1. 변경할 사용자의 기존 항목에 대한 포인터를 찾습니다. (TArray::FindByPredicate 사용)
+	FAgentSelectionInfo* ExistingEntry = Items.FindByPredicate([&UserName](const FAgentSelectionInfo& Info) {
+		return Info.Username == UserName;
+	});
+
+	// 2. 기존 항목을 찾았다면 내용을 업데이트합니다.
+	if (ExistingEntry)
+	{
+		ExistingEntry->bConfirmSelection = true;
+		MarkItemDirty(*ExistingEntry); // 변경된 항목 자체를 전달
+	}
+	else
+	{
+		// UE_LOG(LogAgentSelection, Warning, TEXT("ChangeAgentSelectionInfo: 업데이트할 사용자 '%s'를 찾지 못했습니다."), *AgentSelectionInfo.Username);
+	}
+	if (HasAllPlayerConfirmedAgentSelection())
+	{
+		UGameplayMessageSubsystem* MessageSubsystem = &UGameplayMessageSubsystem::Get(Owner);
+		if (!IsValid(MessageSubsystem)) return;
+
+		FGameplayTag ChannelTag = LyraGameplayTags::Agent_Selection_AllPlayerConfirm;
+		FAgentSelection_ChangedMessage MessagePayload;
+		
+		MessageSubsystem->BroadcastMessage(ChannelTag, MessagePayload);
+	}
+}
+
+bool FAgentSelectionInfoArray::HasAllPlayerConfirmedAgentSelection() const
+{
+	if (Items.Num() != TotalPlayerNum) return false;
+	for (FAgentSelectionInfo Info : Items)
+	{
+		if (Info.bConfirmSelection == false)
+		{
+			return false;
+		}
+	}
+	return true;
 }

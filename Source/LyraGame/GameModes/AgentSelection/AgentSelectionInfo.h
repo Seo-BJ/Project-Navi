@@ -45,15 +45,19 @@ struct FAgentSelectionInfoArray : public FFastArraySerializer
 {
 	GENERATED_BODY()
 	
-	FAgentSelectionInfoArray() : Owner(nullptr) {}
+	FAgentSelectionInfoArray() : Owner(nullptr), TotalPlayerNum(0) {}
 	
 	UPROPERTY()
 	TArray<FAgentSelectionInfo> Items;
 
 	UPROPERTY(NotReplicated)
 	TObjectPtr<UNaviAgentSelectionManagerComponent> Owner;
+	
+	UPROPERTY(NotReplicated)
+	int TotalPlayerNum = 0;
+	
 
-	void RegisterWithOwner(UNaviAgentSelectionManagerComponent* InOwner);
+	void RegisterWithOwner(UNaviAgentSelectionManagerComponent* InOwner, int InTotalPlayerNum);
 
 	bool NetDeltaSerialize(FNetDeltaSerializeInfo& DeltaParams)
 	{
@@ -63,6 +67,10 @@ struct FAgentSelectionInfoArray : public FFastArraySerializer
 	void AddAgentSelectionInfo(const FAgentSelectionInfo& AgentSelectionInfo);
 	void RemoveAgentSelectionInfo(const FString& UserName);
 	void ChangeAgentSelectionInfo(const FAgentSelectionInfo& AgentSelectionInfo);
+
+	void ConfirmAgentSelection(const FString& UserName);
+
+	bool HasAllPlayerConfirmedAgentSelection() const;
 };
 
 template<>
