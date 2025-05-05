@@ -81,6 +81,7 @@ void ALyraPlayerState::CopyProperties(APlayerState* PlayerState)
 		NewPlayerState->UserName = UserName;
 		NewPlayerState->PlayerSessionId = PlayerSessionId;
 		NewPlayerState->MyIndexInTeam = MyIndexInTeam;
+		NewPlayerState->MyAgentTag = MyAgentTag;
 	}
 	
 }
@@ -146,6 +147,7 @@ void ALyraPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, MySquadID, SharedParams);
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, MyIndexInTeam, SharedParams);
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, UserName, SharedParams);
+	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, MyAgentTag, SharedParams);
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, PlayerSessionId, SharedParams);
 
 	SharedParams.Condition = ELifetimeCondition::COND_SkipOwner;
@@ -287,6 +289,21 @@ FGenericTeamId ALyraPlayerState::GetGenericTeamId() const
 FOnLyraTeamIndexChangedDelegate* ALyraPlayerState::GetOnTeamIndexChangedDelegate()
 {
 	return &OnTeamChangedDelegate;
+}
+
+void ALyraPlayerState::SetSelectedAgentTag(const FGameplayTag NewAgentTag)
+{
+	if (HasAuthority())
+	{
+		const FGameplayTag OldAgentTag = MyAgentTag;
+		MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, MyAgentTag, this);
+		MyAgentTag = NewAgentTag;
+		// ConditionalBroadcastTeamChanged(this, OldAgentTag, MyIndexInTeam);
+	}
+	else
+	{
+		UE_LOG(LogLyraTeams, Error, TEXT("Cannot set Selected Agent Tag for %s on non-authority"), *GetPathName(this));
+	}
 }
 
 void ALyraPlayerState::OnRep_MyTeamID(FGenericTeamId OldTeamID)
