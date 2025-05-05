@@ -13,6 +13,7 @@
 #include "GameFramework/Controller.h"        // AController
 #include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
+#include "Player/LyraPlayerState.h"
 
 UNaviAgentSelectionManagerComponent::UNaviAgentSelectionManagerComponent(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -57,6 +58,9 @@ void UNaviAgentSelectionManagerComponent::HandleAgentSelectionRequest(const FAge
     if (HasAuthority())
     {
         AgentSelectionInfoArray.AddAgentSelectionInfo(Info);
+        ALyraPlayerState* LyraPS = Info.Controller->GetPlayerState<ALyraPlayerState>();
+        if (!IsValid(LyraPS)) return;
+        LyraPS->SetSelectedAgentTag(Info.AgentTag);
     }
 }
 

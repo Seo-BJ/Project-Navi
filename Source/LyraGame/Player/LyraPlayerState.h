@@ -102,6 +102,8 @@ public:
 	virtual FOnLyraTeamIndexChangedDelegate* GetOnTeamIndexChangedDelegate() override;
 	//~End of ILyraTeamAgentInterface interface
 
+	virtual void SetSelectedAgentTag(const FGameplayTag NewAgentTag);
+
 	UPROPERTY(BlueprintAssignable, Category = "Teams") 
 	FOnLyraTeamIdChangedForBPDelegate OnTeamChanged_BP;
 	
@@ -129,8 +131,7 @@ public:
 	{
 		return MyIndexInTeam;
 	}
-
-
+	
 	UFUNCTION(BlueprintCallable)
 	FString GetPlayerUserName() const
 	{
@@ -138,10 +139,19 @@ public:
 	}
 
 	UFUNCTION(BlueprintCallable)
+	FGameplayTag GetSelectedAgentTag() const
+	{
+		return MyAgentTag;
+	}
+
+	// @Todo : PlayerController로 이동?
+	UFUNCTION(BlueprintCallable)
 	FString GetPlayerSessionId() const
 	{
 		return PlayerSessionId; 
 	}
+
+	
 	
 	void SetPlayerUserName(FString NewUserName)
 	{
@@ -231,14 +241,16 @@ private:
 
 	UPROPERTY(Replicated)
 	FRotator ReplicatedViewRotation;
-
-	//~GameLift
+	
 	UPROPERTY(Replicated, VisibleInstanceOnly, Category = "Teams")
 	FString UserName;
 
 	UPROPERTY(Replicated)
 	FString PlayerSessionId;
-	//~End of GameLift
+
+	UPROPERTY(Replicated)
+	FGameplayTag MyAgentTag;
+
 
 private:
 	UFUNCTION()
