@@ -7,6 +7,7 @@
 #include "ui/Foundation/LyraButtonBase.h"
 #include "LyraGameplayTags.h"
 #include "LyraLogChannels.h"    
+#include "UI/Data/NaviUIDataTypes.h"
 
 void UNaviAgentDescriptionPanel::NativeConstruct()
 {

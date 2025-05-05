@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "UI/LyraActivatableWidget.h"
 #include "LyraGameplayTags.h"
-#include "UI/Data/NaviUIDataTypes.h"
+
 
 #include "NaviAgentDescriptionPanel.generated.h"
 

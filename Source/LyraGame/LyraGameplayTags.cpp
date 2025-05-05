@@ -105,7 +105,9 @@ namespace LyraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Class_Controller_Viper, "Agent.Class.Controller.Viper", "Agent Viper "); // 설명 수정
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Class_Controller_Brimstone, "Agent.Class.Controller.Brimstone", "Agent Brimstone "); // 설명 수정
 
-	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Selection_Added, "Agent.Selection.Added", "GameplayMesshage ChannelTag When AgentSelection Added");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Selection_Removed, "Agent.Selection.Removed", "GameplayMesshage ChannelTag When AgentSelection Removed");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Selection_Changed, "Agent.Selection.Changed", "GameplayMesshage ChannelTag When AgentSelection Changed");
 
 
 	

@@ -530,7 +530,7 @@ void ALyraPlayerController::ServerRequestSetTeamId_Implementation(int32 NewTeamI
 	ALyraPlayerState* LyraPlayerState = GetPlayerState<ALyraPlayerState>();
 	check(LyraPlayerState);
 	
-	TeamComponent->SetPlayerTeam(LyraPlayerState, NewTeamID);
+	TeamComponent->ServerSetPlayerTeam(LyraPlayerState, NewTeamID);
 #endif	
 }
 

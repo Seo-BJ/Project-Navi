@@ -23,15 +23,12 @@ class UObject;
 struct FFrame;
 struct FGameplayTag;
 
-USTRUCT(Blueprintable, BlueprintType) // BlueprintType: BP에서 변수 타입 등으로 사용 가능하게 함
+USTRUCT(Blueprintable, BlueprintType) 
 struct FLyraTeamChangeMessage
 {
 	GENERATED_BODY()
-
-	// *** 중요: 멤버 변수를 BP에서 사용하려면 UPROPERTY 매크로와 함께 접근 지정자가 필요합니다! ***
-
-	// 예시: 읽고 쓰기가 가능하게 하려면 BlueprintReadWrite 추가
-	UPROPERTY(BlueprintReadWrite, Category = "Team Message") // Category는 에디터 정렬용
+	
+	UPROPERTY(BlueprintReadWrite, Category = "Team Message") 
 	TWeakObjectPtr<ALyraPlayerState> PlayerState = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Team Message")

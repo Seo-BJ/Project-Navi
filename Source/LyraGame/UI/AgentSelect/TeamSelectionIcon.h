@@ -7,6 +7,7 @@
 #include "TeamSelectionIcon.generated.h"
 
 class UCommonTextBlock;
+class UTexture2D;
 class UImage;
 /**
  * 
@@ -20,6 +21,10 @@ public:
 
 	void SerUserNameText(FString UserName);
 
+	// @Todo: C++로 이동
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateSelectionIcon(UTexture2D* AgentIconTexture, const FText& AgentName) const;
+
 protected:
 	
 	virtual void NativeConstruct() override;
@@ -28,6 +33,12 @@ protected:
 	TObjectPtr<UCommonTextBlock> UserName_TextBlock;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	TObjectPtr<UImage> AgentIcon_Image;
+	TObjectPtr<UCommonTextBlock> SelectedAgentName_TextBlock;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	TObjectPtr<UImage> SelectedAgentIcon_Image;
+
+private:
 	
+	FString InUserName;
 };

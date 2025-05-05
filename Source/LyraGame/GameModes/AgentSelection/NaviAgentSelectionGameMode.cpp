@@ -35,7 +35,7 @@ void ANaviAgentSelectionGameMode::PreLogin(const FString& Options, const FString
 		const FString PlayerSessionId = UGameplayStatics::ParseOption(Options, TEXT("PlayerSessionId"));
 		const FString Username = UGameplayStatics::ParseOption(Options, TEXT("Username"));
 
-		TryAcceptPlayerSession(PlayerSessionId, Username, ErrorMessage);
+		// TryAcceptPlayerSession(PlayerSessionId, Username, ErrorMessage);
 		UE_LOG(LogLyraDedicatedServer, Warning, TEXT("ANaviAgentSelectionGameMode::PreLogin- PlayerSessionId: %s, Username: %s"), *PlayerSessionId, *Username);
 	}
 	else
@@ -58,104 +58,6 @@ void ANaviAgentSelectionGameMode::Logout(AController* Exiting)
 	RemovePlayerSession(Exiting);
 	if (LobbyStatus != ELobbyStatus::SeamlessTravelling)
 	{
-		RemovePlayerInfoFromLobbyState(Exiting);
+		// RemovePlayerInfoFromLobbyState(Exiting);
 	}
 }
-
-
-FString ANaviAgentSelectionGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal)
-{
-	FString InitializedString = Super::InitNewPlayer(NewPlayerController, UniqueId, Options, Portal);
-
-	ALyraPlayerController* PlayerController = Cast<ALyraPlayerController>(NewPlayerController);
-	if (IsValid(PlayerController))
-	{
-		ALyraPlayerState* PlayerState = PlayerController->GetPlayerState<ALyraPlayerState>();
-		if (IsValid(PlayerState))
-		{
-			const FString PlayerSessionId = UGameplayStatics::ParseOption(Options, TEXT("PlayerSessionId"));
-			const FString Username = UGameplayStatics::ParseOption(Options, TEXT("Username"));
-			
-			PlayerState->SetPlayerSessionId(PlayerSessionId);
-			PlayerState->SetPlayerUserName(Username);
-		}
-	}
-	AddPlayerInfoToLobbyState(NewPlayerController);
-	return InitializedString;
-}
-/*
-void ANaviAgentSelectionGameMode::InitSeamlessTravelPlayer(AController* NewController)
-{
-	Super::InitSeamlessTravelPlayer(NewController);
-	CheckAndStartLobbyCountdown();
-	if (LobbyStatus != ELobbyStatus::SeamlessTravelling)
-	{
-		AddPlayerInfoToLobbyState(NewController);
-	}
-}
-*/
-void ANaviAgentSelectionGameMode::AddPlayerInfoToLobbyState(AController* Player) const
-{
-	ADSPlayerController* DSPlayerController = Cast<ADSPlayerController>(Player);
-	ADSGameState* DSGameState = GetGameState<ADSGameState>();
-	if (IsValid(DSGameState) && IsValid(DSGameState->LobbyState) && IsValid(DSPlayerController))
-	{
-		FLobbyPlayerInfo PlayerInfo(DSPlayerController->Username);
-		DSGameState->LobbyState->AddPlayerInfo(PlayerInfo);
-	}
-}
-void ANaviAgentSelectionGameMode::RemovePlayerInfoFromLobbyState(AController* Player) const
-{
-	ADSPlayerController* DSPlayerController = Cast<ADSPlayerController>(Player);
-	ADSGameState* DSGameState = GetGameState<ADSGameState>();
-	if (IsValid(DSGameState) && IsValid(DSGameState->LobbyState) && IsValid(DSPlayerController))
-	{
-		DSGameState->LobbyState->RemovePlayerInfo(DSPlayerController->Username);
-	}
-}
-
-void ANaviAgentSelectionGameMode::TryAcceptPlayerSession(const FString& PlayerSessionId, const FString& Username, FString& OutErrorMessage)
-{
-	if (PlayerSessionId.IsEmpty() || Username.IsEmpty())
-	{
-		OutErrorMessage = TEXT("PlayerSessionId and/or Username invalid.");
-		return;
-	}
-
-#if WITH_GAMELIFT
-	Aws::GameLift::Server::Model::DescribePlayerSessionsRequest DescribePlayerSessionsRequest;
-	DescribePlayerSessionsRequest.SetPlayerSessionId(TCHAR_TO_ANSI(*PlayerSessionId));
-
-	const auto& DescribePlayerSessionsOutcome = Aws::GameLift::Server::DescribePlayerSessions(DescribePlayerSessionsRequest);
-	if (!DescribePlayerSessionsOutcome.IsSuccess())
-	{
-		OutErrorMessage = TEXT("DescribePlayerSessions failed.");
-		return;
-	}
-
-	const auto& DescribePlayerSessionsResult = DescribePlayerSessionsOutcome.GetResult();
-	int32 Count = 0;
-	const Aws::GameLift::Server::Model::PlayerSession* PlayerSessions = DescribePlayerSessionsResult.GetPlayerSessions(Count);
-	if (PlayerSessions == nullptr || Count == 0)
-	{
-		OutErrorMessage = TEXT("GetPlayerSessions failed.");
-		return;
-	}
-
-	for (int32 i = 0; i < Count; i++)
-	{
-		const Aws::GameLift::Server::Model::PlayerSession& PlayerSession = PlayerSessions[i];
-		if (!Username.Equals(PlayerSession.GetPlayerId())) continue;
-		if (PlayerSession.GetStatus() != Aws::GameLift::Server::Model::PlayerSessionStatus::RESERVED)
-		{
-			OutErrorMessage = FString::Printf(TEXT("Session for %s not RESERVED; Fail PreLogin."), *Username);
-			return;
-		}
-
-		const auto& AcceptPlayerSessionOutcome = Aws::GameLift::Server::AcceptPlayerSession(TCHAR_TO_ANSI(*PlayerSessionId));
-		OutErrorMessage = AcceptPlayerSessionOutcome.IsSuccess() ? "" : FString::Printf(TEXT("Failed to accept player session for %s"), *Username);
-	}
-#endif
-}
-
-

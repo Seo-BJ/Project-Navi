@@ -19,7 +19,6 @@
 #include "LyraPlayerController.h"
 #include "Messages/LyraVerbMessage.h"
 #include "Net/UnrealNetwork.h"
-#include "GameFramework/GameplayMessageSubsystem.h"
 
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraPlayerState)

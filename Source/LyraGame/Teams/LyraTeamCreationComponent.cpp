@@ -236,7 +236,7 @@ int32 ULyraTeamCreationComponent::GetLeastPopulatedTeamID() const
 
 // WITH_SERVER_CODE
 
-void ULyraTeamCreationComponent::SetPlayerTeam(ALyraPlayerState* PlayerStateToSet, int32 NewTeamID)
+void ULyraTeamCreationComponent::ServerSetPlayerTeam(ALyraPlayerState* PlayerStateToSet, int32 NewTeamID)
 {
 	check(HasAuthority()); // 서버 권한 확인
     check(PlayerStateToSet); // 대상 플레이어 상태 유효성 확인
@@ -245,7 +245,7 @@ void ULyraTeamCreationComponent::SetPlayerTeam(ALyraPlayerState* PlayerStateToSe
     const bool bIsValidTeamId = (NewTeamID == FGenericTeamId::NoTeam) || TeamsToCreate.Contains(static_cast<uint8>(NewTeamID));
     if (!bIsValidTeamId)
     {
-        UE_LOG(LogLyraTeams, Warning, TEXT("SetPlayerTeam: Attempted to set invalid Team ID %d for player %s."), NewTeamID, *PlayerStateToSet->GetPlayerName());
+        UE_LOG(LogLyraTeams, Warning, TEXT("ServerSetPlayerTeam: Attempted to set invalid Team ID %d for player %s."), NewTeamID, *PlayerStateToSet->GetPlayerName());
         return;
     }
 
@@ -256,7 +256,7 @@ void ULyraTeamCreationComponent::SetPlayerTeam(ALyraPlayerState* PlayerStateToSe
     // 실제로 팀이 변경되는 경우에만 아래 로직 수행
     if (CurrentTeamId != TargetTeamId)
     {
-        UE_LOG(LogLyraTeams, Log, TEXT("SetPlayerTeam: Requesting team change for %s from %d (Index %d) to %d."),
+        UE_LOG(LogLyraTeams, Log, TEXT("ServerSetPlayerTeam: Requesting team change for %s from %d (Index %d) to %d."),
             *PlayerStateToSet->GetPlayerName(), CurrentTeamId.GetId(), CurrentIndexInTeam, TargetTeamId.GetId());
 
         AGameStateBase* GameState = GetGameStateChecked<AGameStateBase>(); // GameState 가져오기
@@ -303,7 +303,7 @@ void ULyraTeamCreationComponent::SetPlayerTeam(ALyraPlayerState* PlayerStateToSe
                      // 혹은 NewIndexCounter 사용 (더 안전)
                      // int32 DecrementedIndex = NewIndexCounter;
                      RemainingPlayer->SetIndexInTeam(DecrementedIndex);
-                      UE_LOG(LogLyraTeams, Verbose, TEXT("SetPlayerTeam: Updated index for %s in original team %d to %d."),
+                      UE_LOG(LogLyraTeams, Verbose, TEXT("ServerSetPlayerTeam: Updated index for %s in original team %d to %d."),
                             *RemainingPlayer->GetPlayerName(), CurrentTeamId.GetId(), DecrementedIndex);
                       NewIndexCounter++;
                  }
@@ -337,7 +337,7 @@ void ULyraTeamCreationComponent::SetPlayerTeam(ALyraPlayerState* PlayerStateToSe
         PlayerStateToSet->SetIndexInTeam(NewIndexInTargetTeam); // 새 인덱스 설정
         PlayerStateToSet->SetGenericTeamId(TargetTeamId);   // 새 팀 ID 설정
 
-        UE_LOG(LogLyraTeams, Log, TEXT("SetPlayerTeam: Completed team change for %s to Team ID %d with Index %d."),
+        UE_LOG(LogLyraTeams, Log, TEXT("ServerSetPlayerTeam: Completed team change for %s to Team ID %d with Index %d."),
                *PlayerStateToSet->GetPlayerName(), TargetTeamId.GetId(), NewIndexInTargetTeam);
 
         // TODO: 팀 변경 시 추가적으로 필요한 로직이 있다면 여기에 구현
@@ -345,7 +345,7 @@ void ULyraTeamCreationComponent::SetPlayerTeam(ALyraPlayerState* PlayerStateToSe
     }
     else // 팀 변경이 없는 경우 (같은 팀을 다시 누름)
     {
-        UE_LOG(LogLyraTeams, Log, TEXT("SetPlayerTeam: Player %s is already on Team ID %d. No change needed."), *PlayerStateToSet->GetPlayerName(), NewTeamID);
+        UE_LOG(LogLyraTeams, Log, TEXT("ServerSetPlayerTeam: Player %s is already on Team ID %d. No change needed."), *PlayerStateToSet->GetPlayerName(), NewTeamID);
         // 필요하다면 여기서도 인덱스 재정렬 로직 호출 고려 가능
     }
 }
@@ -455,7 +455,7 @@ check(HasAuthority());
 	const bool bIsValidTeamId = (NewTeamID == FGenericTeamId::NoTeam) || TeamsToCreate.Contains(static_cast<uint8>(NewTeamID));
 	if (!bIsValidTeamId)
 	{
-		UE_LOG(LogLyraTeams, Warning, TEXT("SetPlayerTeam: Attempted to set invalid Team ID %d for player %s."), NewTeamID, *PlayerStateToSet->GetPlayerName());
+		UE_LOG(LogLyraTeams, Warning, TEXT("ServerSetPlayerTeam: Attempted to set invalid Team ID %d for player %s."), NewTeamID, *PlayerStateToSet->GetPlayerName());
 		return;
 	}
 	
@@ -465,14 +465,14 @@ check(HasAuthority());
 	if (CurrentTeamId != TargetTeamId)
 	{
 		PlayerStateToSet->SetGenericTeamId(TargetTeamId);
-		UE_LOG(LogLyraTeams, Log, TEXT("SetPlayerTeam: Set player %s to Team ID %d."), *PlayerStateToSet->GetPlayerName(), NewTeamID);
+		UE_LOG(LogLyraTeams, Log, TEXT("ServerSetPlayerTeam: Set player %s to Team ID %d."), *PlayerStateToSet->GetPlayerName(), NewTeamID);
 
 		// TODO: 팀 변경 시 추가적으로 필요한 로직이 있다면 여기에 구현
 		// (예: 플레이어 스폰 재시작, UI 업데이트 트리거 등)
 	}
 	else
 	{
-		UE_LOG(LogLyraTeams, Log, TEXT("SetPlayerTeam: Player %s is already on Team ID %d."), *PlayerStateToSet->GetPlayerName(), NewTeamID);
+		UE_LOG(LogLyraTeams, Log, TEXT("ServerSetPlayerTeam: Player %s is already on Team ID %d."), *PlayerStateToSet->GetPlayerName(), NewTeamID);
 	}
  
  **/
