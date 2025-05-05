@@ -22,12 +22,17 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION(BlueprintCallable)
-	void ServerHandleAgentSelection(const FAgentSelectionInfo& Info);
+	void HandleAgentSelectionRequest(const FAgentSelectionInfo& Info);
+
+	UFUNCTION(BlueprintCallable)
+	void HandleConfirmSelectionRequest(const FString& UserName);
+
 	
 	void OnAgentSelectionInfoChanged(const FAgentSelectionInfo& Info);
 	void OnAgentSelectionInfoAdded(const FAgentSelectionInfo& Info);
 	void OnAgentSelectionInfoRemoved(const FAgentSelectionInfo& Info);
-
+	void OnAgentSelectionConfirmed(const FAgentSelectionInfo& Info);
+	void OnAllPlayerConfirmedAgentSelection(const FAgentSelectionInfo& Info);
 
 protected:
 	// Called when the game starts
@@ -46,4 +51,5 @@ private:
 	FAgentSelectionInfoArray AgentSelectionInfoArray;
 	
 };
+
 

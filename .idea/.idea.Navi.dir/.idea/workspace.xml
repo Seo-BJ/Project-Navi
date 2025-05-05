@@ -134,49 +134,29 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b4d883ff-d80e-4e06-b7d8-b7964a4ef1bf" name="변경" comment="">
-      <change afterPath="$PROJECT_DIR$/Content/System/03_AgentSelection/B_NaviAgentSelectionManagerComponent.uasset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_TeamSelectionPanel.uasset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/NaviAgentSelectionManagerComponent.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/NaviAgentSelectionManagerComponent.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/System/03_AgentSelection/Phases/Phase_PostAgentSelection.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/System/03_AgentSelection/Phases/Phase_StartAgentSelection.uasset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Navi.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Navi.dir/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Config/DefaultEngine.ini" beforeDir="false" afterPath="$PROJECT_DIR$/Config/DefaultEngine.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/System/02_Lobby/B_NaviLobby_Experience.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/02_Lobby/B_NaviLobby_Experience.uasset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Content/System/02_Lobby/B_NaviTeamSelectionComponent.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/02_Lobby/B_NaviTeamSelectionComponent.uasset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Content/System/03_AgentSelection/B_AgentSelectionControllerComponent.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/03_AgentSelection/B_AgentSelectionControllerComponent.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/System/03_AgentSelection/B_AgentSelectionGameStateComponent.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/03_AgentSelection/B_AgentSelectionGameStateComponent.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/System/03_AgentSelection/B_AgentSelectionPhaseManagement.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/03_AgentSelection/B_AgentSelectionPhaseManagement.uasset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Content/System/03_AgentSelection/B_NaviAgentSelection_Experience.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/03_AgentSelection/B_NaviAgentSelection_Experience.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_AgentIconButton.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_AgentIconButton.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_NaviAgentSelectPanel.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_NaviAgentSelectPanel.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_NaviTeamSelectionIcon.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_NaviTeamSelectionIcon.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_TeamSelectionRow.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_TeamSelectionRow.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Binaries/Win64/UnrealEditor-NaviCoreRuntime.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Binaries/Win64/UnrealEditor-NaviCoreRuntime.pdb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviCoreRuntime/UnrealEditor-NaviCoreRuntime.exp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviCoreRuntime/UnrealEditor-NaviCoreRuntime.exp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterMaps/Binaries/Win64/UnrealEditor-NaviShooterMapsRuntime.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterMaps/Binaries/Win64/UnrealEditor-NaviShooterMapsRuntime.pdb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterMaps/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviShooterMapsRuntime/UnrealEditor-NaviShooterMapsRuntime.exp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterMaps/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviShooterMapsRuntime/UnrealEditor-NaviShooterMapsRuntime.exp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Binaries/Win64/UnrealEditor-ShooterCoreRuntime.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Binaries/Win64/UnrealEditor-ShooterCoreRuntime.pdb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/System/03_AgentSelection/Phases/Phase_StartAgentSelect.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/03_AgentSelection/Phases/Phase_StartAgentSelect.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_AgentSelectOverlay.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_AgentSelectOverlay.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_TeamSelectionPanel.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_TeamSelectionPanel.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Elimination/B_TeamDeathMatchScoring.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Elimination/B_TeamDeathMatchScoring.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Experiences/Phases/Phase_Warmup.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Experiences/Phases/Phase_Warmup.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/GameplayCues/W_WaitingForPlayers_Message.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/GameplayCues/W_WaitingForPlayers_Message.uasset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/UnrealEditor/Inc/ShooterCoreRuntime/UHT/Timestamp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/UnrealEditor/Inc/ShooterCoreRuntime/UHT/Timestamp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/ShooterCoreRuntime/UnrealEditor-ShooterCoreRuntime.exp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/ShooterCoreRuntime/UnrealEditor-ShooterCoreRuntime.exp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterTests/Binaries/Win64/UnrealEditor-ShooterTestsRuntime.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterTests/Binaries/Win64/UnrealEditor-ShooterTestsRuntime.pdb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterTests/Intermediate/Build/Win64/x64/UnrealEditor/Development/ShooterTestsRuntime/UnrealEditor-ShooterTestsRuntime.exp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterTests/Intermediate/Build/Win64/x64/UnrealEditor/Development/ShooterTestsRuntime/UnrealEditor-ShooterTestsRuntime.exp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Binaries/Win64/UnrealEditor-TopDownArenaRuntime.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Binaries/Win64/UnrealEditor-TopDownArenaRuntime.pdb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Intermediate/Build/Win64/UnrealEditor/Inc/TopDownArenaRuntime/UHT/Timestamp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Intermediate/Build/Win64/UnrealEditor/Inc/TopDownArenaRuntime/UHT/Timestamp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Intermediate/Build/Win64/x64/UnrealEditor/Development/TopDownArenaRuntime/UnrealEditor-TopDownArenaRuntime.exp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Intermediate/Build/Win64/x64/UnrealEditor/Development/TopDownArenaRuntime/UnrealEditor-TopDownArenaRuntime.exp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/AgentSelectionInfo.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/AgentSelectionInfo.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/AgentSelectionInfo.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/AgentSelectionInfo.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/NaviAgentSelectionManagerComponent.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/NaviAgentSelectionManagerComponent.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/NaviAgentSelectionManagerComponent.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/NaviAgentSelectionManagerComponent.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/LyraGame/LyraGameplayTags.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/LyraGameplayTags.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/LyraGame/LyraGameplayTags.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/LyraGameplayTags.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/LyraGame/Player/LyraPlayerController.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/Player/LyraPlayerController.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/LyraGame/Player/LyraPlayerState.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/Player/LyraPlayerState.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/LyraGame/Player/LyraPlayerState.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/Player/LyraPlayerState.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/LyraGame/Teams/LyraTeamCreationComponent.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/Teams/LyraTeamCreationComponent.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/LyraGame/Teams/LyraTeamCreationComponent.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/Teams/LyraTeamCreationComponent.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/LyraGame/UI/AgentSelect/NaviAgentDescriptionPanel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/UI/AgentSelect/NaviAgentDescriptionPanel.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/LyraGame/UI/AgentSelect/NaviAgentDescriptionPanel.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/UI/AgentSelect/NaviAgentDescriptionPanel.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/LyraGame/UI/AgentSelect/NaviAgentSelectionOverlay.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/UI/AgentSelect/NaviAgentSelectionOverlay.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/LyraGame/UI/AgentSelect/TeamSelectionIcon.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/UI/AgentSelect/TeamSelectionIcon.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/LyraGame/UI/AgentSelect/TeamSelectionIcon.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/UI/AgentSelect/TeamSelectionIcon.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/LyraGame/UI/AgentSelect/TeamSelectionPanel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/UI/AgentSelect/TeamSelectionPanel.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/LyraGame/UI/AgentSelect/TeamSelectionPanel.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/UI/AgentSelect/TeamSelectionPanel.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -283,7 +263,60 @@
     <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="cidr-memory-view://23" root0="FORCE_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="cidr-memory-view://30" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Intermediate/Build/Win64/UnrealEditor/Inc/LyraGame/UHT/LyraGameState.gen.cpp" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
@@ -29237,7 +29270,7 @@
       <workItem from="1746016455105" duration="1437000" />
       <workItem from="1746023539551" duration="2389000" />
       <workItem from="1746034232333" duration="221000" />
-      <workItem from="1746420833960" duration="10122000" />
+      <workItem from="1746420833960" duration="17640000" />
     </task>
     <servers />
   </component>

@@ -105,11 +105,11 @@ namespace LyraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Class_Controller_Viper, "Agent.Class.Controller.Viper", "Agent Viper "); // 설명 수정
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Class_Controller_Brimstone, "Agent.Class.Controller.Brimstone", "Agent Brimstone "); // 설명 수정
 
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Selection_Added, "Agent.Selection.Added", "GameplayMesshage ChannelTag When AgentSelection Added");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Selection_Removed, "Agent.Selection.Removed", "GameplayMesshage ChannelTag When AgentSelection Removed");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Selection_Changed, "Agent.Selection.Changed", "GameplayMesshage ChannelTag When AgentSelection Changed");
-
-
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Selection_Added, "Agent.Selection.Added", "GameplayMessage ChannelTag When AgentSelection Added");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Selection_Removed, "Agent.Selection.Removed", "GameplayMessage ChannelTag When AgentSelection Removed");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Selection_Changed, "Agent.Selection.Changed", "GameplayMessage ChannelTag When AgentSelection Changed");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Selection_Confirm, "Agent.Selection.Confirm", "GameplayMessage ChannelTag When Player confirm selection");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Selection_AllPlayerConfirm, "Agent.Selection.AllPlayerConfirm", "GameplayMessage ChannelTag When All Player Confirm selection");
 	
 	FGameplayTag FindTagByString(const FString& TagString, bool bMatchPartialString)
 	{

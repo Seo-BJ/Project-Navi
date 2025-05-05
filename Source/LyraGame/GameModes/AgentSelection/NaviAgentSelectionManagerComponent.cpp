@@ -44,13 +44,15 @@ void UNaviAgentSelectionManagerComponent::OnRep_AgentSelectionInfoArray()
 
 void UNaviAgentSelectionManagerComponent::OnExperienceLoaded(const ULyraExperienceDefinition* Experience)
 {
-	AgentSelectionInfoArray.RegisterWithOwner(this);
+    AGameStateBase* GameState = GetGameStateChecked<AGameStateBase>();
+    int PlayerNum = GameState->PlayerArray.Num();
+	AgentSelectionInfoArray.RegisterWithOwner(this, PlayerNum);
 }
 
 
 
 
-void UNaviAgentSelectionManagerComponent::ServerHandleAgentSelection(const FAgentSelectionInfo& Info)
+void UNaviAgentSelectionManagerComponent::HandleAgentSelectionRequest(const FAgentSelectionInfo& Info)
 {
     if (HasAuthority())
     {
@@ -58,140 +60,130 @@ void UNaviAgentSelectionManagerComponent::ServerHandleAgentSelection(const FAgen
     }
 }
 
+void UNaviAgentSelectionManagerComponent::HandleConfirmSelectionRequest(const FString& UserName)
+{
+    if (HasAuthority())
+    {
+        AgentSelectionInfoArray.ConfirmAgentSelection(UserName);
+    }
+    
+}
+
 
 void UNaviAgentSelectionManagerComponent::OnAgentSelectionInfoAdded(const FAgentSelectionInfo& Info)
 {
     const FString PlayerName = Info.Username;
-    UE_LOG(LogTemp, Log, TEXT("UNaviAgentSelectionManagerComponent::OnAgentSelectionInfoAdded (Player: %s)"), *PlayerName);
 
-    UWorld* World = GetWorld(); // 컴포넌트에서 월드 컨텍스트 가져오기
-    if (!IsValid(World))
-    {
-        UE_LOG(LogTemp, Error, TEXT("OnAgentSelectionInfoAdded: 유효하지 않은 월드 컨텍스트 (Player: %s)."), *PlayerName);
-        return;
-    }
+    UWorld* World = GetWorld(); 
+    if (!IsValid(World)) return;
 
 	UGameplayMessageSubsystem* MessageSubsystem = &UGameplayMessageSubsystem::Get(this);
-    if (!MessageSubsystem)
-    {
-        UE_LOG(LogTemp, Error, TEXT("OnAgentSelectionInfoAdded: GameplayMessageSubsystem 가져오기 실패 (Player: %s)."), *PlayerName);
-        return;
-    }
-
-    // 메시지 채널 태그 가져오기 (실제 프로젝트의 태그로 교체)
+    if (!IsValid(MessageSubsystem)) return;
+    
     FGameplayTag ChannelTag = LyraGameplayTags::Agent_Selection_Added;
-    // FGameplayTag ChannelTag = FGameplayTag::RequestGameplayTag(FName("AgentSelection.Added")); // 임시 태그 사용 시
-
-    if (!ChannelTag.IsValid())
-    {
-        UE_LOG(LogTemp, Error, TEXT("OnAgentSelectionInfoAdded: AgentSelection.Added 채널 태그가 유효하지 않음 (Player: %s)."), *PlayerName);
-        return;
-    }
-
-    // 메시지 페이로드 준비
     FAgentSelection_AddedMessage MessagePayload;
-    MessagePayload.AddedInfo = Info; // 전달받은 추가된 정보 복사
+    MessagePayload.AddedInfo = Info; 
 
-    // 연관된 PlayerState 설정 시도
     if (Info.Controller)
     {
         MessagePayload.AssociatedPlayerState = Info.Controller->GetPlayerState<APlayerState>();
     }
-
-    // 메시지 브로드캐스트
+    
     MessageSubsystem->BroadcastMessage(ChannelTag, MessagePayload);
-
-    UE_LOG(LogTemp, Log, TEXT("OnAgentSelectionInfoAdded: AgentSelection.Added 메시지 브로드캐스트 완료 (Player: %s)."), *PlayerName);
+    UE_LOG(LogTemp, Log, TEXT("OnAgentSelectionInfoRemoved: Agent_Selection_Added 메시지 브로드캐스트 완료 (Player: %s)."), *PlayerName);
 }
 
 void UNaviAgentSelectionManagerComponent::OnAgentSelectionInfoRemoved(const FAgentSelectionInfo& Info)
 {
     const FString PlayerName = Info.Username;
-     UE_LOG(LogTemp, Log, TEXT("UNaviAgentSelectionManagerComponent::OnAgentSelectionInfoRemoved (Player: %s)"), *PlayerName);
 
-    UWorld* World = GetWorld();
-    if (!IsValid(World))
-    {
-        UE_LOG(LogTemp, Error, TEXT("OnAgentSelectionInfoRemoved: 유효하지 않은 월드 컨텍스트 (Player: %s)."), *PlayerName);
-        return;
-    }
+    UWorld* World = GetWorld(); 
+    if (!IsValid(World)) return;
 
     UGameplayMessageSubsystem* MessageSubsystem = &UGameplayMessageSubsystem::Get(this);
-    if (!MessageSubsystem)
-    {
-        UE_LOG(LogTemp, Error, TEXT("OnAgentSelectionInfoRemoved: GameplayMessageSubsystem 가져오기 실패 (Player: %s)."), *PlayerName);
-        return;
-    }
-
-    // 메시지 채널 태그 가져오기 (실제 프로젝트의 태그로 교체)
+    if (!IsValid(MessageSubsystem)) return;
+    
     FGameplayTag ChannelTag = LyraGameplayTags::Agent_Selection_Removed;
-    // FGameplayTag ChannelTag = FGameplayTag::RequestGameplayTag(FName("AgentSelection.Removed")); // 임시 태그 사용 시
-
-    if (!ChannelTag.IsValid())
-    {
-        UE_LOG(LogTemp, Error, TEXT("OnAgentSelectionInfoRemoved: AgentSelection.Removed 채널 태그가 유효하지 않음 (Player: %s)."), *PlayerName);
-        return;
-    }
-
-    // 메시지 페이로드 준비 (제거되기 전의 정보 사용)
     FAgentSelection_RemovedMessage MessagePayload;
     MessagePayload.RemovedUsername = Info.Username;
     MessagePayload.RemovedAgentTag = Info.AgentTag;
     MessagePayload.RemovedTeamID = Info.TeamID;
 
-    // 연관된 PlayerState 설정 시도
     if (Info.Controller)
     {
         MessagePayload.AssociatedPlayerState = Info.Controller->GetPlayerState<APlayerState>();
     }
-
-    // 메시지 브로드캐스트
+    
     MessageSubsystem->BroadcastMessage(ChannelTag, MessagePayload);
-
-    UE_LOG(LogTemp, Log, TEXT("OnAgentSelectionInfoRemoved: AgentSelection.Removed 메시지 브로드캐스트 완료 (Player: %s)."), *PlayerName);
+    UE_LOG(LogTemp, Log, TEXT("OnAgentSelectionInfoRemoved: Agent_Selection_Removed 메시지 브로드캐스트 완료 (Player: %s)."), *PlayerName);
 }
 
 void UNaviAgentSelectionManagerComponent::OnAgentSelectionInfoChanged(const FAgentSelectionInfo& Info)
 {
     const FString PlayerName = Info.Username;
-    UE_LOG(LogTemp, Log, TEXT("UNaviAgentSelectionManagerComponent::OnAgentSelectionInfoChanged (Player: %s)"), *PlayerName);
 
-    UWorld* World = GetWorld();
-    if (!IsValid(World))
-    {
-        UE_LOG(LogTemp, Error, TEXT("OnAgentSelectionInfoChanged: 유효하지 않은 월드 컨텍스트 (Player: %s)."), *PlayerName);
-        return;
-    }
+    UWorld* World = GetWorld(); 
+    if (!IsValid(World)) return;
 
     UGameplayMessageSubsystem* MessageSubsystem = &UGameplayMessageSubsystem::Get(this);
-    if (!MessageSubsystem)
-    {
-        UE_LOG(LogTemp, Error, TEXT("OnAgentSelectionInfoChanged: GameplayMessageSubsystem 가져오기 실패 (Player: %s)."), *PlayerName);
-        return;
-    }
-
-    // 메시지 채널 태그 가져오기 (실제 프로젝트의 태그로 교체)
+    if (!IsValid(MessageSubsystem)) return;
+    
     FGameplayTag ChannelTag = LyraGameplayTags::Agent_Selection_Changed;
-    // FGameplayTag ChannelTag = FGameplayTag::RequestGameplayTag(FName("AgentSelection.Changed")); // 임시 태그 사용 시
-
-    if (!ChannelTag.IsValid())
-    {
-        UE_LOG(LogTemp, Error, TEXT("OnAgentSelectionInfoChanged: AgentSelection.Changed 채널 태그가 유효하지 않음 (Player: %s)."), *PlayerName);
-        return;
-    }
-
-    // 메시지 페이로드 준비
     FAgentSelection_ChangedMessage MessagePayload;
-    MessagePayload.ChangedInfo = Info; // 전달받은 변경된 정보 복사
-
-    // 연관된 PlayerState 설정 시도
+    MessagePayload.ChangedInfo = Info; 
+    
     if (Info.Controller)
     {
         MessagePayload.AssociatedPlayerState = Info.Controller->GetPlayerState<APlayerState>();
     }
-
-    // 메시지 브로드캐스트
+    
     MessageSubsystem->BroadcastMessage(ChannelTag, MessagePayload);
-
-    UE_LOG(LogTemp, Log, TEXT("OnAgentSelectionInfoChanged: AgentSelection.Changed 메시지 브로드캐스트 완료 (Player: %s)."), *PlayerName);
+    UE_LOG(LogTemp, Log, TEXT("OnAgentSelectionInfoChanged: Agent_Selection_Changed 메시지 브로드캐스트 완료 (Player: %s)."), *PlayerName);
 }
+
+void UNaviAgentSelectionManagerComponent::OnAgentSelectionConfirmed(const FAgentSelectionInfo& Info)
+{
+    const FString PlayerName = Info.Username;
+
+    UWorld* World = GetWorld(); 
+    if (!IsValid(World)) return;
+
+    UGameplayMessageSubsystem* MessageSubsystem = &UGameplayMessageSubsystem::Get(this);
+    if (!IsValid(MessageSubsystem)) return;
+
+    FGameplayTag ChannelTag = LyraGameplayTags::Agent_Selection_Confirm;
+    FAgentSelection_ChangedMessage MessagePayload;
+    MessagePayload.ChangedInfo = Info; 
+    
+    if (Info.Controller)
+    {
+        MessagePayload.AssociatedPlayerState = Info.Controller->GetPlayerState<APlayerState>();
+    }
+    
+    MessageSubsystem->BroadcastMessage(ChannelTag, MessagePayload);
+    UE_LOG(LogTemp, Log, TEXT("OnAgentSelectionInfoChanged: Agent_Selection_Confirm 메시지 브로드캐스트 완료 (Player: %s)."), *PlayerName);
+}
+
+void UNaviAgentSelectionManagerComponent::OnAllPlayerConfirmedAgentSelection(const FAgentSelectionInfo& Info)
+{
+    const FString PlayerName = Info.Username;
+
+    UWorld* World = GetWorld(); 
+    if (!IsValid(World)) return;
+
+    UGameplayMessageSubsystem* MessageSubsystem = &UGameplayMessageSubsystem::Get(this);
+    if (!IsValid(MessageSubsystem)) return;
+
+    FGameplayTag ChannelTag = LyraGameplayTags::Agent_Selection_AllPlayerConfirm;
+    FAgentSelection_ChangedMessage MessagePayload;
+    MessagePayload.ChangedInfo = Info; 
+
+    if (Info.Controller)
+    {
+        MessagePayload.AssociatedPlayerState = Info.Controller->GetPlayerState<APlayerState>();
+    }
+    
+    MessageSubsystem->BroadcastMessage(ChannelTag, MessagePayload);
+    UE_LOG(LogTemp, Log, TEXT("OnAgentSelectionInfoChanged: Agent_Selection_AllPlayerConfirm 메시지 브로드캐스트 완료 (Player: %s)."), *PlayerName);
+}
+
