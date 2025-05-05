@@ -248,7 +248,7 @@ private:
 	UPROPERTY(Replicated)
 	FString PlayerSessionId;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, VisibleInstanceOnly, Category = "Teams")
 	FGameplayTag MyAgentTag;
 
 
