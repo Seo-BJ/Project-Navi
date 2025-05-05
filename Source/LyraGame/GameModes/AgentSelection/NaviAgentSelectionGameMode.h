@@ -52,10 +52,8 @@ protected:
 
 	virtual void Logout(AController* Exiting) override;
 	virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
-	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal = L"") override;
+	// virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal = L"") override;
 	
-	void AddPlayerInfoToLobbyState(AController* Player) const;
-	void RemovePlayerInfoFromLobbyState(AController* Player) const;
 	
 	UPROPERTY()
 	ELobbyStatus LobbyStatus;
@@ -71,5 +69,4 @@ protected:
 	
 private:
 	
-	void TryAcceptPlayerSession(const FString& PlayerSessionId, const FString& Username, FString& OutErrorMessage);
 };

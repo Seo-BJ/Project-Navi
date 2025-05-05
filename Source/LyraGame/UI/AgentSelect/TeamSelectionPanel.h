@@ -28,6 +28,13 @@ protected:
 
 	virtual void NativeConstruct() override;
 	
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Data") 
+	TObjectPtr<UDataTable> AgentDescriptionData;
+	
+	UFUNCTION(BlueprintCallable)
+	void UpdateSelectionPanel(FAgentSelectionInfo Info);
+
 	
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	TObjectPtr<UHorizontalBox> TeamAgentIcons_HorizontalBox;
@@ -56,6 +63,9 @@ protected:
 	
 	//void SetPlayer
 	void PopulateTeamSelectionIcons();
+
+	UPROPERTY(BlueprintReadOnly)
+	TMap<FString, TObjectPtr<UTeamSelectionIcon>> TeamSelectionIconsMap;
 
 private:
 

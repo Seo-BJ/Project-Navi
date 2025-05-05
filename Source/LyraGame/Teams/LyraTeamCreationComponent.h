@@ -55,7 +55,7 @@ public:
 	
 #if WITH_SERVER_CODE
 	
-	virtual void SetPlayerTeam(ALyraPlayerState* PlayerStateToSet, int32 NewTeamID);
+	virtual void ServerSetPlayerTeam(ALyraPlayerState* PlayerStateToSet, int32 NewTeamID);
 
 	
 protected:

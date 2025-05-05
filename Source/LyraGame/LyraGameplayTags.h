@@ -60,6 +60,8 @@ namespace LyraGameplayTags
 
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Movement_Mode_Custom);
 
+	// Valorant 관련 Tag
+	
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Agent_Class);
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Agent_Class_Duelist);
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Agent_Class_Initiator);
@@ -87,5 +89,10 @@ namespace LyraGameplayTags
 
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Agent_Class_Controller_Viper);
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Agent_Class_Controller_Brimstone);
+
+	// Agent Change Event Tags
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Agent_Selection_Added);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Agent_Selection_Removed);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Agent_Selection_Changed);
 	
 };

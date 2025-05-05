@@ -30,16 +30,6 @@ public:
 protected:
 
     virtual void NativeConstruct() override;
-
-	
-	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	TObjectPtr<UNaviAgentSelectionPanel> AgentSelectionPanel;
-	
-	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	TObjectPtr<UNaviAgentDescriptionPanel> AgentDescriptionPanel;
-	
-	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	TObjectPtr<UTeamSelectionPanel> TeamSelectionPanel;
 	
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Data") 
     TObjectPtr<UDataTable> AgentSkillUIData;

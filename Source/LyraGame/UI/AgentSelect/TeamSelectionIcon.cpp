@@ -16,4 +16,5 @@ void UTeamSelectionIcon::SerUserNameText(FString UserName)
 {
 	check(UserName_TextBlock);
 	UserName_TextBlock->SetText(FText::FromString(UserName));
+	InUserName = UserName;
 }

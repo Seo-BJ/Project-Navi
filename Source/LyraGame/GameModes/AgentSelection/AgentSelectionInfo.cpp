@@ -2,27 +2,48 @@
 
 
 #include "AgentSelectionInfo.h"
-
+#include "NaviAgentSelectionManagerComponent.h"
+#include "LyraLogChannels.h"
 #include "NiagaraValidationRule.h"
 
-void FAgentSelectionInfo::PreReplicatedRemove(const FFastArraySerializer& Serializer)
+void FAgentSelectionInfo::PreReplicatedRemove(const FAgentSelectionInfoArray& InArraySerializer)
 {
+	if (InArraySerializer.Owner)
+	{
+		// UE_LOG(LogLyraDedicatedServer, Verbose, TEXT("%s: OnRemoveAbility (Non-Auth): [%s] %s. Level: %d"), *GetNameSafe(InArraySerializer.Owner->GetOwner()), *Handle.ToString(), *GetNameSafe(Ability), Level)
+		// UE_VLOG(InArraySerializer.Owner->GetOwner(), VLogAbilitySystem, Verbose, TEXT("OnRemoveAbility (Non-Auth): [%s] %s. Level: %d"), *Handle.ToString(), *GetNameSafe(Ability), Level);
+		InArraySerializer.Owner->OnAgentSelectionInfoRemoved(*this);
+	}
 }
 
-void FAgentSelectionInfo::PostReplicatedAdd(const FFastArraySerializer& Serializer)
+void FAgentSelectionInfo::PostReplicatedAdd(const FAgentSelectionInfoArray& InArraySerializer)
 {
+	if (InArraySerializer.Owner)
+	{
+		InArraySerializer.Owner->OnAgentSelectionInfoAdded(*this);
+	}
 }
 
-void FAgentSelectionInfo::PostReplicatedChange(const FFastArraySerializer& Serializer)
+void FAgentSelectionInfo::PostReplicatedChange(const FAgentSelectionInfoArray& InArraySerializer)
 {
+	if (InArraySerializer.Owner)
+	{
+		InArraySerializer.Owner->OnAgentSelectionInfoChanged(*this);
+	}
 }
 
 
 
+
+
+void FAgentSelectionInfoArray::RegisterWithOwner(UNaviAgentSelectionManagerComponent* InOwner)
+{
+	Owner = InOwner;
+}
 
 void FAgentSelectionInfoArray::AddAgentSelectionInfo(const FAgentSelectionInfo& AgentSelectionInfo)
 {
-	FAgentSelectionInfo* ExistingEntryByName = SelectedAgents.FindByPredicate([&](const FAgentSelectionInfo& Info) {
+	FAgentSelectionInfo* ExistingEntryByName = Items.FindByPredicate([&](const FAgentSelectionInfo& Info) {
 		return Info.Username == AgentSelectionInfo.Username;
 	});
 
@@ -33,7 +54,7 @@ void FAgentSelectionInfoArray::AddAgentSelectionInfo(const FAgentSelectionInfo& 
 		return; 
 	}
 
-	const FAgentSelectionInfo* ConflictingEntry = SelectedAgents.FindByPredicate([&](const FAgentSelectionInfo& OtherInfo) {
+	const FAgentSelectionInfo* ConflictingEntry = Items.FindByPredicate([&](const FAgentSelectionInfo& OtherInfo) {
 	   return (OtherInfo.AgentTag == AgentSelectionInfo.AgentTag && OtherInfo.bConfirmSelection);
    }); 
 	
@@ -48,7 +69,7 @@ void FAgentSelectionInfoArray::AddAgentSelectionInfo(const FAgentSelectionInfo& 
 
 	// 5. 충돌이 없으면 새로운 정보를 배열에 추가합니다.
 	// UE_LOG(LogAgentSelection, Log, TEXT("AddAgentSelectionInfo: 새로운 사용자 '%s' (에이전트 태그: '%s')를 추가합니다."), *AgentSelectionInfo.Username, *AgentSelectionInfo.AgentTag.ToString());
-	SelectedAgents.Add(AgentSelectionInfo);
+	Items.Add(AgentSelectionInfo);
 
 	// 6. 배열 구조가 변경되었으므로 Serializer에게 알립니다.
 	MarkArrayDirty();
@@ -57,7 +78,7 @@ void FAgentSelectionInfoArray::RemoveAgentSelectionInfo(const FString& UserName)
 {
 
 	// 1. 제거할 사용자의 인덱스를 찾습니다. (TArray::IndexOfByPredicate는 그대로 사용)
-	const int32 FoundIndex = SelectedAgents.IndexOfByPredicate([&UserName](const FAgentSelectionInfo& Info) {
+	const int32 FoundIndex = Items.IndexOfByPredicate([&UserName](const FAgentSelectionInfo& Info) {
 		return Info.Username == UserName;
 	});
 
@@ -65,7 +86,7 @@ void FAgentSelectionInfoArray::RemoveAgentSelectionInfo(const FString& UserName)
 	if (FoundIndex != INDEX_NONE)
 	{
 		// UE_LOG(LogAgentSelection, Log, TEXT("RemoveAgentSelectionInfo: 사용자 '%s' (인덱스: %d)를 제거합니다."), *UserName, FoundIndex);
-		SelectedAgents.RemoveAt(FoundIndex); // 순서 유지가 필요하면 RemoveAt, 속도가 중요하면 RemoveAtSwap
+		Items.RemoveAt(FoundIndex); // 순서 유지가 필요하면 RemoveAt, 속도가 중요하면 RemoveAtSwap
 
 		// 3. 배열 구조가 변경되었으므로 Serializer에게 알립니다.
 		MarkArrayDirty();
@@ -80,7 +101,7 @@ void FAgentSelectionInfoArray::RemoveAgentSelectionInfo(const FString& UserName)
 void FAgentSelectionInfoArray::ChangeAgentSelectionInfo(const FAgentSelectionInfo& AgentSelectionInfo)
 {
 	// 1. 변경할 사용자의 기존 항목에 대한 포인터를 찾습니다. (TArray::FindByPredicate 사용)
-	FAgentSelectionInfo* ExistingEntry = SelectedAgents.FindByPredicate([&](const FAgentSelectionInfo& Info) {
+	FAgentSelectionInfo* ExistingEntry = Items.FindByPredicate([&](const FAgentSelectionInfo& Info) {
 		return Info.Username == AgentSelectionInfo.Username;
 	}); // Algo:: 대신 SelectedAgents. 으로 변경
 

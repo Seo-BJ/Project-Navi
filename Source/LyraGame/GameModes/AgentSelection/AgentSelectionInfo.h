@@ -7,6 +7,8 @@
 #include "LyraGameplayTags.h"
 #include "AgentSelectionInfo.generated.h"
 
+class UNaviAgentSelectionManagerComponent;
+
 USTRUCT(BlueprintType)
 struct FAgentSelectionInfo : public FFastArraySerializerItem
 {
@@ -33,22 +35,29 @@ struct FAgentSelectionInfo : public FFastArraySerializerItem
 	UPROPERTY(BlueprintReadWrite)
 	bool bConfirmSelection = false;
 
-	void PreReplicatedRemove(const FFastArraySerializer& Serializer);
-	void PostReplicatedAdd(const FFastArraySerializer& Serializer);
-	void PostReplicatedChange(const FFastArraySerializer& Serializer);
+	void PreReplicatedRemove(const FAgentSelectionInfoArray& InArraySerializer);
+	void PostReplicatedAdd(const FAgentSelectionInfoArray& InArraySerializer);
+	void PostReplicatedChange(const FAgentSelectionInfoArray& InArraySerializer);
 };
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FAgentSelectionInfoArray : public FFastArraySerializer
 {
 	GENERATED_BODY()
-
+	
+	FAgentSelectionInfoArray() : Owner(nullptr) {}
+	
 	UPROPERTY()
-	TArray<FAgentSelectionInfo> SelectedAgents;
+	TArray<FAgentSelectionInfo> Items;
+
+	UPROPERTY(NotReplicated)
+	TObjectPtr<UNaviAgentSelectionManagerComponent> Owner;
+
+	void RegisterWithOwner(UNaviAgentSelectionManagerComponent* InOwner);
 
 	bool NetDeltaSerialize(FNetDeltaSerializeInfo& DeltaParams)
 	{
-		return FastArrayDeltaSerialize<FAgentSelectionInfo, FAgentSelectionInfoArray>(SelectedAgents, DeltaParams, *this);
+		return FastArrayDeltaSerialize<FAgentSelectionInfo, FAgentSelectionInfoArray>(Items, DeltaParams, *this);
 	}
 
 	void AddAgentSelectionInfo(const FAgentSelectionInfo& AgentSelectionInfo);
