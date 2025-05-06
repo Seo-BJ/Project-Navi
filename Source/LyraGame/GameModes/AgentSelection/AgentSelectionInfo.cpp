@@ -42,10 +42,6 @@ void FAgentSelectionInfo::PostReplicatedChange(const FAgentSelectionInfoArray& I
 	}
 }
 
-
-
-
-
 void FAgentSelectionInfoArray::RegisterWithOwner(UNaviAgentSelectionManagerComponent* InOwner, int InTotalPlayerNum)
 {
 	Owner = InOwner;
@@ -61,7 +57,6 @@ void FAgentSelectionInfoArray::AddAgentSelectionInfo(const FAgentSelectionInfo& 
 	if (ExistingEntryByName)
 	{
 		ChangeAgentSelectionInfo(AgentSelectionInfo);
-		// UE_LOG(LogAgentSelection, Log, TEXT("AddAgentSelectionInfo: 사용자 '%s'가 이미 존재합니다. ChangeAgentSelectionInfo를 호출합니다."), *AgentSelectionInfo.Username);
 		return; 
 	}
 
@@ -78,19 +73,13 @@ void FAgentSelectionInfoArray::AddAgentSelectionInfo(const FAgentSelectionInfo& 
 }
 void FAgentSelectionInfoArray::RemoveAgentSelectionInfo(const FString& UserName)
 {
-
-	// 1. 제거할 사용자의 인덱스를 찾습니다. (TArray::IndexOfByPredicate는 그대로 사용)
 	const int32 FoundIndex = Items.IndexOfByPredicate([&UserName](const FAgentSelectionInfo& Info) {
 		return Info.Username == UserName;
 	});
 
-	// 2. 사용자를 찾았다면 해당 인덱스의 항목을 제거합니다.
 	if (FoundIndex != INDEX_NONE)
 	{
-		// UE_LOG(LogAgentSelection, Log, TEXT("RemoveAgentSelectionInfo: 사용자 '%s' (인덱스: %d)를 제거합니다."), *UserName, FoundIndex);
-		Items.RemoveAt(FoundIndex); // 순서 유지가 필요하면 RemoveAt, 속도가 중요하면 RemoveAtSwap
-
-		// 3. 배열 구조가 변경되었으므로 Serializer에게 알립니다.
+		Items.RemoveAtSwap(FoundIndex); // 순서 유지가 필요하면 RemoveAt, 속도가 중요하면 RemoveAtSwap
 		MarkArrayDirty();
 	}
 	else
@@ -102,26 +91,19 @@ void FAgentSelectionInfoArray::RemoveAgentSelectionInfo(const FString& UserName)
 
 void FAgentSelectionInfoArray::ChangeAgentSelectionInfo(const FAgentSelectionInfo& AgentSelectionInfo)
 {
-	// 1. 변경할 사용자의 기존 항목에 대한 포인터를 찾습니다. (TArray::FindByPredicate 사용)
 	FAgentSelectionInfo* ExistingEntry = Items.FindByPredicate([&](const FAgentSelectionInfo& Info) {
 		return Info.Username == AgentSelectionInfo.Username;
-	}); // Algo:: 대신 SelectedAgents. 으로 변경
+	}); 
 
-	// 2. 기존 항목을 찾았다면 내용을 업데이트합니다.
 	if (ExistingEntry)
 	{
-		// UE_LOG(LogAgentSelection, Log, TEXT("ChangeAgentSelectionInfo: 사용자 '%s'의 정보를 업데이트합니다."), *AgentSelectionInfo.Username);
-
-		// 식별자인 Username을 제외한 다른 속성들을 업데이트합니다.
 		ExistingEntry->Controller = AgentSelectionInfo.Controller;
 		ExistingEntry->TeamID = AgentSelectionInfo.TeamID;
 		ExistingEntry->IndexInTeam = AgentSelectionInfo.IndexInTeam;
 		ExistingEntry->AgentTag = AgentSelectionInfo.AgentTag;
 		ExistingEntry->bConfirmSelection = AgentSelectionInfo.bConfirmSelection;
-		// FAgentSelectionInfo에 다른 업데이트 필요한 속성이 있다면 여기에 추가
-
-		// 3. 특정 항목의 내용이 변경되었으므로 Serializer에게 알립니다.
-		MarkItemDirty(*ExistingEntry); // 변경된 항목 자체를 전달
+		
+		MarkItemDirty(*ExistingEntry);
 	}
 	else
 	{
@@ -132,12 +114,11 @@ void FAgentSelectionInfoArray::ChangeAgentSelectionInfo(const FAgentSelectionInf
 
 void FAgentSelectionInfoArray::ConfirmAgentSelection(const FString& UserName)
 {
-	// 1. 변경할 사용자의 기존 항목에 대한 포인터를 찾습니다. (TArray::FindByPredicate 사용)
+
 	FAgentSelectionInfo* ExistingEntry = Items.FindByPredicate([&UserName](const FAgentSelectionInfo& Info) {
 		return Info.Username == UserName;
 	});
-
-	// 2. 기존 항목을 찾았다면 내용을 업데이트합니다.
+	
 	if (ExistingEntry)
 	{
 		ExistingEntry->bConfirmSelection = true;

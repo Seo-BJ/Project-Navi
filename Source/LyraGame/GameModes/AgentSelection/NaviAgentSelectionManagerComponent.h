@@ -1,10 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "AgentSelectionInfo.h"
 #include "Components/GameStateComponent.h"
+
 #include "NaviAgentSelectionManagerComponent.generated.h"
 
 class ULyraExperienceDefinition;
@@ -27,7 +27,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void HandleConfirmSelectionRequest(const FString& UserName);
 
-	
 	void OnAgentSelectionInfoChanged(const FAgentSelectionInfo& Info);
 	void OnAgentSelectionInfoAdded(const FAgentSelectionInfo& Info);
 	void OnAgentSelectionInfoRemoved(const FAgentSelectionInfo& Info);
@@ -35,11 +34,9 @@ public:
 	void OnAllPlayerConfirmedAgentSelection(const FAgentSelectionInfo& Info);
 
 protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
 	
-
+	virtual void BeginPlay() override;
+	
 	UFUNCTION()
 	void OnRep_AgentSelectionInfoArray();
 	
