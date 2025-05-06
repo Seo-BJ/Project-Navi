@@ -110,6 +110,13 @@ namespace LyraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Selection_Changed, "Agent.Selection.Changed", "GameplayMessage ChannelTag When AgentSelection Changed");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Selection_Confirm, "Agent.Selection.Confirm", "GameplayMessage ChannelTag When Player confirm selection");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Selection_AllPlayerConfirm, "Agent.Selection.AllPlayerConfirm", "GameplayMessage ChannelTag When All Player Confirm selection");
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Map_ShooterGym, "Navi.Map.ShooterGym", "Navi Shooter Gym");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Map_PerformanceTest, "Navi.Map.PerformanceTest", "Navi Performance Test Map");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Map_FeatureTest, "Navi.Map.FeatureTest", "Navi Feature Test Map");
+	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Map_Ascent, "Navi.Map.Ascent", "Valorant Ascent Map");
+
 	
 	FGameplayTag FindTagByString(const FString& TagString, bool bMatchPartialString)
 	{

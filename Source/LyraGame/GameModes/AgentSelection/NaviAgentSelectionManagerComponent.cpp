@@ -4,13 +4,12 @@
 #include "NaviAgentSelectionManagerComponent.h"
 #include "GameModes/LyraExperienceManagerComponent.h"
 
-#include "NaviAgentSelectionManagerComponent.h" // 컴포넌트 헤더
-#include "AgentSelectionInfo.h"              // FAgentSelectionInfo 구조체 헤더// 메시지 구조체 헤더 (이전에 정의)
+#include "AgentSelectionInfo.h"              
 #include "GameFramework/GameplayMessageSubsystem.h"
 
-#include "LyraGameplayTags.h"              // Gameplay Tag 헤더 (실제 경로/이름으로 수정)
-#include "GameFramework/PlayerState.h"       // APlayerState
-#include "GameFramework/Controller.h"        // AController
+#include "LyraGameplayTags.h"             
+#include "GameFramework/PlayerState.h"       
+#include "GameFramework/Controller.h"       
 #include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/LyraPlayerState.h"
@@ -18,6 +17,7 @@
 UNaviAgentSelectionManagerComponent::UNaviAgentSelectionManagerComponent(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
+    PrimaryComponentTick.bCanEverTick = false;
 }
 
 void UNaviAgentSelectionManagerComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
