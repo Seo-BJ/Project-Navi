@@ -76,7 +76,7 @@ namespace LyraGameplayTags
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Class, "Agent.Class", "Agent class");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Class_Duelist, "Agent.Class.Duelist", "Agent class is Duelist");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Class_Initiator, "Agent.Class.Initiator", "Agent class is Initiator");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Class_Initiator, "Agent.Class.Initiator", "Agent class is Initiator"); 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Class_Sentinel, "Agent.Class.Sentinel", "Agent class is Sentinel");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Agent_Class_Controller, "Agent.Class.Controller", "Agent class is Controller");
 
@@ -116,6 +116,11 @@ namespace LyraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Map_FeatureTest, "Navi.Map.FeatureTest", "Navi Feature Test Map");
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Map_Ascent, "Navi.Map.Ascent", "Valorant Ascent Map");
+
+
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Mod_Normal_Unrated, "Navi.Mod.Normal.Unrated", "Normal Mod with Unrated");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Mod_TeamDeathMatch, "Navi.Mod.TeamDeathMatch", "Team Deathmatch Mod");
 
 	
 	FGameplayTag FindTagByString(const FString& TagString, bool bMatchPartialString)
