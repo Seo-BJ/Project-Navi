@@ -134,47 +134,29 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b4d883ff-d80e-4e06-b7d8-b7964a4ef1bf" name="변경" comment="">
-      <change afterPath="$PROJECT_DIR$/Content/System/02_Lobby/B_LobbySettingManagerComponent.uasset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/System/03_AgentSelection/B_AgentSelectionPhaseManagerComponent.uasset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/System/04_Maps/DA_NaviShooterGym_Def.uasset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/UI/02_Lobby/W_ItemListButton.uasset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/UI/02_Lobby/W_ItemRow.uasset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/UI/02_Lobby/W_LobbySettingPanel.uasset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/UI/03_AgentSelection/LoadingScreen/W_LoadingScreen_Host1.uasset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_LoadingScreen_Host1.uasset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_TimerText.uasset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/UI/04_Maps/Arts/Ascent.uasset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/UI/Foundation/LoadingScreen/W_LoadingScreen_Host1.uasset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Source/LyraGame/GameModes/GameLobby/NaviLobbySettingManaerComponent.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Source/LyraGame/GameModes/GameLobby/NaviLobbySettingManaerComponent.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Source/LyraGame/GameModes/GameLobby/NaviMapDefinition.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Source/LyraGame/GameModes/GameLobby/NaviMapDefinition.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/System/02_Lobby/LobbyStetting/B_NaviLobbySettingControllerComponent.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/System/02_Lobby/LobbyStetting/B_NaviLobbySettingManagerComponent.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/System/02_Lobby/TeamSelection/B_NaviTeamSelectionControllerComponent.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/System/02_Lobby/TeamSelection/B_NaviTeamSelectionGameStateComponent.uasset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Navi.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Navi.dir/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Config/DefaultEngine.ini" beforeDir="false" afterPath="$PROJECT_DIR$/Config/DefaultEngine.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Audio/Blueprints/B_MusicManagerComponent_FE.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Audio/Blueprints/B_MusicManagerComponent_FE.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/System/02_Lobby/L_NaviLobby.umap" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/02_Lobby/L_NaviLobby.umap" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/System/03_AgentSelection/B_AgentSelectionPhaseManagement.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/03_AgentSelection/B_AgentSelectionPhaseManagement.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/System/03_AgentSelection/B_NaviAgentSelection_Experience.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/03_AgentSelection/B_NaviAgentSelection_Experience.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/System/03_AgentSelection/L_NaviAgentSelection.umap" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/03_AgentSelection/L_NaviAgentSelection.umap" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Config/DefaultGame.ini" beforeDir="false" afterPath="$PROJECT_DIR$/Config/DefaultGame.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/System/02_Lobby/B_LobbySettingManagerComponent.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/02_Lobby/B_LobbySettingManagerComponent.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/System/02_Lobby/B_NaviLobby_Experience.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/02_Lobby/B_NaviLobby_Experience.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/System/02_Lobby/B_NaviTeamSelectionComponent.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/02_Lobby/B_NaviTeamSelectionComponent.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/System/02_Lobby/B_NaviTeamSelectionGameStateComponent.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/02_Lobby/B_NaviTeamSelectionGameStateComponent.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/System/04_Maps/DA_NaviShooterGym_Def.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/04_Maps/DA_NaviShooterGym_Def.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/UI/02_Lobby/W_ItemListButton.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/02_Lobby/W_ItemListButton.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/UI/02_Lobby/W_ItemRow.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/02_Lobby/W_ItemRow.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/UI/02_Lobby/W_LobbySettingPanel.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/02_Lobby/W_LobbySettingPanel.uasset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Content/UI/02_Lobby/W_NaviGameLobby.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/02_Lobby/W_NaviGameLobby.uasset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_AgentSelectOverlay.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_AgentSelectOverlay.uasset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_NaviAgentSelectPanel.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_NaviAgentSelectPanel.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_TeamSelectionPanel.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_TeamSelectionPanel.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/UI/Foundation/LoadingScreen/W_LoadingScreen_Host.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/Foundation/LoadingScreen/W_LoadingScreen_Host.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/UI/Menu/Experiences/W_ExperienceList.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/Menu/Experiences/W_ExperienceList.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/UI/Menu/Experiences/W_HostSessionScreen.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/Menu/Experiences/W_HostSessionScreen.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Binaries/Win64/UnrealEditor-ShooterCoreRuntime.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Binaries/Win64/UnrealEditor-ShooterCoreRuntime.pdb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Elimination/B_TeamDeathMatchScoring.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Elimination/B_TeamDeathMatchScoring.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Elimination/UI/W_ScoreWidget_Elimination.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Elimination/UI/W_ScoreWidget_Elimination.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/UI/Menu/Experiences/UIExperienceMacros.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/Menu/Experiences/UIExperienceMacros.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/UI/Menu/Experiences/W_ExperienceSelectionScreen.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/Menu/Experiences/W_ExperienceSelectionScreen.uasset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/UnrealEditor/Inc/ShooterCoreRuntime/UHT/Timestamp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/UnrealEditor/Inc/ShooterCoreRuntime/UHT/Timestamp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/ShooterCoreRuntime/UnrealEditor-ShooterCoreRuntime.exp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/ShooterCoreRuntime/UnrealEditor-ShooterCoreRuntime.exp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterTests/Binaries/Win64/UnrealEditor-ShooterTestsRuntime.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterTests/Binaries/Win64/UnrealEditor-ShooterTestsRuntime.pdb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterTests/Intermediate/Build/Win64/x64/UnrealEditor/Development/ShooterTestsRuntime/UnrealEditor-ShooterTestsRuntime.exp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterTests/Intermediate/Build/Win64/x64/UnrealEditor/Development/ShooterTestsRuntime/UnrealEditor-ShooterTestsRuntime.exp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Binaries/Win64/UnrealEditor-TopDownArenaRuntime.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Binaries/Win64/UnrealEditor-TopDownArenaRuntime.pdb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Intermediate/Build/Win64/UnrealEditor/Inc/TopDownArenaRuntime/UHT/Timestamp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Intermediate/Build/Win64/UnrealEditor/Inc/TopDownArenaRuntime/UHT/Timestamp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/AgentSelectionInfo.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/AgentSelectionInfo.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/NaviAgentSelectionManagerComponent.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/NaviAgentSelectionManagerComponent.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/NaviAgentSelectionManagerComponent.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/NaviAgentSelectionManagerComponent.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/LyraGame/LyraGameplayTags.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/LyraGameplayTags.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/LyraGame/LyraGameplayTags.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/LyraGameplayTags.h" afterDir="false" />
     </list>
@@ -190,9 +172,15 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="cidr-memory-view://2" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../../../../UE_Source/5_5_4/Engine/Source/ThirdParty/HarfBuzz/harfbuzz-1.2.4/src/hb-open-type-private.hh" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../../../../UE_Source/5_5_4/Engine/Source/ThirdParty/ShaderConductor/ShaderConductor/External/DirectXShaderCompiler/test/tools/llvm-cov/showLineExecutionCounts.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Intermediate/Build/Win64/UnrealEditor/Inc/LyraGame/UHT/LyraGameState.gen.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Intermediate/Build/Win64/UnrealEditor/Inc/LyraGame/UHT/LyraPlayerController.gen.cpp" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
@@ -203,21 +191,21 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "Uproject.Navi.executor": "Run",
-    "git-widget-placeholder": "main",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.lookFeel",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;Uproject.Navi.executor&quot;: &quot;Debug&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Uproject.Navi">
     <configuration name="UnrealAndroidFileTool: UAFT-linux-x64" type="DotNetMsBuildPublish" factoryName="Publish to IIS">
       <riderPublish publish_profile="UAFT-linux-x64.pubxml" pubxml_path="$PROJECT_DIR$/../../../../../UE_Source/5_5_4/Engine/Source/Programs/UnrealAndroidFileTool/Properties/PublishProfiles/UAFT-linux-x64.pubxml" uuid_high="7955553615007426355" uuid_low="1901880150328835101" />
@@ -29150,7 +29138,11 @@
       <workItem from="1746441952359" duration="4074000" />
       <workItem from="1746448861556" duration="3565000" />
       <workItem from="1746496748078" duration="7818000" />
-      <workItem from="1746526930640" duration="9314000" />
+      <workItem from="1746526930640" duration="9415000" />
+      <workItem from="1746788458777" duration="1792000" />
+      <workItem from="1746879727323" duration="702000" />
+      <workItem from="1746955119355" duration="5601000" />
+      <workItem from="1746969516836" duration="1999000" />
     </task>
     <servers />
   </component>

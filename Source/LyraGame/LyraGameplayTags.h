@@ -102,6 +102,9 @@ namespace LyraGameplayTags
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Map_FeatureTest);
 
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Map_Ascent);
-	
+
+	// Mod Tags
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Mod_Normal_Unrated);
+    LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Mod_TeamDeathMatch)
 	
 };
