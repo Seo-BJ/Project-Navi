@@ -7,6 +7,7 @@
 #include "NaviUserInfoRow.generated.h"
 
 class UCommonTextBlock;
+
 /**
  * 
  */
@@ -21,7 +22,7 @@ public:
 	TObjectPtr<UCommonTextBlock> UserName_Text;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	TObjectPtr<UCommonTextBlock> UserPing_text;
+	TObjectPtr<UCommonTextBlock> UserPing_Text;
 
 	UFUNCTION(BlueprintCallable)
 	void SetUserNameText(FString UserName);

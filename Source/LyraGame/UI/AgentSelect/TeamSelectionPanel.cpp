@@ -106,18 +106,6 @@ void UTeamSelectionPanel::UpdateSelectionPanel(FAgentSelectionInfo Info)
 
 void UTeamSelectionPanel::PopulateTeamSelectionIcons()
 {
-	    // 0. 필요한 컴포넌트 및 클래스 유효성 검사
-    if (!IsValid(TeamAgentIcons_HorizontalBox))
-    {
-        UE_LOG(LogTemp, Error, TEXT("UTeamSelectionPanel::PopulateTeamSelectionIcons: TeamAgentIcons_UniformGridPanel is not valid!"));
-        return;
-    }
-     if (!TeamSelectionIconClass) // TeamSelectionIconClass가 설정되었는지 확인
-    {
-        UE_LOG(LogTemp, Error, TEXT("UTeamSelectionPanel::PopulateTeamSelectionIcons: TeamSelectionIconClass is not set in the Blueprint!"));
-        return;
-    }
-    
     APlayerController* LocalPC = GetOwningPlayer();
     if (!IsValid(LocalPC)) return; 
 
@@ -132,8 +120,7 @@ void UTeamSelectionPanel::PopulateTeamSelectionIcons()
     
     AGameStateBase* GameState = GetWorld() ? GetWorld()->GetGameState() : nullptr;
     if (!IsValid(GameState)) return; 
-
-    // 3. 같은 팀 PlayerState 수집
+    
     TArray<ALyraPlayerState*> Teammates;
     for (APlayerState* PS : GameState->PlayerArray)
     {
