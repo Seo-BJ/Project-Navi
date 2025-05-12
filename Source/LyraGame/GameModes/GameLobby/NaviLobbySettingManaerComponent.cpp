@@ -22,6 +22,16 @@ void UNaviLobbySettingManaerComponent::GetLifetimeReplicatedProps(TArray<FLifeti
 	DOREPLIFETIME(UNaviLobbySettingManaerComponent, ModTag);
 }
 
+FGameplayTag UNaviLobbySettingManaerComponent::GetMapTag()
+{
+	return MapTag;
+}
+
+FGameplayTag UNaviLobbySettingManaerComponent::GetModTag()
+{
+	return ModTag;
+}
+
 void UNaviLobbySettingManaerComponent::HandleMapSelectionRequest(const FGameplayTag& SelectedMapTag)
 {
 	if (HasAuthority())
