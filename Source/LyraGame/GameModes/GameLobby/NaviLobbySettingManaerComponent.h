@@ -22,6 +22,12 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FGameplayTag GetMapTag();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FGameplayTag GetModTag();
+	
 	UFUNCTION(BlueprintCallable)
 	void HandleMapSelectionRequest(const FGameplayTag& SelectedMapTag);
 

@@ -15,7 +15,7 @@ class LYRAGAME_API UNaviMapDefinition : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
 	
-  public:
+public:
 
     /**
      * @brief 실제로 로드될 맵 월드 에셋의 Primary Asset ID입니다.
@@ -81,4 +81,8 @@ class LYRAGAME_API UNaviMapDefinition : public UPrimaryDataAsset
     // 이 함수를 특별히 오버라이드할 필요는 대부분 없습니다.
     // AssetType을 명시적으로 설정하고 싶다면 생성자에서 할 수 있습니다.
     // virtual FPrimaryAssetId GetPrimaryAssetId() const override;
+
+	UFUNCTION(BlueprintCallable,  meta = (WorldContext = "WorldContextObject"))
+	void RequestAndSetLoadingScreenWidget(UObject* WorldContextObject) const;
+	
 };
