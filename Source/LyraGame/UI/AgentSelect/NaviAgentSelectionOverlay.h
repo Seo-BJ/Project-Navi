@@ -40,10 +40,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Data") 
 	TObjectPtr<UDataTable> AgentClassData;
 
-
-
-	
-
 private:
 
 	FGameplayTag CurrentAgentTag;

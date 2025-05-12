@@ -57,10 +57,6 @@ protected:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	TObjectPtr<UTeamSelectionIcon> Fourth_SelectionPanel;
 	
-	
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<UTeamSelectionIcon> TeamSelectionIconClass;
-	
 	//void SetPlayer
 	void PopulateTeamSelectionIcons();
 
