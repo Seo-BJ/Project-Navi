@@ -37,8 +37,7 @@
 /FUNCTIONPADMIN:6
 /NOIMPLIB
 "..\Intermediate\Build\Win64\x64\UnrealEditor\Development\UnrealEd\SharedPCH.UnrealEd.Project.ValApi.Cpp20.h.obj"
-"C:\Users\binij\Documents\UnrealProjects\Navi\Plugins\GameFeatures\NaviMaps\Intermediate\Build\Win64\x64\UnrealEditor\Development\NaviMapsRuntime\NaviMapsRuntimeModule.cpp.obj"
-"C:\Users\binij\Documents\UnrealProjects\Navi\Plugins\GameFeatures\NaviMaps\Intermediate\Build\Win64\x64\UnrealEditor\Development\NaviMapsRuntime\PerModuleInline.gen.cpp.obj"
+"C:\Users\binij\Documents\UnrealProjects\Navi\Plugins\GameFeatures\NaviMaps\Intermediate\Build\Win64\x64\UnrealEditor\Development\NaviMapsRuntime\Module.NaviMapsRuntime.cpp.obj"
 "..\Intermediate\Build\Win64\x64\UnrealEditor\Development\Default.rc2.res"
 "..\Intermediate\Build\Win64\x64\UnrealEditor\Development\CoreUObject\UnrealEditor-CoreUObject.lib"
 "..\Intermediate\Build\Win64\x64\UnrealEditor\Development\Engine\UnrealEditor-Engine.lib"
