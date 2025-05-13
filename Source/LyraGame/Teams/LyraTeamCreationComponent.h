@@ -48,9 +48,14 @@ protected:
 
 public:
 
+	/** If ture, Server Create Teams and Assign Players To Team When Experience Loaded
+	 * If false, Server 
+	 * 
+	 */
+	
 	UPROPERTY(EditDefaultsOnly, Category = Teams)
 	bool bActivateOnExperienceLoaded = true;
-
+	
 	virtual void ServerHandlePlayerLogout(AController* LeavingController);
 	
 #if WITH_SERVER_CODE

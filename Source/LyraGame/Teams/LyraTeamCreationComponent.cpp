@@ -48,11 +48,20 @@ void ULyraTeamCreationComponent::BeginPlay()
 void ULyraTeamCreationComponent::OnExperienceLoaded(const ULyraExperienceDefinition* Experience)
 {
 #if WITH_SERVER_CODE
-	if (HasAuthority() && bActivateOnExperienceLoaded)
+	if (HasAuthority())
 	{
-		ServerCreateTeams();
-		ServerAssignPlayersToTeams();
+		if (bActivateOnExperienceLoaded)
+		{
+			ServerCreateTeams();
+			ServerAssignPlayersToTeams();
+		}
+		else
+		{
+			ServerCreateTeams();
+		}
+
 	}
+	
 #endif
 }
 
