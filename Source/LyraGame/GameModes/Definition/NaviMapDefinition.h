@@ -8,6 +8,7 @@
 
 class UTexture2D;
 class UUserWidget;
+class UCommonSession_HostSessionRequest;
 
 UCLASS(BlueprintType) 
 class LYRAGAME_API UNaviMapDefinition : public UPrimaryDataAsset
@@ -18,7 +19,7 @@ public:
 
 	/** The specific map to load */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowedTypes = "Map"))
-    FPrimaryAssetId ActualMapToLoad;
+    FPrimaryAssetId MapID;
 
 	/** Map Name Text */
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -43,14 +44,8 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TSoftClassPtr<UUserWidget> LoadingScreenWidget;
 	
-    // UPrimaryDataAsset의 GetPrimaryAssetId는 기본적으로 에셋 자체의 ID를 반환합니다.
-    // (예: NaviMapDefinition'/Game/Data/Maps/DA_Map_Ascent.DA_Map_Ascent')
-    // 이 UNaviMapDefinition 에셋 자체가 고유한 Primary Asset이 되므로,
-    // 이 함수를 특별히 오버라이드할 필요는 대부분 없습니다.
-    // AssetType을 명시적으로 설정하고 싶다면 생성자에서 할 수 있습니다.
-    // virtual FPrimaryAssetId GetPrimaryAssetId() const override;
-
-	UFUNCTION(BlueprintCallable,  meta = (WorldContext = "WorldContextObject"))
-	void RequestAndSetLoadingScreenWidget(UObject* WorldContextObject) const;
+	/** Create a request object about MapID that is used to actually start a session and Server Travel */
+	UFUNCTION(BlueprintCallable, BlueprintPure=false, meta = (WorldContext = "WorldContextObject"))
+	UCommonSession_HostSessionRequest* CreateHostingRequest(const UObject* WorldContextObject) const;
 	
 };

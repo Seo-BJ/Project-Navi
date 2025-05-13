@@ -17,7 +17,7 @@ class LYRAGAME_API UNaviExperienceDefinition : public UPrimaryDataAsset
 public:
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Information")
-	FText ExperienceName;
+	FText ExperienceNameText;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Information")
 	FGameplayTag ExperienceTag;
@@ -30,7 +30,15 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category=Experience)
 	TMap<FString, FString> ExtraArgs;
 
+	/** If true, a replay will be recorded of the game */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category=Experience)
+	bool bRecordReplay = false;
+	
 	/** Max number of players for this session */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category=Experience)
 	int32 MaxPlayerCount = 16;
+
+	/** Create a request object about Exprience that is used to actually start a session and Server Travel */
+	UFUNCTION(BlueprintCallable, BlueprintPure=false, meta = (WorldContext = "WorldContextObject"))
+	UCommonSession_HostSessionRequest* CreateHostingRequest(const UObject* WorldContextObject) const;
 };

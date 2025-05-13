@@ -2,7 +2,15 @@
 
 
 #include "NaviLobbySettingManaerComponent.h"
+
+#include "OnlineSubsystemUtils.h"
 #include "GameModes/LyraExperienceManagerComponent.h"
+
+#include "GameModes/Definition/NaviExperienceDefinition.h"
+
+#include "GameModes/Definition/NaviMapDefinition.h"
+
+#include "GameModes/Definition/NaviHostingRequestSubsystem.h"
 
 #include "Gamemodes/LyraGameState.h"
 #include "Net/UnrealNetwork.h"
@@ -18,38 +26,43 @@ void UNaviLobbySettingManaerComponent::GetLifetimeReplicatedProps(TArray<FLifeti
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     
-	DOREPLIFETIME(UNaviLobbySettingManaerComponent, MapTag);
-	DOREPLIFETIME(UNaviLobbySettingManaerComponent, ModTag);
+	DOREPLIFETIME(UNaviLobbySettingManaerComponent, MapDefinition);
+	DOREPLIFETIME(UNaviLobbySettingManaerComponent, ExperienceDefinition);
 }
 
-FGameplayTag UNaviLobbySettingManaerComponent::GetMapTag()
+void UNaviLobbySettingManaerComponent::HandleMapSelectionRequest(UNaviMapDefinition* SelectedMapDefinition)
 {
-	return MapTag;
+	if (HasAuthority())
+	{   
+		MapDefinition = SelectedMapDefinition;
+	}
 }
 
-FGameplayTag UNaviLobbySettingManaerComponent::GetModTag()
-{
-	return ModTag;
-}
-
-void UNaviLobbySettingManaerComponent::HandleMapSelectionRequest(const FGameplayTag& SelectedMapTag)
+void UNaviLobbySettingManaerComponent::HandleExperienceSelectionRequest(UNaviExperienceDefinition* SeletedExperienceDefinition)
 {
 	if (HasAuthority())
 	{
-		MapTag = SelectedMapTag;
+		ExperienceDefinition = SeletedExperienceDefinition;
 	}
+}
+
+void UNaviLobbySettingManaerComponent::SaveSelectedExperienceAndMapDefinition()
+{
+	UWorld* World = GetOwner()->GetWorld(); 
+	if (!World) return;
+
+	UGameInstance* GameInstance = World->GetGameInstance();
+	if (!GameInstance) return;
 	
-}
-
-void UNaviLobbySettingManaerComponent::HandleModSelectionRequest(const FGameplayTag& SelectedModTag)
-{
-	if (HasAuthority())
+	UNaviHostingRequestSubsystem* HostingSubsystem = GameInstance->GetSubsystem<UNaviHostingRequestSubsystem>();
+	if (!HostingSubsystem) return;
+	
+	if (MapDefinition && ExperienceDefinition)
 	{
-		ModTag = SelectedModTag;
+		HostingSubsystem->SaveSelectedMapAndExperienceDefinition(ExperienceDefinition, MapDefinition);
 	}
 }
 
-// Called when the game starts
 void UNaviLobbySettingManaerComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -58,8 +71,6 @@ void UNaviLobbySettingManaerComponent::BeginPlay()
 	ULyraExperienceManagerComponent* ExperienceComponent = GameState->FindComponentByClass<ULyraExperienceManagerComponent>();
 	check(ExperienceComponent);
 	ExperienceComponent->CallOrRegister_OnExperienceLoaded_HighPriority(FOnLyraExperienceLoaded::FDelegate::CreateUObject(this, &UNaviLobbySettingManaerComponent::OnExperienceLoaded));
-	
-	
 }
 
 
@@ -68,13 +79,13 @@ void UNaviLobbySettingManaerComponent::OnExperienceLoaded(const ULyraExperienceD
 
 }
 
-void UNaviLobbySettingManaerComponent::OnRep_MapTag(FGameplayTag OldTag)
+void UNaviLobbySettingManaerComponent::OnRep_MapDefinition()
 {
-	OnMapSettingTagChanged.Broadcast(OldTag, MapTag);
+	OnMapDefinitionChanged.Broadcast(MapDefinition);
 }
 
-void UNaviLobbySettingManaerComponent::OnRep_ModTag(FGameplayTag OldTag)
+void UNaviLobbySettingManaerComponent::OnRep_ExperienceDefinition()
 {
-	OnModSettingTagChanged.Broadcast(OldTag, ModTag);
+	OnExperienceDefnitionChanged.Broadcast(ExperienceDefinition);
 }
 

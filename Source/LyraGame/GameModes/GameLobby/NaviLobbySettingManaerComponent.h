@@ -7,7 +7,11 @@
 
 #include "NaviLobbySettingManaerComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSettingTagChanged, FGameplayTag, OldSettingTag, FGameplayTag, NewSettingTag);
+class UNaviMapDefinition;
+class UNaviExperienceDefinition;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMapDefinitionChanged, UNaviMapDefinition*, MapDefinition);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FExperienceDefinitionChanged, UNaviExperienceDefinition*, ExperienceDefinition);
 
 class ULyraExperienceDefinition;
 
@@ -21,24 +25,21 @@ public:
 	UNaviLobbySettingManaerComponent(const FObjectInitializer& ObjectInitializer);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FGameplayTag GetMapTag();
-
-	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FGameplayTag GetModTag();
 	
 	UFUNCTION(BlueprintCallable)
-	void HandleMapSelectionRequest(const FGameplayTag& SelectedMapTag);
+	void HandleMapSelectionRequest(UNaviMapDefinition* SelectedMapDefinition);
 
 	UFUNCTION(BlueprintCallable)
-	void HandleModSelectionRequest(const FGameplayTag& SelectedModTag);
+	void HandleExperienceSelectionRequest(UNaviExperienceDefinition* SeletedExperienceDefinition);
+
+	UFUNCTION(BlueprintCallable)
+	void SaveSelectedExperienceAndMapDefinition();
+	
+	UPROPERTY(BlueprintAssignable)
+	FMapDefinitionChanged OnMapDefinitionChanged;
 
 	UPROPERTY(BlueprintAssignable)
-	FSettingTagChanged OnMapSettingTagChanged;
-
-	UPROPERTY(BlueprintAssignable)
-	FSettingTagChanged OnModSettingTagChanged;
+	FExperienceDefinitionChanged OnExperienceDefnitionChanged;
 
 protected:
 
@@ -49,15 +50,16 @@ private:
 	
 	void OnExperienceLoaded(const ULyraExperienceDefinition* Experience);
 
-	UPROPERTY(ReplicatedUsing = OnRep_MapTag)
-	FGameplayTag MapTag;
+	UPROPERTY(ReplicatedUsing = OnRep_MapDefinition)
+	TObjectPtr<UNaviMapDefinition> MapDefinition;
 
-	UPROPERTY(ReplicatedUsing = OnRep_ModTag)
-	FGameplayTag ModTag;
+	UPROPERTY(ReplicatedUsing = OnRep_ExperienceDefinition)
+	TObjectPtr<UNaviExperienceDefinition> ExperienceDefinition;
+	
 	
 	UFUNCTION()
-	void OnRep_MapTag(FGameplayTag OldTag);
+	void OnRep_MapDefinition();
 
 	UFUNCTION()
-	void OnRep_ModTag(FGameplayTag OldTag);
+	void OnRep_ExperienceDefinition();
 };

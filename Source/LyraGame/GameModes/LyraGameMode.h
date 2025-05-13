@@ -85,7 +85,10 @@ protected:
 	//~GameLift
 	void InitGameLift();
 	void SetServerParameters(FServerParameters& OutServerParameters);
-
+	
+	UFUNCTION(BlueprintCallable)
+	void ServerTravelWithRequest(const FString& InURL, bool bAbsolute = false, bool bShouldSkipGameNotify = false);
+	
 	UFUNCTION(BlueprintCallable)
 	void TrySeamlessTravel(TSoftObjectPtr<UWorld> DestinationMap);
 	void RemovePlayerSession(AController* Exiting);
