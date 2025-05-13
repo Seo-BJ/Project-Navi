@@ -103,8 +103,33 @@ namespace LyraGameplayTags
 
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Map_Ascent);
 
-	// Mod Tags
-	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Mod_Normal_Unrated);
-    LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Mod_TeamDeathMatch)
+	// Experience (Mod) Tags
+	// Already created in Lyra Projcet
+
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_ShooterGame_Elimination);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_ShooterGame_ControlPoints);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_ShooterGame_Test_Basic);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_ShooterGame_Test_Automated);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_ShooterGame_Test_Perf);
+	
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_TopDownArena);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_TopDownArena_Multiplayer);
+	
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_Default);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_FrontEnd);
+	
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_TestInventory);
+
+	// Navi Project
+	
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Experience_FrontEnd);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Experience_Lobby);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Experience_AgentSelection);
+
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Experience_Normal);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Experience_TeamDeathMatch)
+	
+	// Navi Mod
+
 	
 };

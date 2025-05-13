@@ -117,10 +117,26 @@ namespace LyraGameplayTags
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Map_Ascent, "Navi.Map.Ascent", "Valorant Ascent Map");
 
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Lyra_Experience_ShooterGame_Elimination, "Lyra.Experience.ShooterGame.Elimination", "Lyra 슈터 게임 경험: 상대방 제거에 중점을 둡니다.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Lyra_Experience_ShooterGame_ControlPoints, "Lyra.Experience.ShooterGame.ControlPoints", "Lyra 슈터 게임 경험: 거점 점령 및 방어에 중점을 둡니다.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Lyra_Experience_ShooterGame_Test_Basic, "Lyra.Experience.ShooterGame.Test.Basic", "Lyra 슈터 게임의 기본적인 기능을 테스트하기 위한 경험입니다.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Lyra_Experience_ShooterGame_Test_Automated, "Lyra.Experience.ShooterGame.Test.Automated", "Lyra 슈터 게임의 자동화된 테스트를 위한 경험입니다.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Lyra_Experience_ShooterGame_Test_Perf, "Lyra.Experience.ShooterGame.Test.Perf", "Lyra 슈터 게임의 성능 테스트를 위한 경험입니다.");
 
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Lyra_Experience_TopDownArena, "Lyra.Experience.TopDownArena", "Lyra 탑다운 아레나 게임 모드 경험입니다 (싱글 플레이어 또는 로컬).");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Lyra_Experience_TopDownArena_Multiplayer, "Lyra.Experience.TopDownArena.Multiplayer", "Lyra 멀티플레이어 탑다운 아레나 게임 모드 경험입니다.");
 
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Mod_Normal_Unrated, "Navi.Mod.Normal.Unrated", "Normal Mod with Unrated");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Mod_TeamDeathMatch, "Navi.Mod.TeamDeathMatch", "Team Deathmatch Mod");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Lyra_Experience_Default, "Lyra.Experience.Default", "기본 Lyra 경험으로, 폴백 또는 기반으로 사용됩니다.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Lyra_Experience_FrontEnd, "Lyra.Experience.FrontEnd", "메인 메뉴 또는 프론트엔드 UI를 위한 Lyra 경험입니다.");
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Lyra_Experience_TestInventory, "Lyra.Experience.TestInventory", "인벤토리 시스템 테스트를 위한 Lyra 경험입니다.");
+	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Experience_FrontEnd, "Navi.Experience.FrontEnd", "Navi 프로젝트의 메인 메뉴 또는 프론트엔드 UI를 위한 경험입니다. (예: 발로란트의 초기 화면)");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Experience_Lobby, "Navi.Experience.Lobby", "Navi 프로젝트의 게임 전 로비 경험입니다. 플레이어들이 파티를 구성하고 매치메이킹을 대기하는 공간입니다. (예: 발로란트의 파티 화면)");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Experience_AgentSelection, "Navi.Experience.AgentSelection", "Navi 프로젝트의 요원(캐릭터) 선택 단계를 위한 경험입니다. 매치 시작 전 요원을 선택하는 과정을 담당합니다. (예: 발로란트의 요원 선택창)");
+	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Experience_Normal, "Navi.Experience.Normal", "Normal Mod with Unrated");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Experience_TeamDeathMatch, "Navi.Experience.TeamDeathMatch", "Team Deathmatch Mod");
 
 	
 	FGameplayTag FindTagByString(const FString& TagString, bool bMatchPartialString)

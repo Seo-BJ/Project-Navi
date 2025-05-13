@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "GameplayTagContainer.h"
 #include "Engine/DataAsset.h"
 #include "LyraExperienceDefinition.generated.h"
 
@@ -33,6 +34,7 @@ public:
 	//~End of UPrimaryDataAsset interface
 
 public:
+	
 	// List of Game Feature Plugins this experience wants to have active
 	UPROPERTY(EditDefaultsOnly, Category = Gameplay)
 	TArray<FString> GameFeaturesToEnable;
