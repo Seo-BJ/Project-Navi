@@ -315,6 +315,19 @@ void ALyraGameMode::SetServerParameters(FServerParameters& OutServerParameters)
 	UE_LOG(LogLyraGameLift, Log, TEXT("PID: %s"), *OutServerParameters.m_processId);
 }
 
+void ALyraGameMode::ServerTravelWithRequest(const FString& InURL, bool bAbsolute, bool bShouldSkipGameNotify)
+{
+	if (GIsEditor)
+	{
+		GetWorld()->ServerTravel(InURL, bAbsolute, bShouldSkipGameNotify);
+	}
+	else
+	{
+		GetWorld()->ServerTravel(InURL, bAbsolute, bShouldSkipGameNotify);
+	}
+	
+}
+
 void ALyraGameMode::TrySeamlessTravel(TSoftObjectPtr<UWorld> DestinationMap)
 {
 	const FString MapName = DestinationMap.ToSoftObjectPath().GetAssetName();

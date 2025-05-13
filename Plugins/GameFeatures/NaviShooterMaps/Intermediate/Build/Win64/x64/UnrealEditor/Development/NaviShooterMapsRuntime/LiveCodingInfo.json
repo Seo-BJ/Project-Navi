@@ -1,9 +1,0 @@
-{
-	"RemapUnityFiles": 
-	{
-		"Module.NaviShooterMapsRuntime.cpp.obj": [
-			"PerModuleInline.gen.cpp.obj",
-			"NaviShooterMapsRuntimeModule.cpp.obj"
-		]
-	}
-}
