@@ -134,37 +134,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b4d883ff-d80e-4e06-b7d8-b7964a4ef1bf" name="변경" comment="">
-      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Content/NaviMaps_Label.uasset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Content/System/Playlists/Experiences/DA_NaviNormalMode.uasset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Content/System/Playlists/Maps/DA_NaviShooterGym_Def.uasset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Game/B_TeamSetup_TwoTeams1.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/NaviAgentSelect.uplugin" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Resources/Icon128.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Source/NaviAgentSelectRuntime/NaviAgentSelectRuntime.Build.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Source/NaviAgentSelectRuntime/Private/NaviAgentSelectRuntimeModule.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Source/NaviAgentSelectRuntime/Public/NaviAgentSelectRuntimeModule.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Game/B_TeamSetup_TwoTeams_AlreadySetTeam.uasset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Navi.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Navi.dir/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Config/DefaultGame.ini" beforeDir="false" afterPath="$PROJECT_DIR$/Config/DefaultGame.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/DefaultGame_Label.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/DefaultGame_Label.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/System/02_Lobby/L_NaviLobby.umap" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/02_Lobby/L_NaviLobby.umap" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/System/03_AgentSelection/B_NaviAgentSelection_Experience.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/System/03_AgentSelection/B_NaviAgentSelection_Experience.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/System/04_Experiences/DA_NaviNormalMode.uasset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/System/05_Maps/DA_NaviShooterGym_Def.uasset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/UI/02_Lobby/W_MapListButton.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/02_Lobby/W_MapListButton.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_AgentIconButton.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_AgentIconButton.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_NaviAgentSelectPanel.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_NaviAgentSelectPanel.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_TeamSelectionPanel.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/03_AgentSelection/W_TeamSelectionPanel.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Binaries/Win64/UnrealEditor-NaviMapsRuntime.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Binaries/Win64/UnrealEditor-NaviMapsRuntime.pdb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Content/Maps/L_NaviShooterGym.umap" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Content/Maps/L_NaviShooterGym.umap" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Content/NaviMaps.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Content/NaviMaps.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviMapsRuntime/LiveCodingInfo.json" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviMapsRuntime/LiveCodingInfo.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviMapsRuntime/UnrealEditor-NaviMapsRuntime.dll.rsp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviMapsRuntime/UnrealEditor-NaviMapsRuntime.dll.rsp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviMapsRuntime/UnrealEditor-NaviMapsRuntime.dll.rsp.old" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviMapsRuntime/UnrealEditor-NaviMapsRuntime.dll.rsp.old" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviMapsRuntime/UnrealEditor-NaviMapsRuntime.exp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviMapsRuntime/UnrealEditor-NaviMapsRuntime.exp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviMapsRuntime/UnrealEditor-NaviMapsRuntime.lib.rsp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviMapsRuntime/UnrealEditor-NaviMapsRuntime.lib.rsp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviMapsRuntime/UnrealEditor-NaviMapsRuntime.lib.rsp.old" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviMapsRuntime/UnrealEditor-NaviMapsRuntime.lib.rsp.old" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/NaviMaps.uplugin" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/NaviMaps.uplugin" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Experiences/B_Navi_CompetitiveMatch.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Experiences/B_Navi_CompetitiveMatch.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Game/B_TeamSetup_TwoTeams1.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Game/B_TeamSetup_TwoTeams1.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Maps/L_ShooterGym.umap" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Maps/L_ShooterGym.umap" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/UnrealEditor/Inc/ShooterCoreRuntime/UHT/Timestamp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/UnrealEditor/Inc/ShooterCoreRuntime/UHT/Timestamp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterMaps/Content/ShooterMaps.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterMaps/Content/ShooterMaps.uasset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Intermediate/Build/Win64/UnrealEditor/Inc/TopDownArenaRuntime/UHT/Timestamp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Intermediate/Build/Win64/UnrealEditor/Inc/TopDownArenaRuntime/UHT/Timestamp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/LyraGame/Teams/LyraTeamCreationComponent.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/Teams/LyraTeamCreationComponent.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/LyraGame/Teams/LyraTeamCreationComponent.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/Teams/LyraTeamCreationComponent.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/LyraGame/Player/LyraPlayerState.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/Player/LyraPlayerState.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -290,21 +272,21 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "Uproject.Navi.executor": "Debug",
-    "git-widget-placeholder": "main",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.lookFeel",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;Uproject.Navi.executor&quot;: &quot;Run&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Uproject.Navi">
     <configuration name="UnrealAndroidFileTool: UAFT-linux-x64" type="DotNetMsBuildPublish" factoryName="Publish to IIS">
       <riderPublish publish_profile="UAFT-linux-x64.pubxml" pubxml_path="$PROJECT_DIR$/../../../../../UE_Source/5_5_4/Engine/Source/Programs/UnrealAndroidFileTool/Properties/PublishProfiles/UAFT-linux-x64.pubxml" uuid_high="7955553615007426355" uuid_low="1901880150328835101" />
@@ -29246,7 +29228,9 @@
       <workItem from="1747053909881" duration="5466000" />
       <workItem from="1747104532033" duration="14173000" />
       <workItem from="1747128995179" duration="3703000" />
-      <workItem from="1747132783861" duration="4768000" />
+      <workItem from="1747132783861" duration="5512000" />
+      <workItem from="1747186828966" duration="4280000" />
+      <workItem from="1747375168493" duration="6228000" />
     </task>
     <servers />
   </component>
