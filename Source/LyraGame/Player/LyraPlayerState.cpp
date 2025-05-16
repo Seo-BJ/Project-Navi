@@ -220,7 +220,7 @@ void ALyraPlayerState::SetPawnData(const ULyraPawnData* InPawnData)
 	for (const ULyraAbilitySet* AbilitySet : PawnData->AbilitySets)
 	{
 		if (AbilitySet)
-		{
+		{ 
 			AbilitySet->GiveToAbilitySystem(AbilitySystemComponent, nullptr);
 		}
 	}
@@ -233,7 +233,7 @@ void ALyraPlayerState::SetPawnData(const ULyraPawnData* InPawnData)
 void ALyraPlayerState::OnRep_PawnData()
 {
 }
-
+z
 void ALyraPlayerState::SetPlayerConnectionType(ELyraPlayerConnectionType NewType)
 {
 	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, MyPlayerConnectionType, this);
