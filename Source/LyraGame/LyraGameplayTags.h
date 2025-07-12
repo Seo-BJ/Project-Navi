@@ -59,7 +59,30 @@ namespace LyraGameplayTags
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Movement_Mode_Flying);
 
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Movement_Mode_Custom);
+	
+	// Experience (Mod) Tags
+	// Already created in Lyra Projcet
 
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_ShooterGame_Elimination);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_ShooterGame_ControlPoints);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_ShooterGame_Test_Basic);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_ShooterGame_Test_Automated);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_ShooterGame_Test_Perf);
+	
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_TopDownArena);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_TopDownArena_Multiplayer);
+	
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_Default);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_FrontEnd);
+	
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_TestInventory);
+
+
+	
+};
+
+namespace NaviGameplayTags
+{
 	// Valorant 관련 Tag
 	
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Agent_Class);
@@ -103,23 +126,6 @@ namespace LyraGameplayTags
 
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Map_Ascent);
 
-	// Experience (Mod) Tags
-	// Already created in Lyra Projcet
-
-	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_ShooterGame_Elimination);
-	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_ShooterGame_ControlPoints);
-	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_ShooterGame_Test_Basic);
-	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_ShooterGame_Test_Automated);
-	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_ShooterGame_Test_Perf);
-	
-	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_TopDownArena);
-	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_TopDownArena_Multiplayer);
-	
-	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_Default);
-	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_FrontEnd);
-	
-	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_TestInventory);
-
 	// Navi Project
 	
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Experience_FrontEnd);
@@ -128,8 +134,24 @@ namespace LyraGameplayTags
 
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Experience_Normal);
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Experience_TeamDeathMatch)
-	
-	// Navi Mod
+
+
+	LYRAGAME_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Kill_Message);
+
+
+	// Creds System Message
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Creds_Award);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Creds_Spend);
 
 	
-};
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Creds_Award_PistolRound);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Creds_Award_Round_Win);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Creds_Award_Round_Defeat);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Creds_Award_Kill);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Experience_PlantSpike);
+
+
+	// Cheat Tags
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Cheat_InfiniteCreds);
+
+}

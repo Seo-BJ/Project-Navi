@@ -134,19 +134,105 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b4d883ff-d80e-4e06-b7d8-b7964a4ef1bf" name="변경" comment="">
-      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/NaviAgentSelect.uplugin" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Resources/Icon128.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Source/NaviAgentSelectRuntime/NaviAgentSelectRuntime.Build.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Source/NaviAgentSelectRuntime/Private/NaviAgentSelectRuntimeModule.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Source/NaviAgentSelectRuntime/Public/NaviAgentSelectRuntimeModule.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Game/B_TeamSetup_TwoTeams_AlreadySetTeam.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Source/NaviAgentSelectRuntime/Private/Agent/NaviAgentInstance.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Source/NaviAgentSelectRuntime/Public/Agent/NaviAgentInstance.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/CredsSystem/BP_CredsControllerComponent.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/CredsSystem/BP_CredsManagerComponent.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/CredsSystem/BP_CredsSet.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/CredsSystem/CredsShop/UI/W_CredsShopOverlay.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/CredsSystem/CredsShop/UI/WeaponSkillShop/W_WeaponSkillShop.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/CredsSystem/NAS_CredsSystem.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/CredsSystem/W_MatchScoreBoard_CP1.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/Experiences/NAS_ShooterGame_SharedInput.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/Experiences/NAS_ShooterGame_StandardComponents.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/Experiences/NAS_ShooterGame_StandardHUD.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/Experiences/Phases/GE_DamageImmunity_FromGameMode.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/Experiences/Phases/GE_PregameLobby.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/Experiences/Phases/Phase_Playing.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/Experiences/Phases/Phase_PostGame.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/Experiences/Phases/Phase_Warmup.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/Maps/L_NaviShooterGym.umap" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/Maps/L_NaviShooterGym1.umap" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/NaviShooterCore.uasset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/NaviShooterCore.uplugin" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Resources/Icon128.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Source/NaviShooterCoreRuntime/NaviShooterCoreRuntime.Build.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Source/NaviShooterCoreRuntime/Private/NaviCredsSet.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Source/NaviShooterCoreRuntime/Private/NaviCredsStateComponent.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Source/NaviShooterCoreRuntime/Private/NaviPlayerCredsComponent.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Source/NaviShooterCoreRuntime/Private/NaviShooterCoreRuntimeModule.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Source/NaviShooterCoreRuntime/Public/NaviCredsSet.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Source/NaviShooterCoreRuntime/Public/NaviCredsStateComponent.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Source/NaviShooterCoreRuntime/Public/NaviPlayerCredsComponent.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Source/NaviShooterCoreRuntime/Public/NaviShooterCoreRuntimeModule.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Navi.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Navi.dir/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Experiences/B_Navi_CompetitiveMatch.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Experiences/B_Navi_CompetitiveMatch.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Game/B_TeamSetup_TwoTeams1.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Game/B_TeamSetup_TwoTeams1.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Maps/L_ShooterGym.umap" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Maps/L_ShooterGym.umap" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vsconfig" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Config/DefaultEngine.ini" beforeDir="false" afterPath="$PROJECT_DIR$/Config/DefaultEngine.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Navi.uproject" beforeDir="false" afterPath="$PROJECT_DIR$/Navi.uproject" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Binaries/Win64/UnrealEditor-NaviAgentSelectRuntime.exp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Binaries/Win64/UnrealEditor-NaviAgentSelectRuntime.exp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Binaries/Win64/UnrealEditor-NaviAgentSelectRuntime.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Binaries/Win64/UnrealEditor-NaviAgentSelectRuntime.pdb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviAgentSelectRuntime/Definitions.NaviAgentSelectRuntime.h" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviAgentSelectRuntime/Definitions.NaviAgentSelectRuntime.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviAgentSelectRuntime/LiveCodingInfo.json" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviAgentSelectRuntime/LiveCodingInfo.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviAgentSelectRuntime/NaviAgentSelectRuntime.Shared.rsp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviAgentSelectRuntime/NaviAgentSelectRuntime.Shared.rsp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviAgentSelectRuntime/UnrealEditor-NaviAgentSelectRuntime.dll.rsp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviAgentSelectRuntime/UnrealEditor-NaviAgentSelectRuntime.dll.rsp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviAgentSelectRuntime/UnrealEditor-NaviAgentSelectRuntime.exp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviAgentSelectRuntime/UnrealEditor-NaviAgentSelectRuntime.exp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviAgentSelectRuntime/UnrealEditor-NaviAgentSelectRuntime.lib.rsp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviAgentSelectRuntime/UnrealEditor-NaviAgentSelectRuntime.lib.rsp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Intermediate/Build/Win64/x64/UnrealEditorGPF/Development/NaviAgentSelectRuntime/Definitions.NaviAgentSelectRuntime.h" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Intermediate/Build/Win64/x64/UnrealEditorGPF/Development/NaviAgentSelectRuntime/Definitions.NaviAgentSelectRuntime.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/NaviAgentSelect.uplugin" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/NaviAgentSelect.uplugin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Source/NaviAgentSelectRuntime/NaviAgentSelectRuntime.Build.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviAgentSelect/Source/NaviAgentSelectRuntime/NaviAgentSelectRuntime.Build.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Binaries/Win64/UnrealEditor-NaviCoreRuntime.exp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Binaries/Win64/UnrealEditor-NaviCoreRuntime.pdb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Binaries/Win64/UnrealEditor.modules" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Content/NaviCore.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Intermediate/Build/BuildRules/NaviCoreModuleRules.pdb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Intermediate/Build/BuildRules/NaviCoreModuleRulesManifest.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviCoreRuntime/Definitions.NaviCoreRuntime.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviCoreRuntime/LiveCodingInfo.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviCoreRuntime/Module.NaviCoreRuntime.cpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviCoreRuntime/Module.NaviCoreRuntime.cpp.dep.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviCoreRuntime/Module.NaviCoreRuntime.cpp.obj.rsp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviCoreRuntime/Module.NaviCoreRuntime.cpp.sarif" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviCoreRuntime/NaviCoreRuntime.Shared.rsp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviCoreRuntime/PerModuleInline.gen.cpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviCoreRuntime/UnrealEditor-NaviCoreRuntime.dll.rsp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviCoreRuntime/UnrealEditor-NaviCoreRuntime.exp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviCoreRuntime/UnrealEditor-NaviCoreRuntime.lib.rsp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Intermediate/Build/Win64/x64/UnrealEditorGPF/Development/NaviCoreRuntime/Definitions.NaviCoreRuntime.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Intermediate/Build/Win64/x64/UnrealEditorGPF/Development/NaviCoreRuntime/Definitions.NaviCoreRuntime.h.old" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/NaviCore.uplugin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Resources/Icon128.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Source/NaviCoreRuntime/NaviCoreRuntime.Build.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Source/NaviCoreRuntime/Private/NaviCoreRuntimeModule.cpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviCore/Source/NaviCoreRuntime/Public/NaviCoreRuntimeModule.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Binaries/Win64/UnrealEditor-NaviMapsRuntime.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Binaries/Win64/UnrealEditor-NaviMapsRuntime.pdb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Content/Maps/L_NaviShooterGym.umap" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviMapsRuntime/UnrealEditor-NaviMapsRuntime.exp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviMaps/Intermediate/Build/Win64/x64/UnrealEditor/Development/NaviMapsRuntime/UnrealEditor-NaviMapsRuntime.exp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Binaries/Win64/UnrealEditor-ShooterCoreRuntime.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Binaries/Win64/UnrealEditor-ShooterCoreRuntime.pdb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/ControlPoint/UI/W_MatchScoreBoard_CP.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/ControlPoint/UI/W_MatchScoreBoard_CP.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Experiences/B_Navi_CompetitiveMatch.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/NaviShooterCore/Content/Experiences/B_CompetitiveMatch.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Input/Abilities/GAB_ShowWidget_WhenInputPressed.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Input/Abilities/GAB_ShowWidget_WhenInputPressed.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Weapon/Grenade/B_Grenade.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Weapon/Grenade/B_Grenade.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Weapons/Grenade/GE_Damage_Grenade.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Content/Weapons/Grenade/GE_Damage_Grenade.uasset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/UnrealEditor/Inc/ShooterCoreRuntime/UHT/Timestamp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/UnrealEditor/Inc/ShooterCoreRuntime/UHT/Timestamp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/ShooterCoreRuntime/UnrealEditor-ShooterCoreRuntime.exp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/x64/UnrealEditor/Development/ShooterCoreRuntime/UnrealEditor-ShooterCoreRuntime.exp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterExplorer/Content/Input/Abilities/GA_ToggleInventory.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterExplorer/Content/Input/Abilities/GA_ToggleInventory.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterExplorer/Content/Input/Actions/IA_ToggleInventory.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterExplorer/Content/Input/Actions/IA_ToggleInventory.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterExplorer/Content/System/Experiences/B_TestInventoryExperience.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterExplorer/Content/System/Experiences/B_TestInventoryExperience.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterExplorer/Content/UserInterface/W_InventoryScreen.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterExplorer/Content/UserInterface/W_InventoryScreen.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterTests/Binaries/Win64/UnrealEditor-ShooterTestsRuntime.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterTests/Binaries/Win64/UnrealEditor-ShooterTestsRuntime.pdb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterTests/Intermediate/Build/Win64/x64/UnrealEditor/Development/ShooterTestsRuntime/UnrealEditor-ShooterTestsRuntime.exp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/ShooterTests/Intermediate/Build/Win64/x64/UnrealEditor/Development/ShooterTestsRuntime/UnrealEditor-ShooterTestsRuntime.exp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Binaries/Win64/UnrealEditor-TopDownArenaRuntime.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Binaries/Win64/UnrealEditor-TopDownArenaRuntime.pdb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Intermediate/Build/Win64/UnrealEditor/Inc/TopDownArenaRuntime/UHT/Timestamp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Intermediate/Build/Win64/UnrealEditor/Inc/TopDownArenaRuntime/UHT/Timestamp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Intermediate/Build/Win64/x64/UnrealEditor/Development/TopDownArenaRuntime/UnrealEditor-TopDownArenaRuntime.exp" beforeDir="false" afterPath="$PROJECT_DIR$/Plugins/GameFeatures/TopDownArena/Intermediate/Build/Win64/x64/UnrealEditor/Development/TopDownArenaRuntime/UnrealEditor-TopDownArenaRuntime.exp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/LyraGame/Equipment/LyraEquipmentDefinition.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/Equipment/LyraEquipmentDefinition.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/LyraGame/Equipment/LyraEquipmentInstance.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/Equipment/LyraEquipmentInstance.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/AgentSelectionInfo.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/AgentSelectionInfo.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/AgentSelectionInfo.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/AgentSelectionInfo.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/NaviAgentSelectionManagerComponent.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/GameModes/AgentSelection/NaviAgentSelectionManagerComponent.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/LyraGame/LyraGameplayTags.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/LyraGameplayTags.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/LyraGame/LyraGameplayTags.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/LyraGameplayTags.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/LyraGame/Player/LyraPlayerState.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/Player/LyraPlayerState.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/LyraGame/UI/AgentSelect/NaviAgentDescriptionPanel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/LyraGame/UI/AgentSelect/NaviAgentDescriptionPanel.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -157,7 +243,7 @@
     <option name="firstShow" value="false" />
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../../../../UE_Source/5_5_4" />
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
@@ -176,92 +262,12 @@
     <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="cidr-memory-view://10" root0="FORCE_HIGHLIGHTING" />
+    <setting file="cidr-memory-view://5" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../../../../UE_Source/5_5_4/Engine/Source/ThirdParty/HarfBuzz/harfbuzz-1.2.4/src/hb-open-type-private.hh" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../../../../UE_Source/5_5_4/Engine/Source/ThirdParty/ShaderConductor/ShaderConductor/External/DirectXShaderCompiler/test/tools/llvm-cov/showLineExecutionCounts.cpp" root0="SKIP_HIGHLIGHTING" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="Toolset" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
@@ -276,8 +282,9 @@
   &quot;keyToString&quot;: {
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;Uproject.Navi.executor&quot;: &quot;Run&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;Uproject.Navi.executor&quot;: &quot;Debug&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;release&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -29230,7 +29237,24 @@
       <workItem from="1747128995179" duration="3703000" />
       <workItem from="1747132783861" duration="5512000" />
       <workItem from="1747186828966" duration="4280000" />
-      <workItem from="1747375168493" duration="6228000" />
+      <workItem from="1747375168493" duration="7894000" />
+      <workItem from="1747405703766" duration="895000" />
+      <workItem from="1747408263223" duration="3752000" />
+      <workItem from="1747460182523" duration="2069000" />
+      <workItem from="1747464476957" duration="1784000" />
+      <workItem from="1747486244407" duration="712000" />
+      <workItem from="1747653626195" duration="1191000" />
+      <workItem from="1747732963631" duration="1191000" />
+      <workItem from="1747818919407" duration="652000" />
+      <workItem from="1751432695655" duration="1226000" />
+      <workItem from="1752147527521" duration="1356000" />
+      <workItem from="1752209037858" duration="877000" />
+      <workItem from="1752209972136" duration="13989000" />
+      <workItem from="1752248664015" duration="2523000" />
+      <workItem from="1752309265748" duration="1002000" />
+      <workItem from="1752314358822" duration="2059000" />
+      <workItem from="1752317776983" duration="1479000" />
+      <workItem from="1752322283406" duration="3031000" />
     </task>
     <servers />
   </component>

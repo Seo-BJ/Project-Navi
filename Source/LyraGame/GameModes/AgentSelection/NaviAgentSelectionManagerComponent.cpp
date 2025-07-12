@@ -84,7 +84,7 @@ void UNaviAgentSelectionManagerComponent::OnAgentSelectionInfoAdded(const FAgent
 	UGameplayMessageSubsystem* MessageSubsystem = &UGameplayMessageSubsystem::Get(this);
     if (!IsValid(MessageSubsystem)) return;
     
-    FGameplayTag ChannelTag = LyraGameplayTags::Agent_Selection_Added;
+    FGameplayTag ChannelTag = NaviGameplayTags::Agent_Selection_Added;
     FAgentSelection_AddedMessage MessagePayload;
     MessagePayload.AddedInfo = Info; 
 
@@ -107,7 +107,7 @@ void UNaviAgentSelectionManagerComponent::OnAgentSelectionInfoRemoved(const FAge
     UGameplayMessageSubsystem* MessageSubsystem = &UGameplayMessageSubsystem::Get(this);
     if (!IsValid(MessageSubsystem)) return;
     
-    FGameplayTag ChannelTag = LyraGameplayTags::Agent_Selection_Removed;
+    FGameplayTag ChannelTag = NaviGameplayTags::Agent_Selection_Removed;
     FAgentSelection_RemovedMessage MessagePayload;
     MessagePayload.RemovedUsername = Info.Username;
     MessagePayload.RemovedAgentTag = Info.AgentTag;
@@ -132,7 +132,7 @@ void UNaviAgentSelectionManagerComponent::OnAgentSelectionInfoChanged(const FAge
     UGameplayMessageSubsystem* MessageSubsystem = &UGameplayMessageSubsystem::Get(this);
     if (!IsValid(MessageSubsystem)) return;
     
-    FGameplayTag ChannelTag = LyraGameplayTags::Agent_Selection_Changed;
+    FGameplayTag ChannelTag = NaviGameplayTags::Agent_Selection_Changed;
     FAgentSelection_ChangedMessage MessagePayload;
     MessagePayload.ChangedInfo = Info; 
     
@@ -155,7 +155,7 @@ void UNaviAgentSelectionManagerComponent::OnAgentSelectionConfirmed(const FAgent
     UGameplayMessageSubsystem* MessageSubsystem = &UGameplayMessageSubsystem::Get(this);
     if (!IsValid(MessageSubsystem)) return;
 
-    FGameplayTag ChannelTag = LyraGameplayTags::Agent_Selection_Confirm;
+    FGameplayTag ChannelTag = NaviGameplayTags::Agent_Selection_Confirm;
     FAgentSelection_ChangedMessage MessagePayload;
     MessagePayload.ChangedInfo = Info; 
     
@@ -178,7 +178,7 @@ void UNaviAgentSelectionManagerComponent::OnAllPlayerConfirmedAgentSelection(con
     UGameplayMessageSubsystem* MessageSubsystem = &UGameplayMessageSubsystem::Get(this);
     if (!IsValid(MessageSubsystem)) return;
 
-    FGameplayTag ChannelTag = LyraGameplayTags::Agent_Selection_AllPlayerConfirm;
+    FGameplayTag ChannelTag = NaviGameplayTags::Agent_Selection_AllPlayerConfirm;
     FAgentSelection_ChangedMessage MessagePayload;
     MessagePayload.ChangedInfo = Info; 
 

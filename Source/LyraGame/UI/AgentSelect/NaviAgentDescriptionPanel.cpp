@@ -39,22 +39,22 @@ void UNaviAgentDescriptionPanel::NativeConstruct()
     CSkill_Button->OnClicked().AddLambda([this]()
         {
             // 람다 함수 본문에서 실제 함수 호출
-            this->UpdateSkillTextBlocks(LyraGameplayTags::Agent_Skill_C);
+            this->UpdateSkillTextBlocks(NaviGameplayTags::Agent_Skill_C);
         });
     ESkill_Button->OnClicked().AddLambda([this]() 
       {
           // 람다 함수 본문에서 실제 함수 호출
-          this->UpdateSkillTextBlocks(LyraGameplayTags::Agent_Skill_E);
+          this->UpdateSkillTextBlocks(NaviGameplayTags::Agent_Skill_E);
       });
     QSkill_Button->OnClicked().AddLambda([this]() 
     {
         // 람다 함수 본문에서 실제 함수 호출
-        this->UpdateSkillTextBlocks(LyraGameplayTags::Agent_Skill_Q);
+        this->UpdateSkillTextBlocks(NaviGameplayTags::Agent_Skill_Q);
     });
     XSkill_Button->OnClicked().AddLambda([this]() 
       {
           // 람다 함수 본문에서 실제 함수 호출
-          this->UpdateSkillTextBlocks(LyraGameplayTags::Agent_Skill_X);
+          this->UpdateSkillTextBlocks(NaviGameplayTags::Agent_Skill_X);
       });
 }
 
@@ -117,12 +117,12 @@ void UNaviAgentDescriptionPanel::UpdateSkillTextBlocks(const FGameplayTag& Targe
     
     FString SkillShortID;
     
-    if (TargetSkillTag == LyraGameplayTags::Agent_Skill_C)           SkillShortID = TEXT("C");
-    else if (TargetSkillTag == LyraGameplayTags::Agent_Skill_Q)      SkillShortID = TEXT("Q");
-    else if (TargetSkillTag == LyraGameplayTags::Agent_Skill_E)      SkillShortID = TEXT("E");
-    else if (TargetSkillTag == LyraGameplayTags::Agent_Skill_X)      SkillShortID = TEXT("X");
-    else if (TargetSkillTag == LyraGameplayTags::Agent_Skill_Passive_1)      SkillShortID = TEXT("P.1");
-    else if (TargetSkillTag == LyraGameplayTags::Agent_Skill_Passive_2)      SkillShortID = TEXT("P.2");
+    if (TargetSkillTag == NaviGameplayTags::Agent_Skill_C)           SkillShortID = TEXT("C");
+    else if (TargetSkillTag == NaviGameplayTags::Agent_Skill_Q)      SkillShortID = TEXT("Q");
+    else if (TargetSkillTag == NaviGameplayTags::Agent_Skill_E)      SkillShortID = TEXT("E");
+    else if (TargetSkillTag == NaviGameplayTags::Agent_Skill_X)      SkillShortID = TEXT("X");
+    else if (TargetSkillTag == NaviGameplayTags::Agent_Skill_Passive_1)      SkillShortID = TEXT("P.1");
+    else if (TargetSkillTag == NaviGameplayTags::Agent_Skill_Passive_2)      SkillShortID = TEXT("P.2");
     else SkillShortID = TEXT("UnKnown");
 
     FName ConstructedRowName;

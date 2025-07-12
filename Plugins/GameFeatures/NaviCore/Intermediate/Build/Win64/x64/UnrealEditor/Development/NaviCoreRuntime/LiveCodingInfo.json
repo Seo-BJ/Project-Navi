@@ -1,9 +1,0 @@
-{
-	"RemapUnityFiles": 
-	{
-		"Module.NaviCoreRuntime.cpp.obj": [
-			"PerModuleInline.gen.cpp.obj",
-			"NaviCoreRuntimeModule.cpp.obj"
-		]
-	}
-}

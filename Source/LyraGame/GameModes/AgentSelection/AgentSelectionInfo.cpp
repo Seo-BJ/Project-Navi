@@ -133,7 +133,7 @@ void FAgentSelectionInfoArray::ConfirmAgentSelection(const FString& UserName)
 		UGameplayMessageSubsystem* MessageSubsystem = &UGameplayMessageSubsystem::Get(Owner);
 		if (!IsValid(MessageSubsystem)) return;
 
-		FGameplayTag ChannelTag = LyraGameplayTags::Agent_Selection_AllPlayerConfirm;
+		FGameplayTag ChannelTag = NaviGameplayTags::Agent_Selection_AllPlayerConfirm;
 		FAgentSelection_ChangedMessage MessagePayload;
 		
 		MessageSubsystem->BroadcastMessage(ChannelTag, MessagePayload);

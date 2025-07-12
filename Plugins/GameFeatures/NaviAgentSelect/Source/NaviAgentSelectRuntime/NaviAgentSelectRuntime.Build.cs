@@ -11,6 +11,7 @@ public class NaviAgentSelectRuntime : ModuleRules
 		PublicIncludePaths.AddRange(
 			new string[] {
 				// ... add public include paths required here ...
+
 			}
 			);
 				
@@ -26,6 +27,7 @@ public class NaviAgentSelectRuntime : ModuleRules
 			new string[]
 			{
 				"Core",
+				"LyraGame", 
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
