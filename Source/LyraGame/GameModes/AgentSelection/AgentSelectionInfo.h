@@ -30,7 +30,7 @@ struct FAgentSelectionInfo : public FFastArraySerializerItem
 	int32 IndexInTeam = -1;
 	
 	UPROPERTY(BlueprintReadWrite)
-	FGameplayTag AgentTag = LyraGameplayTags::Agent_Class;
+	FGameplayTag AgentTag = NaviGameplayTags::Agent_Class;
 
 	UPROPERTY(BlueprintReadWrite)
 	bool bConfirmSelection = false;

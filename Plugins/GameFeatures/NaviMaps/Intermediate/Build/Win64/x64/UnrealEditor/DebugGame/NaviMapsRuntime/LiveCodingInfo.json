@@ -1,0 +1,9 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.NaviMapsRuntime.cpp.obj": [
+			"NaviMapsRuntimeModule.cpp.obj",
+			"PerModuleInline.gen.cpp.obj"
+		]
+	}
+}

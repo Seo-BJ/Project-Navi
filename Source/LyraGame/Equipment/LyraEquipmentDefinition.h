@@ -35,7 +35,7 @@ struct FLyraEquipmentActorToSpawn
  * Definition of a piece of equipment that can be applied to a pawn
  */
 UCLASS(Blueprintable, Const, Abstract, BlueprintType)
-class ULyraEquipmentDefinition : public UObject
+class LYRAGAME_API ULyraEquipmentDefinition : public UObject
 {
 	GENERATED_BODY()
 
@@ -53,4 +53,4 @@ public:
 	// Actors to spawn on the pawn when this is equipped
 	UPROPERTY(EditDefaultsOnly, Category=Equipment)
 	TArray<FLyraEquipmentActorToSpawn> ActorsToSpawn;
-};
+}; 
