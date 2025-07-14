@@ -2,6 +2,7 @@
 #include "C:/Users/binij/Documents/UnrealProjects/Navi/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/UnrealEditor/Inc/ShooterCoreRuntime/UHT/ControlPointStatusMessage.gen.cpp"
 #include "C:/Users/binij/Documents/UnrealProjects/Navi/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/UnrealEditor/Inc/ShooterCoreRuntime/UHT/IAimAssistTargetInterface.gen.cpp"
 #include "C:/Users/binij/Documents/UnrealProjects/Navi/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/UnrealEditor/Inc/ShooterCoreRuntime/UHT/ShooterCoreRuntime.init.gen.cpp"
+#include "C:/Users/binij/Documents/UnrealProjects/Navi/Plugins/GameFeatures/ShooterCore/Intermediate/Build/Win64/x64/UnrealEditor/DebugGame/ShooterCoreRuntime/PerModuleInline.gen.cpp"
 #include "C:/Users/binij/Documents/UnrealProjects/Navi/Plugins/GameFeatures/ShooterCore/Source/ShooterCoreRuntime/Private/Accolades/LyraAccoladeDefinition.cpp"
 #include "C:/Users/binij/Documents/UnrealProjects/Navi/Plugins/GameFeatures/ShooterCore/Source/ShooterCoreRuntime/Private/Accolades/LyraAccoladeHostWidget.cpp"
 #include "C:/Users/binij/Documents/UnrealProjects/Navi/Plugins/GameFeatures/ShooterCore/Source/ShooterCoreRuntime/Private/Input/AimAssistInputModifier.cpp"

@@ -5,7 +5,6 @@
 			"ControlPointStatusMessage.gen.cpp.obj",
 			"IAimAssistTargetInterface.gen.cpp.obj",
 			"ShooterCoreRuntime.init.gen.cpp.obj",
-			"PerModuleInline.gen.cpp.obj",
 			"LyraAccoladeDefinition.cpp.obj",
 			"LyraAccoladeHostWidget.cpp.obj",
 			"AimAssistInputModifier.cpp.obj",
@@ -17,7 +16,8 @@
 			"ElimStreakProcessor.cpp.obj",
 			"ShooterCoreRuntimeModule.cpp.obj",
 			"ShooterCoreRuntimeSettings.cpp.obj",
-			"TDM_PlayerSpawningManagmentComponent.cpp.obj"
+			"TDM_PlayerSpawningManagmentComponent.cpp.obj",
+			"PerModuleInline.gen.cpp.obj"
 		]
 	}
 }

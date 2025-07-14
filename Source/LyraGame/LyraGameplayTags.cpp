@@ -170,7 +170,40 @@ namespace NaviGameplayTags
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Elimination_Message, "Navi.Elimination.Message", "");
 
+	// 무기, 방어 Tag
+	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Sidearms_Classic, "Weapon.Sidearms.Classic", "Weapon Classic");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Sidearms_Shorty, "Weapon.Sidearms.Shorty", "Weapon Shorty");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Sidearms_Frenzy, "Weapon.Sidearms.Frenzy", "Weapon Frenzy");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Sidearms_Ghost, "Weapon.Sidearms.Ghost", "Weapon Ghost");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Sidearms_Sheriff, "Weapon.Sidearms.Sheriff", "Weapon Sheriff");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Sidearms_GoldenGun, "Weapon.Sidearms.GoldenGun", "Weapon Golden Gun (Spike Rush Only)");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Sidearms_SnowballLauncher, "Weapon.Sidearms.SnowballLauncher", "Weapon Snowball Launcher (Event Only)");
 
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_SMGs_Stinger, "Weapon.SMGs.Stinger", "Weapon Stinger");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_SMGs_Spectre, "Weapon.SMGs.Spectre", "Weapon Spectre");
+	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Shotguns_Bucky, "Weapon.Shotguns.Bucky", "Weapon Bucky");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Shotguns_Judge, "Weapon.Shotguns.Judge", "Weapon Judge");
+	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Rifles_Bulldog, "Weapon.Rifles.Bulldog", "Weapon Bulldog");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Rifles_Guardian, "Weapon.Rifles.Guardian", "Weapon Guardian");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Rifles_Phantom, "Weapon.Rifles.Phantom", "Weapon Phantom");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Rifles_Vandal, "Weapon.Rifles.Vandal", "Weapon Vandal");
+	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_SniperRifles_Marshal, "Weapon.SniperRifles.Marshal", "Weapon Marshal");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_SniperRifles_Outlaw, "Weapon.SniperRifles.Outlaw", "Weapon Outlaw");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_SniperRifles_Operator, "Weapon.SniperRifles.Operator", "Weapon Operator");
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_MachineGuns_Ares, "Weapon.MachineGuns.Ares", "Weapon Ares");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_MachineGuns_Odin, "Weapon.MachineGuns.Odin", "Weapon Odin");
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Melee_Default, "Weapon.Melee.Default", "Default Melee Weapon");
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Armor_LightArmor, "Armor.LightArmor", "Light Armor");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Armor_RegenShield, "Armor.RegenShield", "Regen Shield");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Armor_HeavyArmor, "Armor.HeavyArmor", "Heavy Armor");
+	
 	// Creds System Message
 	UE_DEFINE_GAMEPLAY_TAG(Navi_Creds_Award, "Navi.Creds.Award");
 	UE_DEFINE_GAMEPLAY_TAG(Navi_Creds_Spend, "Navi.Creds.Spend");

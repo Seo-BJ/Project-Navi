@@ -7,6 +7,8 @@
         "Includes": [
             "c:\\users\\binij\\documents\\unrealprojects\\navi\\plugins\\gamefeatures\\topdownarena\\intermediate\\build\\win64\\x64\\unrealeditor\\debuggame\\topdownarenaruntime\\definitions.topdownarenaruntime.h",
             "c:\\users\\binij\\documents\\unrealprojects\\navi\\plugins\\gamefeatures\\topdownarena\\intermediate\\build\\win64\\unrealeditor\\inc\\topdownarenaruntime\\uht\\topdownarenaruntime.init.gen.cpp",
+            "c:\\users\\binij\\documents\\unrealprojects\\navi\\plugins\\gamefeatures\\topdownarena\\intermediate\\build\\win64\\x64\\unrealeditor\\debuggame\\topdownarenaruntime\\permoduleinline.gen.cpp",
+            "c:\\ue_source\\5_5_4\\engine\\source\\runtime\\core\\public\\hal\\permoduleinline.inl",
             "c:\\users\\binij\\documents\\unrealprojects\\navi\\plugins\\gamefeatures\\topdownarena\\source\\topdownarenaruntime\\private\\lyracameramode_topdownarenacamera.cpp",
             "c:\\users\\binij\\documents\\unrealprojects\\navi\\plugins\\gamefeatures\\topdownarena\\source\\topdownarenaruntime\\public\\lyracameramode_topdownarenacamera.h",
             "c:\\users\\binij\\documents\\unrealprojects\\navi\\source\\lyragame\\camera\\lyracameramode.h",
