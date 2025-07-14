@@ -6,6 +6,8 @@
         "PCH": "c:\\ue_source\\5_5_4\\engine\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\unrealed\\sharedpch.unrealed.project.nonoptimized.valapi.cpp20.h.pch",
         "Includes": [
             "c:\\users\\binij\\documents\\unrealprojects\\navi\\plugins\\gamefeatures\\navimaps\\intermediate\\build\\win64\\x64\\unrealeditor\\debuggame\\navimapsruntime\\definitions.navimapsruntime.h",
+            "c:\\users\\binij\\documents\\unrealprojects\\navi\\plugins\\gamefeatures\\navimaps\\intermediate\\build\\win64\\x64\\unrealeditor\\debuggame\\navimapsruntime\\permoduleinline.gen.cpp",
+            "c:\\ue_source\\5_5_4\\engine\\source\\runtime\\core\\public\\hal\\permoduleinline.inl",
             "c:\\users\\binij\\documents\\unrealprojects\\navi\\plugins\\gamefeatures\\navimaps\\source\\navimapsruntime\\private\\navimapsruntimemodule.cpp",
             "c:\\users\\binij\\documents\\unrealprojects\\navi\\plugins\\gamefeatures\\navimaps\\source\\navimapsruntime\\public\\navimapsruntimemodule.h"
         ],

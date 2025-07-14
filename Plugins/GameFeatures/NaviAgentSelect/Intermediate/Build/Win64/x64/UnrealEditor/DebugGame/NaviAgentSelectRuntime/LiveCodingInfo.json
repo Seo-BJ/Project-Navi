@@ -2,13 +2,13 @@
 	"RemapUnityFiles": 
 	{
 		"Module.NaviAgentSelectRuntime.cpp.obj": [
-			"NaviAgentSelectRuntimeModule.cpp.obj",
 			"NaviAgentDefinition.gen.cpp.obj",
 			"NaviAgentInstance.gen.cpp.obj",
 			"NaviAgentSelectRuntime.init.gen.cpp.obj",
 			"PerModuleInline.gen.cpp.obj",
 			"NaviAgentDefinition.cpp.obj",
-			"NaviAgentInstance.cpp.obj"
+			"NaviAgentInstance.cpp.obj",
+			"NaviAgentSelectRuntimeModule.cpp.obj"
 		]
 	}
 }
