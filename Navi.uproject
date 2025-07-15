@@ -354,8 +354,8 @@
 			"Enabled": true
 		},
 		{
-			"Name": "NaviCore",
-			"Enabled": false
+			"Name": "NaviShooterCore",
+			"Enabled": true
 		}
 	],
 	"EpicSampleNameHash": "451731683"

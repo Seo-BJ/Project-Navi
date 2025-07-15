@@ -2,9 +2,6 @@
 	"RemapUnityFiles": 
 	{
 		"Module.ShooterCoreRuntime.cpp.obj": [
-			"ControlPointStatusMessage.gen.cpp.obj",
-			"IAimAssistTargetInterface.gen.cpp.obj",
-			"ShooterCoreRuntime.init.gen.cpp.obj",
 			"LyraAccoladeDefinition.cpp.obj",
 			"LyraAccoladeHostWidget.cpp.obj",
 			"AimAssistInputModifier.cpp.obj",
@@ -17,6 +14,9 @@
 			"ShooterCoreRuntimeModule.cpp.obj",
 			"ShooterCoreRuntimeSettings.cpp.obj",
 			"TDM_PlayerSpawningManagmentComponent.cpp.obj",
+			"ControlPointStatusMessage.gen.cpp.obj",
+			"IAimAssistTargetInterface.gen.cpp.obj",
+			"ShooterCoreRuntime.init.gen.cpp.obj",
 			"PerModuleInline.gen.cpp.obj"
 		]
 	}

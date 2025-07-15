@@ -9,3 +9,4 @@
 #include "C:/Users/binij/Documents/UnrealProjects/Navi/Plugins/GameFeatures/NaviShooterCore/Source/NaviShooterCoreRuntime/Private/NaviPlayerCredsComponent.cpp"
 #include "C:/Users/binij/Documents/UnrealProjects/Navi/Plugins/GameFeatures/NaviShooterCore/Source/NaviShooterCoreRuntime/Private/NaviShooterCoreRuntimeModule.cpp"
 #include "C:/Users/binij/Documents/UnrealProjects/Navi/Plugins/GameFeatures/NaviShooterCore/Source/NaviShooterCoreRuntime/Private/Weapons/NaviWeaponStatDefinition.cpp"
+#include "C:/Users/binij/Documents/UnrealProjects/Navi/Plugins/GameFeatures/NaviShooterCore/Source/NaviShooterCoreRuntime/Private/Weapons/NaviWeaponWidgetDefinition.cpp"
