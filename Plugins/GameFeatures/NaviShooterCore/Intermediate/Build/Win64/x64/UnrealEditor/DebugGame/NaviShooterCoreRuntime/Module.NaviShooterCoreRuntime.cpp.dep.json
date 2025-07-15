@@ -112,7 +112,8 @@
             "c:\\users\\binij\\documents\\unrealprojects\\navi\\plugins\\gamefeatures\\navishootercore\\source\\navishootercoreruntime\\private\\naviplayercredscomponent.cpp",
             "c:\\users\\binij\\documents\\unrealprojects\\navi\\plugins\\gamefeatures\\navishootercore\\source\\navishootercoreruntime\\private\\navishootercoreruntimemodule.cpp",
             "c:\\users\\binij\\documents\\unrealprojects\\navi\\plugins\\gamefeatures\\navishootercore\\source\\navishootercoreruntime\\public\\navishootercoreruntimemodule.h",
-            "c:\\users\\binij\\documents\\unrealprojects\\navi\\plugins\\gamefeatures\\navishootercore\\source\\navishootercoreruntime\\private\\weapons\\naviweaponstatdefinition.cpp"
+            "c:\\users\\binij\\documents\\unrealprojects\\navi\\plugins\\gamefeatures\\navishootercore\\source\\navishootercoreruntime\\private\\weapons\\naviweaponstatdefinition.cpp",
+            "c:\\users\\binij\\documents\\unrealprojects\\navi\\plugins\\gamefeatures\\navishootercore\\source\\navishootercoreruntime\\private\\weapons\\naviweaponwidgetdefinition.cpp"
         ],
         "ImportedModules": [],
         "ImportedHeaderUnits": []
