@@ -1,0 +1,149 @@
+[
+  {
+    "Name": "Weapon.Sidearms.Classic",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"E12B1AFE486B44E0231E5D8CF67D0EFD\", \"클래식\")",
+    "WeaponTag": {
+      "TagName": "Weapon.Sidearms.Classic"
+    }
+  },
+  {
+    "Name": "Weapon.Sidearms.Shorty",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"489DA7064ED4E878192724B532B94C0F\", \"쇼티\")",
+    "WeaponTag": {
+      "TagName": "Weapon.Sidearms.Shorty"
+    }
+  },
+  {
+    "Name": "Weapon.Sidearms.Frenzy",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"EEDE67CD4819CD208D26AB9A81533AE7\", \"프렌지\")",
+    "WeaponTag": {
+      "TagName": "Weapon.Sidearms.Frenzy"
+    }
+  },
+  {
+    "Name": "Weapon.Sidearms.Ghost",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"70787C13407B44C31A8ECEA5DAF579D5\", \"고스트\")",
+    "WeaponTag": {
+      "TagName": "Weapon.Sidearms.Ghost"
+    }
+  },
+  {
+    "Name": "Weapon.Sidearms.Sheriff",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"8A22478540A86BF3694E52BAE398AD78\", \"셰리프\")",
+    "WeaponTag": {
+      "TagName": "Weapon.Sidearms.Sheriff"
+    }
+  },
+  {
+    "Name": "Weapon.SMGs.Stinger",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"6ED5AC9E44BB699DBC1B99A20259F67A\", \"스팅어\")",
+    "WeaponTag": {
+      "TagName": "Weapon.SMGs.Stinger"
+    }
+  },
+  {
+    "Name": "Weapon.SMGs.Spectre",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"94C78AFF4FB23CF5B694D4AE846B60BE\", \"스펙터\")",
+    "WeaponTag": {
+      "TagName": "Weapon.SMGs.Spectre"
+    }
+  },
+  {
+    "Name": "Weapon.Shotguns.Bucky",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"78ED3E1146ABB53E1B7E2A8C7B30B12B\", \"버키\")",
+    "WeaponTag": {
+      "TagName": "Weapon.Shotguns.Bucky"
+    }
+  },
+  {
+    "Name": "Weapon.Shotguns.Judge",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"F422267E4D7F0F201149D1AA59400926\", \"저지\")",
+    "WeaponTag": {
+      "TagName": "Weapon.Shotguns.Judge"
+    }
+  },
+  {
+    "Name": "Weapon.Rifles.Bulldog",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"BFFC6A1E4B4287BFBA1503B74A2C0EF4\", \"불독\")",
+    "WeaponTag": {
+      "TagName": "Weapon.Rifles.Bulldog"
+    }
+  },
+  {
+    "Name": "Weapon.Rifles.Guardian",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"C37CAA5945A7B4D1F4A3EBBBFBE134AD\", \"가디언\")",
+    "WeaponTag": {
+      "TagName": "Weapon.Rifles.Guardian"
+    }
+  },
+  {
+    "Name": "Weapon.Rifles.Phantom",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"BE2ED4AD4A6BA436F191759DE62A9A46\", \"팬텀\")",
+    "WeaponTag": {
+      "TagName": "Weapon.Rifles.Phantom"
+    }
+  },
+  {
+    "Name": "Weapon.Rifles.Vandal",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"FC016D2940E4D58EB86D619EA8ED6C87\", \"밴달\")",
+    "WeaponTag": {
+      "TagName": "Weapon.Rifles.Vandal"
+    }
+  },
+  {
+    "Name": "Weapon.SniperRifles.Marshal",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"7F25C07141D12FCCF58AB99738E22F94\", \"마샬\")",
+    "WeaponTag": {
+      "TagName": "Weapon.SniperRifles.Marshal"
+    }
+  },
+  {
+    "Name": "Weapon.SniperRifles.Outlaw",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"7B8DB45A4F7F01EB755A0AA6DBFD42C9\", \"아웃로\")",
+    "WeaponTag": {
+      "TagName": "Weapon.SniperRifles.Outlaw"
+    }
+  },
+  {
+    "Name": "Weapon.SniperRifles.Operator",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"3F1B929344B33C5C83C4A9A34F4A663F\", \"오퍼레이터\")",
+    "WeaponTag": {
+      "TagName": "Weapon.SniperRifles.Operator"
+    }
+  },
+  {
+    "Name": "Weapon.MachineGuns.Ares",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"C0BC228644C8B0923D30B5A499DC23F4\", \"아레스\")",
+    "WeaponTag": {
+      "TagName": "Weapon.MachineGuns.Ares"
+    }
+  },
+  {
+    "Name": "Weapon.MachineGuns.Odin",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"1D6094E949EFA56CD1E54997C7A0C16C\", \"오딘\")",
+    "WeaponTag": {
+      "TagName": "Weapon.MachineGuns.Odin"
+    }
+  },
+  {
+    "Name": "Armor.LightArmor",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"622ADC6447D64A3F0B6FB58694AC6A12\", \"경형 방어구\")",
+    "WeaponTag": {
+      "TagName": "Armor.LightArmor"
+    }
+  },
+  {
+    "Name": "Armor.RegenShield",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"3BA6BBFB47323AD9C123A9B3327578FF\", \"재생 보호막\")",
+    "WeaponTag": {
+      "TagName": "Armor.RegenShield"
+    }
+  },
+  {
+    "Name": "Armor.HeavyArmor",
+    "DisplayName": "NSLOCTEXT(\"[4646EC11A3999C375B29BDC2A008915E]\", \"0F7EC15A48AACB9FCA9DD5901232A5E7\", \"중형 방어구\")",
+    "WeaponTag": {
+      "TagName": "Armor.HeavyArmor"
+    }
+  }
+]

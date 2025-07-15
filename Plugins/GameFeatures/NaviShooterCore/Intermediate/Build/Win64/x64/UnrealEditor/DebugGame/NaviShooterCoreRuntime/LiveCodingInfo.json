@@ -3,14 +3,16 @@
 	{
 		"Module.NaviShooterCoreRuntime.cpp.obj": [
 			"NaviPlayerCredsComponent.gen.cpp.obj",
+			"NaviShooterCoreRuntime.init.gen.cpp.obj",
+			"NaviWeaponStatDefinition.gen.cpp.obj",
+			"NaviWeaponWidgetDefinition.gen.cpp.obj",
 			"PerModuleInline.gen.cpp.obj",
 			"NaviCredsSet.cpp.obj",
 			"NaviCredsStateComponent.cpp.obj",
 			"NaviPlayerCredsComponent.cpp.obj",
 			"NaviShooterCoreRuntimeModule.cpp.obj",
-			"NaviShooterCoreRuntime.init.gen.cpp.obj",
-			"NaviWeaponStatDefinition.gen.cpp.obj",
-			"NaviWeaponStatDefinition.cpp.obj"
+			"NaviWeaponStatDefinition.cpp.obj",
+			"NaviWeaponWidgetDefinition.cpp.obj"
 		]
 	}
 }

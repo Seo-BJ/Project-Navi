@@ -17,13 +17,13 @@ void EmptyLinkFunctionForGeneratedCodeNaviShooterCoreRuntime_init() {}
 				nullptr,
 				0,
 				PKG_CompiledIn | 0x00000000,
-				0xD6D5D780,
-				0x02172D52,
+				0xA7B09543,
+				0xF00DF66E,
 				METADATA_PARAMS(0, nullptr)
 			};
 			UECodeGen_Private::ConstructUPackage(Z_Registration_Info_UPackage__Script_NaviShooterCoreRuntime.OuterSingleton, PackageParams);
 		}
 		return Z_Registration_Info_UPackage__Script_NaviShooterCoreRuntime.OuterSingleton;
 	}
-	static FRegisterCompiledInInfo Z_CompiledInDeferPackage_UPackage__Script_NaviShooterCoreRuntime(Z_Construct_UPackage__Script_NaviShooterCoreRuntime, TEXT("/Script/NaviShooterCoreRuntime"), Z_Registration_Info_UPackage__Script_NaviShooterCoreRuntime, CONSTRUCT_RELOAD_VERSION_INFO(FPackageReloadVersionInfo, 0xD6D5D780, 0x02172D52));
+	static FRegisterCompiledInInfo Z_CompiledInDeferPackage_UPackage__Script_NaviShooterCoreRuntime(Z_Construct_UPackage__Script_NaviShooterCoreRuntime, TEXT("/Script/NaviShooterCoreRuntime"), Z_Registration_Info_UPackage__Script_NaviShooterCoreRuntime, CONSTRUCT_RELOAD_VERSION_INFO(FPackageReloadVersionInfo, 0xA7B09543, 0xF00DF66E));
 PRAGMA_ENABLE_DEPRECATION_WARNINGS
