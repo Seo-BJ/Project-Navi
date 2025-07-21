@@ -180,23 +180,28 @@ namespace NaviGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Sidearms_GoldenGun, "Weapon.Sidearms.GoldenGun", "Weapon Golden Gun (Spike Rush Only)");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Sidearms_SnowballLauncher, "Weapon.Sidearms.SnowballLauncher", "Weapon Snowball Launcher (Event Only)");
 
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_SMGs_Stinger, "Weapon.SMGs.Stinger", "Weapon Stinger");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_SMGs_Spectre, "Weapon.SMGs.Spectre", "Weapon Spectre");
-	
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Shotguns_Bucky, "Weapon.Shotguns.Bucky", "Weapon Bucky");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Shotguns_Judge, "Weapon.Shotguns.Judge", "Weapon Judge");
-	
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Rifles_Bulldog, "Weapon.Rifles.Bulldog", "Weapon Bulldog");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Rifles_Guardian, "Weapon.Rifles.Guardian", "Weapon Guardian");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Rifles_Phantom, "Weapon.Rifles.Phantom", "Weapon Phantom");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Rifles_Vandal, "Weapon.Rifles.Vandal", "Weapon Vandal");
-	
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_SniperRifles_Marshal, "Weapon.SniperRifles.Marshal", "Weapon Marshal");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_SniperRifles_Outlaw, "Weapon.SniperRifles.Outlaw", "Weapon Outlaw");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_SniperRifles_Operator, "Weapon.SniperRifles.Operator", "Weapon Operator");
+	// SMGs
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Primary_SMGs_Stinger, "Weapon.Primary.SMGs.Stinger", "Weapon Stinger");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Primary_SMGs_Spectre, "Weapon.Primary.SMGs.Spectre", "Weapon Spectre");
 
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_MachineGuns_Ares, "Weapon.MachineGuns.Ares", "Weapon Ares");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_MachineGuns_Odin, "Weapon.MachineGuns.Odin", "Weapon Odin");
+	// Shotguns
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Primary_Shotguns_Bucky, "Weapon.Primary.Shotguns.Bucky", "Weapon Bucky");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Primary_Shotguns_Judge, "Weapon.Primary.Shotguns.Judge", "Weapon Judge");
+
+	// Rifles
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Primary_Rifles_Bulldog, "Weapon.Primary.Rifles.Bulldog", "Weapon Bulldog");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Primary_Rifles_Guardian, "Weapon.Primary.Rifles.Guardian", "Weapon Guardian");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Primary_Rifles_Phantom, "Weapon.Primary.Rifles.Phantom", "Weapon Phantom");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Primary_Rifles_Vandal, "Weapon.Primary.Rifles.Vandal", "Weapon Vandal");
+
+	// Sniper Rifles
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Primary_SniperRifles_Marshal, "Weapon.Primary.SniperRifles.Marshal", "Weapon Marshal");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Primary_SniperRifles_Outlaw, "Weapon.Primary.SniperRifles.Outlaw", "Weapon Outlaw");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Primary_SniperRifles_Operator, "Weapon.Primary.SniperRifles.Operator", "Weapon Operator");
+
+	// Machine Guns
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Primary_MachineGuns_Ares, "Weapon.Primary.MachineGuns.Ares", "Weapon Ares");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Primary_MachineGuns_Odin, "Weapon.Primary.MachineGuns.Odin", "Weapon Odin");
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Melee_Default, "Weapon.Melee.Default", "Default Melee Weapon");
 
