@@ -16,7 +16,7 @@ struct FGameplayEffectModCallbackData;
 
 
 UCLASS()
-class NAVISHOOTERCORERUNTIME_API UNaviCredsSet : public ULyraAttributeSet
+class UNaviCredsSet : public ULyraAttributeSet
 {
 	GENERATED_BODY()
 
