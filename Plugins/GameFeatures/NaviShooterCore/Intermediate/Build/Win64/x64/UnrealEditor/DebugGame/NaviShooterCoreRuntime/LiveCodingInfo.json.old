@@ -2,18 +2,20 @@
 	"RemapUnityFiles": 
 	{
 		"Module.NaviShooterCoreRuntime.cpp.obj": [
+			"NaviCredsShopComponent.gen.cpp.obj",
 			"NaviCredsShopControllerComponent.gen.cpp.obj",
 			"NaviWeaponStatDefinition.gen.cpp.obj",
 			"NaviWeaponWidgetDefinition.gen.cpp.obj",
 			"PerModuleInline.gen.cpp.obj",
+			"NaviCredsShopControllerComponent.cpp.obj",
+			"NaviCredsSet.cpp.obj",
 			"NaviShooterCoreRuntimeModule.cpp.obj",
 			"NaviWeaponStatDefinition.cpp.obj",
 			"NaviWeaponWidgetDefinition.cpp.obj",
-			"NaviCredsShopComponent.gen.cpp.obj",
+			"NaviQuickBarComponent.gen.cpp.obj",
 			"NaviShooterCoreRuntime.init.gen.cpp.obj",
 			"NaviCredsShopComponent.cpp.obj",
-			"NaviCredsShopControllerComponent.cpp.obj",
-			"NaviCredsSet.cpp.obj"
+			"NaviQuickBarComponent.cpp.obj"
 		]
 	}
 }

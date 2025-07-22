@@ -9,23 +9,15 @@
 #include "Equipment/LyraPickupDefinition.h"
 #include "Engine/DataTable.h"
 #include "NativeGameplayTags.h" // FNativeGameplayTag 필요
+#include "Equipment/NaviQuickBarComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/Pawn.h"
 #include "Weapons/NaviWeaponStatDefinition.h"
 #include "Inventory/LyraInventoryItemDefinition.h"
 
-// 데이터 테이블에서 사용할 행의 이름을 정의합니다.
-// 이는 FNaviWeaponStatDefinition 구조체에 선언된 WeaponTag와 일치해야 합니다.
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Type_Pistol_Classic, "Weapon.Type.Pistol.Classic");
-// ...다른 무기 태그들도 여기에 정의할 수 있습니다...
-
-// FNaviWeaponStatDefinition 구조체 정의가 필요합니다.
-// 이미 다른 파일에 정의되어 있다면 그 파일을 include 해야 합니다.
-// 예시: #include "NaviWeaponStatDefinition.h"
 
 UNaviCredsShopComponent::UNaviCredsShopComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
-    // 이 컴포넌트는 서버에서만 모든 로직을 처리하므로 Tick이 필요 없습니다.
     PrimaryComponentTick.bCanEverTick = false;
     SetIsReplicatedByDefault(true);
 }
@@ -81,7 +73,14 @@ void UNaviCredsShopComponent::PurchaseWeapon(AController* RequestingPlayer, FGam
     {
         return;
     }
+    ULyraWeaponPickupDefinition* WeaponPickupDefinition = WeaponDefinitionMap[WeaponTag];
+    TSubclassOf<ULyraInventoryItemDefinition> WeaponItemDefinition = WeaponPickupDefinition ? WeaponPickupDefinition->InventoryItemDefinition : nullptr;
+    if (WeaponItemDefinition != nullptr)
+    {
+        GiveWeaponToPlayer(WeaponItemDefinition, RequestingPlayer);
+    }
 
+    /*
     // 크레드가 충분한지 확인
     if (CredsSet->GetCreds() >= Cost)
     {
@@ -100,7 +99,7 @@ void UNaviCredsShopComponent::PurchaseWeapon(AController* RequestingPlayer, FGam
 
         // 무기 지급
         // TODO: WeaponDefinitionMap에서 WeaponDef 조회 후 전달
-        GiveWeaponToPlayer(RequestingPlayer, WeaponDefinitionMap[WeaponTag]);
+        GiveWeaponToPlayer(*WeaponDefinitionMap[WeaponTag], RequestingPlayer);
         
         // TODO: 로그 또는 클라이언트에 성공 피드백 전송
     }
@@ -108,21 +107,21 @@ void UNaviCredsShopComponent::PurchaseWeapon(AController* RequestingPlayer, FGam
     {
         // TODO: 크레드 부족 피드백 전송
     }
+    */
 }
 
-void UNaviCredsShopComponent::GiveWeaponToPlayer(AController* TargetController, ULyraWeaponPickupDefinition* WeaponDefinition)
+void UNaviCredsShopComponent::GiveWeaponToPlayer(TSubclassOf<ULyraInventoryItemDefinition> WeaponItemClass, AController* ReceivingController)
 {
-    if (!TargetController || !TargetController->GetPawn() || !WeaponDefinition)
-    {
-        return;
-    }
+    if (WeaponItemClass == nullptr || ReceivingController == nullptr) return;
 
-    // 플레이어 폰에서 인벤토리 매니저 컴포넌트 찾기
-    ULyraInventoryManagerComponent* InventoryManager = TargetController->GetPawn()->FindComponentByClass<ULyraInventoryManagerComponent>();
-    if (InventoryManager)
-    {
-        // 인벤토리에 아이템 정의 추가
-        // TSubclassOf<ULyraInventoryItemDefinition> WeaponItemClass = WeaponDefinition->InventoryItemDefinition;
-        // InventoryManager->AddItemDefinition(WeaponItemClass, 1); // 예시. 수량은 1
-    }
+    UNaviQuickBarComponent* NaviQuickBarComponent = ReceivingController->GetComponentByClass<UNaviQuickBarComponent>();
+    ULyraInventoryManagerComponent* LyraInventoryManagerComponent = ReceivingController->GetComponentByClass<ULyraInventoryManagerComponent>();
+    if (NaviQuickBarComponent == nullptr|| LyraInventoryManagerComponent == nullptr) return;
+    
+    const ULyraInventoryItemDefinition* ItemCDO = WeaponItemClass->GetDefaultObject<ULyraInventoryItemDefinition>();
+    if (ItemCDO == nullptr) return;
+    
+    ULyraInventoryItemInstance* LyraInventoryItemDefinition = LyraInventoryManagerComponent->AddItemDefinition(WeaponItemClass);
+    int AddedIndex = NaviQuickBarComponent->AddItemToSlot(ItemCDO->ItemTag, LyraInventoryItemDefinition);
+    NaviQuickBarComponent->SetActiveSlotIndex(AddedIndex);
 }

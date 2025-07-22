@@ -171,6 +171,12 @@ namespace NaviGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Elimination_Message, "Navi.Elimination.Message", "");
 
 	// 무기, 방어 Tag
+
+	UE_DEFINE_GAMEPLAY_TAG(Weapon_Sidearms, "Weapon.Sidearms");
+	UE_DEFINE_GAMEPLAY_TAG(Weapon_Primary, "Weapon.Primary");
+	UE_DEFINE_GAMEPLAY_TAG(Weapon_Melee, "Weapon.Melee");
+	UE_DEFINE_GAMEPLAY_TAG(Item_Spike, "Item.Spike");
+	UE_DEFINE_GAMEPLAY_TAG(Armor, "Armor");
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Sidearms_Classic, "Weapon.Sidearms.Classic", "Weapon Classic");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Sidearms_Shorty, "Weapon.Sidearms.Shorty", "Weapon Shorty");
@@ -180,6 +186,7 @@ namespace NaviGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Sidearms_GoldenGun, "Weapon.Sidearms.GoldenGun", "Weapon Golden Gun (Spike Rush Only)");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Sidearms_SnowballLauncher, "Weapon.Sidearms.SnowballLauncher", "Weapon Snowball Launcher (Event Only)");
 
+	
 	// SMGs
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Primary_SMGs_Stinger, "Weapon.Primary.SMGs.Stinger", "Weapon Stinger");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Primary_SMGs_Spectre, "Weapon.Primary.SMGs.Spectre", "Weapon Spectre");
