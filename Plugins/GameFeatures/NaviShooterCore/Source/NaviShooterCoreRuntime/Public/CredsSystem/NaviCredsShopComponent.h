@@ -60,8 +60,9 @@ protected:
 
     /**
      * 플레이어에게 무기 아이템을 지급합니다.
-     * @param TargetController 무기를 받을 플레이어의 컨트롤러입니다.
-     * @param WeaponDefinition 지급할 무기의 정의입니다.
+     * @param WeaponItemClass 지급 대상 Weapon의 Item Definition Class
+     * @param ReceivingController 지급 대상 Controller
      */
-    void GiveWeaponToPlayer(AController* TargetController, ULyraWeaponPickupDefinition* WeaponDefinition);
+    void GiveWeaponToPlayer(TSubclassOf<ULyraInventoryItemDefinition> WeaponItemClass, AController* ReceivingController);
+    
 };
