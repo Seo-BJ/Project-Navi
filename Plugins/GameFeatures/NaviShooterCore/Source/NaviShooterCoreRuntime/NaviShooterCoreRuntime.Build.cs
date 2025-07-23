@@ -42,7 +42,11 @@ public class NaviShooterCoreRuntime : ModuleRules
 				"CoreUObject",
 				"Engine",
 				"Slate",
-				"SlateCore", "GameplayMessageRuntime", "ShooterCoreRuntime", 
+				"SlateCore", 
+				"GameplayMessageRuntime", 
+				"ShooterCoreRuntime", 
+				"UMG",
+				"CommonUI" 
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

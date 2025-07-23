@@ -11,8 +11,6 @@
 #include "GameplayEffectExtension.h"
 #include "Messages/LyraVerbMessage.h"
 #include "GameFramework/GameplayMessageSubsystem.h"
-#include "NaviGame/NaviGameplayTags.h"
-
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraHealthSet)
 
@@ -25,8 +23,6 @@ UE_DEFINE_GAMEPLAY_TAG(TAG_Lyra_Damage_Message, "Lyra.Damage.Message");
 ULyraHealthSet::ULyraHealthSet()
 	:  Health(100.0f)
 	, MaxHealth(100.0f)
-	, Shield(0.0f)
-	, MaxShield(50.0f)
 	, Armor(0.0f)
 	, MaxArmor(50.0f)
 {
@@ -41,8 +37,6 @@ void ULyraHealthSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 	DOREPLIFETIME_CONDITION_NOTIFY(ULyraHealthSet, Health, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(ULyraHealthSet, MaxHealth, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(ULyraHealthSet, Shield, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(ULyraHealthSet, MaxShield, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(ULyraHealthSet, Armor, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(ULyraHealthSet, MaxArmor, COND_None, REPNOTIFY_Always);
 }
@@ -56,8 +50,7 @@ bool ULyraHealthSet::PreGameplayEffectExecute(FGameplayEffectModCallbackData &Da
 
 	// Handle modifying incoming normal damage
 	bool bDoesDataHasDamageAttribute = (Data.EvaluatedData.Attribute == GetIncomingDamageToHealthAttribute())
-	|| (Data.EvaluatedData.Attribute == GetIncomingDamageToArmorAttribute())
-	|| (Data.EvaluatedData.Attribute == GetIncomingDamageToShieldAttribute());
+	|| (Data.EvaluatedData.Attribute == GetIncomingDamageToArmorAttribute());
     
 	if (bDoesDataHasDamageAttribute)
 	{
@@ -126,12 +119,6 @@ void ULyraHealthSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackD
 		SetArmor(FMath::Clamp(GetArmor() - GetIncomingDamageToArmor(), MinimumArmor, GetMaxArmor()));
 		SetIncomingDamageToArmor(0.0f);
 	}
-	else if (Data.EvaluatedData.Attribute == GetIncomingDamageToShieldAttribute())
-	{
-		BroadcastDamageMessage(Data);
-		SetShield(FMath::Clamp(GetShield() - GetIncomingDamageToShield(), MinimumShield, GetMaxShield()));
-		SetIncomingDamageToShield(0.0f);
-	}
 	else if (Data.EvaluatedData.Attribute == GetInComingHealingAttribute())
 	{
 		// Convert into +Health and then clamp
@@ -178,20 +165,6 @@ void ULyraHealthSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackD
 
 	// Check health again in case an event above changed it.
 	bOutOfArmor = (GetArmor() <= 0.0f);
-
-	// If health has actually changed activate callbacks
-	if (GetShield() != HealthBeforeAttributeChange)
-	{
-		OnShieldChanged.Broadcast(Instigator, Causer, &Data.EffectSpec, Data.EvaluatedData.Magnitude, ShieldBeforeAttributeChange, GetShield());
-	}
-
-	if ((GetShield() <= 0.0f) && !bOutOfHealth)
-	{
-		OnOutOfShield.Broadcast(Instigator, Causer, &Data.EffectSpec, Data.EvaluatedData.Magnitude, ShieldBeforeAttributeChange, GetShield());
-	}
-
-	// Check health again in case an event above changed it.
-	bOutOfShield = (GetShield() <= 0.0f);
 }
 
 void ULyraHealthSet::PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const
@@ -245,23 +218,7 @@ void ULyraHealthSet::PostAttributeChange(const FGameplayAttribute& Attribute, fl
 	{
 		bOutOfArmor = false;
 	}
-
-	if (Attribute == GetMaxShieldAttribute())
-	{
-		// Make sure current health is not greater than the new max health.
-		if (GetShield() > NewValue)
-		{
-			ULyraAbilitySystemComponent* LyraASC = GetLyraAbilitySystemComponent();
-			check(LyraASC);
-
-			LyraASC->ApplyModToAttribute(GetShieldAttribute(), EGameplayModOp::Override, NewValue);
-		}
-	}
-
-	if (bOutOfShield && (GetShield() > 0.0f))
-	{
-		bOutOfShield = false;
-	}
+	
 }
 
 void ULyraHealthSet::ClampAttribute(const FGameplayAttribute& Attribute, float& NewValue) const
@@ -279,14 +236,6 @@ void ULyraHealthSet::ClampAttribute(const FGameplayAttribute& Attribute, float& 
 		NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxArmor()); 
 	}
 	else if (Attribute == GetMaxArmorAttribute())
-	{
-		NewValue = FMath::Max(NewValue, 1.0f); 
-	}
-	else if (Attribute == GetShieldAttribute())
-	{
-		NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxShield());
-	}
-	else if (Attribute == GetMaxShieldAttribute())
 	{
 		NewValue = FMath::Max(NewValue, 1.0f); 
 	}
@@ -364,25 +313,3 @@ void ULyraHealthSet::OnRep_MaxArmor(const FGameplayAttributeData& OldValue)
     OnMaxHealthChanged.Broadcast(nullptr, nullptr, nullptr, GetMaxArmor() - OldValue.GetCurrentValue(), OldValue.GetCurrentValue(), GetMaxArmor());
 }
 
-void ULyraHealthSet::OnRep_Shield(const FGameplayAttributeData& OldValue)
-{
-    GAMEPLAYATTRIBUTE_REPNOTIFY(ULyraHealthSet, Shield, OldValue);
-    const float CurrentSheild = GetShield();
-    const float EstimatedMagnitude = CurrentSheild - OldValue.GetCurrentValue();
-	
-    OnHealthChanged.Broadcast(nullptr, nullptr, nullptr, EstimatedMagnitude, OldValue.GetCurrentValue(), CurrentSheild);
-
-    if (!bOutOfHealth && CurrentSheild <= 0.0f)
-    {
-        OnOutOfHealth.Broadcast(nullptr, nullptr, nullptr, EstimatedMagnitude, OldValue.GetCurrentValue(), CurrentSheild);
-    }
-
-    bOutOfHealth = (CurrentSheild <= 0.0f);
-}
-void ULyraHealthSet::OnRep_MaxShield(const FGameplayAttributeData& OldValue)
-{
-    GAMEPLAYATTRIBUTE_REPNOTIFY(ULyraHealthSet, MaxShield, OldValue);
-    // Call the change callback, but without an instigator
-    // This could be changed to an explicit RPC in the future
-    OnMaxHealthChanged.Broadcast(nullptr, nullptr, nullptr, GetMaxShield() - OldValue.GetCurrentValue(), OldValue.GetCurrentValue(), GetMaxShield());
-}

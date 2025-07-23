@@ -41,11 +41,8 @@ public:
 	//ATTRIBUTE_ACCESSORS(ULyraHealthSet, Damage);
 	ATTRIBUTE_ACCESSORS(ULyraHealthSet, Armor);
 	ATTRIBUTE_ACCESSORS(ULyraHealthSet, MaxArmor);
-	ATTRIBUTE_ACCESSORS(ULyraHealthSet, Shield);
-	ATTRIBUTE_ACCESSORS(ULyraHealthSet, MaxShield);
 	ATTRIBUTE_ACCESSORS(ULyraHealthSet, IncomingDamageToHealth);
 	ATTRIBUTE_ACCESSORS(ULyraHealthSet, IncomingDamageToArmor);
-	ATTRIBUTE_ACCESSORS(ULyraHealthSet, IncomingDamageToShield);
 	ATTRIBUTE_ACCESSORS(ULyraHealthSet, InComingHealing);
 	
 	// Delegate when health changes due to damage/healing, some information may be missing on the client
@@ -66,15 +63,6 @@ public:
 	// Delegate to broadcast when the health attribute reaches zero
 	mutable FLyraAttributeEvent OnOutOfArmor;
 
-	// Delegate when health changes due to damage/healing, some information may be missing on the client
-	mutable FLyraAttributeEvent OnShieldChanged;
-
-	// Delegate when max health changes
-	mutable FLyraAttributeEvent OnMaxShieldChanged;
-
-	// Delegate to broadcast when the health attribute reaches zero
-	mutable FLyraAttributeEvent OnOutOfShield;
-
 protected:
 
 	UFUNCTION()
@@ -82,12 +70,6 @@ protected:
 
 	UFUNCTION()
 	void OnRep_MaxHealth(const FGameplayAttributeData& OldValue);
-
-	UFUNCTION()
-	void OnRep_Shield(const FGameplayAttributeData& OldValue);
-
-	UFUNCTION()
-	void OnRep_MaxShield(const FGameplayAttributeData& OldValue);
 
 	UFUNCTION()
 	void OnRep_Armor(const FGameplayAttributeData& OldValue);
@@ -114,20 +96,12 @@ private:
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MaxHealth, Category = "Lyra|Health", Meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData MaxHealth;
 
-	// Current shield
-	UPROPERTY(BlueprintReadOnly, Category = "Navi|Health", ReplicatedUsing = OnRep_Shield , Meta = (AllowPrivateAccess = true))
-	FGameplayAttributeData Shield;
-	
-	// Max shield
-	UPROPERTY(BlueprintReadOnly, Category = "Navi|Health", ReplicatedUsing = OnRep_MaxShield , Meta = (AllowPrivateAccess = true))
-	FGameplayAttributeData MaxShield;
-
-	// Current shield
-	UPROPERTY(BlueprintReadOnly, Category = "Navi|Health", ReplicatedUsing = OnRep_Shield , Meta = (AllowPrivateAccess = true))
+	// Current Armor
+	UPROPERTY(BlueprintReadOnly, Category = "Navi|Health", ReplicatedUsing = OnRep_Armor , Meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData Armor;
 	
-	// Max shield
-	UPROPERTY(BlueprintReadOnly, Category = "Navi|Health", ReplicatedUsing = OnRep_MaxShield , Meta = (AllowPrivateAccess = true))
+	// Max Armor
+	UPROPERTY(BlueprintReadOnly, Category = "Navi|Health", ReplicatedUsing = OnRep_MaxArmor , Meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData MaxArmor;
 
 	// Used to track when the health reaches 0.
@@ -145,9 +119,6 @@ private:
 	
 	bool bOutOfShield;
 
-	// Store the health before any changes 
-	float MaxShieldBeforeAttributeChange;
-	float ShieldBeforeAttributeChange;
 
 	// -------------------------------------------------------------------
 	//	Meta Attribute (please keep attributes that aren't 'stateful' below 

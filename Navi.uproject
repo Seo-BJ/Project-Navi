@@ -346,10 +346,6 @@
 			"Enabled": true
 		},
 		{
-			"Name": "NaviGame",
-			"Enabled": true
-		},
-		{
 			"Name": "GameLiftPlugin",
 			"Enabled": true
 		},
