@@ -60,10 +60,6 @@
 		{
 			"Name": "LyraExampleContent",
 			"Enabled": true
-		},
-		{
-			"Name": "NaviGame",
-			"Enabled": true
 		}
 	]
 }

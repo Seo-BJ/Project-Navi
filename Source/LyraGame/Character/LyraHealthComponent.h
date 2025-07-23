@@ -69,29 +69,18 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Lyra|Health")
 	float GetHealthNormalized() const;
 
-	// Returns the current health value.
+	// Returns the current Armor value.
 	UFUNCTION(BlueprintCallable, Category = "Navi|Health")
 	float GetArmor() const;
 
-	// Returns the current maximum health value.
+	// Returns the current maximum Armor value.
 	UFUNCTION(BlueprintCallable, Category = "Navi|Health")
 	float GetMaxArmor() const;
 
-	// Returns the current health in the range [0.0, 1.0].
+	// Returns the current Armor in the range [0.0, 1.0].
 	UFUNCTION(BlueprintCallable, Category = "Navi|Health")
 	float GetArmorNormalized() const;
-
-	// Returns the current health value.
-	UFUNCTION(BlueprintCallable, Category = "Navi|Health")
-	float GetSheild() const;
-
-	// Returns the current maximum health value.
-	UFUNCTION(BlueprintCallable, Category = "Navi|Health")
-	float GetMaxShield() const;
-
-	// Returns the current health in the range [0.0, 1.0].
-	UFUNCTION(BlueprintCallable, Category = "Navi|Health")
-	float GetShieldNormalized() const;
+	
 
 	UFUNCTION(BlueprintCallable, Category = "Lyra|Health")
 	ELyraDeathState GetDeathState() const { return DeathState; }
@@ -126,14 +115,6 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FLyraHealth_AttributeChanged OnMaxArmorChanged;
 
-	// Delegate fired when the Shield value has changed. This is called on the client but the instigator may not be valid
-	UPROPERTY(BlueprintAssignable)
-	FLyraHealth_AttributeChanged OnShieldChanged;
-
-	// Delegate fired when the max Sheild value has changed. This is called on the client but the instigator may not be valid
-	UPROPERTY(BlueprintAssignable)
-	FLyraHealth_AttributeChanged OnMaxShieldChanged;
-
 	// Delegate fired when the death sequence has started.
 	UPROPERTY(BlueprintAssignable)
 	FLyraHealth_DeathEvent OnDeathStarted;
@@ -155,11 +136,7 @@ protected:
 	virtual void HandleArmorChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue);
 	virtual void HandleMaxArmorChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue);
 	virtual void HandleOutOfArmor(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue);
-
-	virtual void HandleShieldChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue);
-	virtual void HandleMaxShieldChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue);
-	virtual void HandleOutOfShield(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue);
-
+	
 	UFUNCTION()
 	virtual void OnRep_DeathState(ELyraDeathState OldDeathState);
 

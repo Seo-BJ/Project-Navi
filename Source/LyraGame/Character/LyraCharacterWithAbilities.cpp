@@ -4,8 +4,7 @@
 
 #include "AbilitySystem/Attributes/LyraCombatSet.h"
 #include "AbilitySystem/Attributes/LyraHealthSet.h"
-#include "AbilitySystem/LyraAbilitySystemComponent.h"
-#include "AbilitySystem/Attributes/NaviHealthSet.h"
+#include "AbilitySystem/LyraAbilitySystemComponent.h" 
 #include "Async/TaskGraphInterfaces.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraCharacterWithAbilities)

@@ -81,9 +81,6 @@ void ULyraHealthComponent::InitializeWithAbilitySystem(ULyraAbilitySystemCompone
 	HealthSet->OnArmorChanged.AddUObject(this, &ThisClass::HandleArmorChanged);
 	HealthSet->OnMaxArmorChanged.AddUObject(this, &ThisClass::HandleMaxArmorChanged);
 	HealthSet->OnOutOfArmor.AddUObject(this, &ThisClass::HandleOutOfArmor);
-	HealthSet->OnShieldChanged.AddUObject(this, &ThisClass::HandleShieldChanged);
-	HealthSet->OnMaxShieldChanged.AddUObject(this, &ThisClass::HandleMaxShieldChanged);
-	HealthSet->OnOutOfShield.AddUObject(this, &ThisClass::HandleOutOfShield);
 	
 	// TEMP: Reset attributes to default values.  Eventually this will be driven by a spread sheet.
 	AbilitySystemComponent->SetNumericAttributeBase(ULyraHealthSet::GetHealthAttribute(), HealthSet->GetMaxHealth());
@@ -94,8 +91,6 @@ void ULyraHealthComponent::InitializeWithAbilitySystem(ULyraAbilitySystemCompone
 	OnMaxHealthChanged.Broadcast(this, HealthSet->GetHealth(), HealthSet->GetHealth(), nullptr);
 	OnArmorChanged.Broadcast(this, HealthSet->GetArmor(), HealthSet->GetArmor(), nullptr);
 	OnMaxArmorChanged.Broadcast(this, HealthSet->GetMaxArmor(), HealthSet->GetMaxArmor(), nullptr);
-	OnShieldChanged.Broadcast(this, HealthSet->GetShield(), HealthSet->GetShield(), nullptr);
-	OnMaxShieldChanged.Broadcast(this, HealthSet->GetMaxShield(), HealthSet->GetMaxShield(), nullptr);
 }
 
 void ULyraHealthComponent::UninitializeFromAbilitySystem()
@@ -110,9 +105,6 @@ void ULyraHealthComponent::UninitializeFromAbilitySystem()
 		HealthSet->OnArmorChanged.RemoveAll(this);
 		HealthSet->OnMaxArmorChanged.RemoveAll(this);
 		HealthSet->OnOutOfArmor.RemoveAll(this);
-		HealthSet->OnShieldChanged.RemoveAll(this);
-		HealthSet->OnMaxShieldChanged.RemoveAll(this);
-		HealthSet->OnOutOfShield.RemoveAll(this);
 	}
 
 	HealthSet = nullptr;
@@ -172,29 +164,6 @@ float ULyraHealthComponent::GetArmorNormalized() const
 
 	return 0.0f;
 }
-float ULyraHealthComponent::GetSheild() const
-{
-	return (HealthSet ? HealthSet->GetShield() : 0.0f);
-}
-
-float ULyraHealthComponent::GetMaxShield() const
-{
-	return (HealthSet ? HealthSet->GetMaxShield() : 0.0f);
-}
-
-float ULyraHealthComponent::GetShieldNormalized() const
-{
-	if (HealthSet)
-	{
-		const float Shield = HealthSet->GetShield();
-		const float MaxShield = HealthSet->GetMaxShield();
-
-		return ((MaxShield > 0.0f) ? (Shield / MaxShield) : 0.0f);
-	}
-
-	return 0.0f;
-}
-
 void ULyraHealthComponent::HandleHealthChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
 {
 	OnHealthChanged.Broadcast(this, OldValue, NewValue, DamageInstigator);
@@ -263,25 +232,6 @@ void ULyraHealthComponent::HandleOutOfArmor(AActor* DamageInstigator, AActor* Da
 	}
 #endif // #if WITH_SERVER_CODE
 }
-
-void ULyraHealthComponent::HandleShieldChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
-{
-	OnShieldChanged.Broadcast(this, OldValue, NewValue, DamageInstigator);
-}
-void ULyraHealthComponent::HandleMaxShieldChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
-{
-	OnMaxShieldChanged.Broadcast(this, OldValue, NewValue, DamageInstigator);
-}
-void ULyraHealthComponent::HandleOutOfShield(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
-{
-#if WITH_SERVER_CODE
-	if (AbilitySystemComponent && DamageEffectSpec)
-	{
-
-	}
-#endif // #if WITH_SERVER_CODE
-}
-
 
 
 void ULyraHealthComponent::OnRep_DeathState(ELyraDeathState OldDeathState)
