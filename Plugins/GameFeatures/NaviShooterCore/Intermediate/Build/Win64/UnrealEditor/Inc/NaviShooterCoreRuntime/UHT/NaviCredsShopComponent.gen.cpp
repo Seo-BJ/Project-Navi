@@ -21,66 +21,66 @@ NAVISHOOTERCORERUNTIME_API UClass* Z_Construct_UClass_UNaviCredsShopComponent_No
 UPackage* Z_Construct_UPackage__Script_NaviShooterCoreRuntime();
 // End Cross Module References
 
-// Begin Class UNaviCredsShopComponent Function PurchaseWeapon
-struct Z_Construct_UFunction_UNaviCredsShopComponent_PurchaseWeapon_Statics
+// Begin Class UNaviCredsShopComponent Function BuyEquipment
+struct Z_Construct_UFunction_UNaviCredsShopComponent_BuyEquipment_Statics
 {
-	struct NaviCredsShopComponent_eventPurchaseWeapon_Parms
+	struct NaviCredsShopComponent_eventBuyEquipment_Parms
 	{
-		AController* RequestingPlayer;
-		FGameplayTag WeaponTag;
+		AController* RequestingPlayerController;
+		FGameplayTag EquipmentTag;
 	};
 #if WITH_METADATA
 	static constexpr UECodeGen_Private::FMetaDataPairParam Function_MetaDataParams[] = {
 		{ "Category", "Navi|Shop" },
 #if !UE_BUILD_SHIPPING
-		{ "Comment", "/**\n     * \xed\x81\xb4\xeb\x9d\xbc\xec\x9d\xb4\xec\x96\xb8\xed\x8a\xb8\xea\xb0\x80 \xec\x84\x9c\xeb\xb2\x84\xec\x97\x90 \xeb\xac\xb4\xea\xb8\xb0 \xea\xb5\xac\xeb\xa7\xa4\xeb\xa5\xbc \xec\x9a\x94\xec\xb2\xad\xed\x95\xa0 \xeb\x95\x8c \xed\x98\xb8\xec\xb6\x9c\xed\x95\xa9\xeb\x8b\x88\xeb\x8b\xa4.\n     * @param RequestingPlayer \xea\xb5\xac\xeb\xa7\xa4\xeb\xa5\xbc \xec\x9a\x94\xec\xb2\xad\xed\x95\x98\xeb\x8a\x94 \xed\x94\x8c\xeb\xa0\x88\xec\x9d\xb4\xec\x96\xb4\xec\x9d\x98 \xec\xbb\xa8\xed\x8a\xb8\xeb\xa1\xa4\xeb\x9f\xac\xec\x9e\x85\xeb\x8b\x88\xeb\x8b\xa4.\n     * @param WeaponTag \xea\xb5\xac\xeb\xa7\xa4\xed\x95\x98\xeb\xa0\xa4\xeb\x8a\x94 \xeb\xac\xb4\xea\xb8\xb0\xec\x9d\x98 \xea\xb3\xa0\xec\x9c\xa0 \xea\xb2\x8c\xec\x9e\x84\xed\x94\x8c\xeb\xa0\x88\xec\x9d\xb4 \xed\x83\x9c\xea\xb7\xb8\xec\x9e\x85\xeb\x8b\x88\xeb\x8b\xa4.\n     */" },
+		{ "Comment", "/**\n     * \xed\x81\xb4\xeb\x9d\xbc\xec\x9d\xb4\xec\x96\xb8\xed\x8a\xb8\xea\xb0\x80 \xec\x84\x9c\xeb\xb2\x84\xec\x97\x90 \xeb\xac\xb4\xea\xb8\xb0 \xea\xb5\xac\xeb\xa7\xa4\xeb\xa5\xbc \xec\x9a\x94\xec\xb2\xad\xed\x95\xa0 \xeb\x95\x8c \xed\x98\xb8\xec\xb6\x9c\xed\x95\xa9\xeb\x8b\x88\xeb\x8b\xa4.\n     * @param RequestingPlayerController \xea\xb5\xac\xeb\xa7\xa4\xeb\xa5\xbc \xec\x9a\x94\xec\xb2\xad\xed\x95\x98\xeb\x8a\x94 \xed\x94\x8c\xeb\xa0\x88\xec\x9d\xb4\xec\x96\xb4\xec\x9d\x98 \xec\xbb\xa8\xed\x8a\xb8\xeb\xa1\xa4\xeb\x9f\xac\xec\x9e\x85\xeb\x8b\x88\xeb\x8b\xa4.\n     * @param EquipmentTag \xea\xb5\xac\xeb\xa7\xa4\xed\x95\x98\xeb\xa0\xa4\xeb\x8a\x94 \xeb\xac\xb4\xea\xb8\xb0\xec\x9d\x98 \xea\xb3\xa0\xec\x9c\xa0 \xea\xb2\x8c\xec\x9e\x84\xed\x94\x8c\xeb\xa0\x88\xec\x9d\xb4 \xed\x83\x9c\xea\xb7\xb8\xec\x9e\x85\xeb\x8b\x88\xeb\x8b\xa4.\n     */" },
 #endif
 		{ "ModuleRelativePath", "Public/CredsSystem/NaviCredsShopComponent.h" },
 #if !UE_BUILD_SHIPPING
-		{ "ToolTip", "\xed\x81\xb4\xeb\x9d\xbc\xec\x9d\xb4\xec\x96\xb8\xed\x8a\xb8\xea\xb0\x80 \xec\x84\x9c\xeb\xb2\x84\xec\x97\x90 \xeb\xac\xb4\xea\xb8\xb0 \xea\xb5\xac\xeb\xa7\xa4\xeb\xa5\xbc \xec\x9a\x94\xec\xb2\xad\xed\x95\xa0 \xeb\x95\x8c \xed\x98\xb8\xec\xb6\x9c\xed\x95\xa9\xeb\x8b\x88\xeb\x8b\xa4.\n@param RequestingPlayer \xea\xb5\xac\xeb\xa7\xa4\xeb\xa5\xbc \xec\x9a\x94\xec\xb2\xad\xed\x95\x98\xeb\x8a\x94 \xed\x94\x8c\xeb\xa0\x88\xec\x9d\xb4\xec\x96\xb4\xec\x9d\x98 \xec\xbb\xa8\xed\x8a\xb8\xeb\xa1\xa4\xeb\x9f\xac\xec\x9e\x85\xeb\x8b\x88\xeb\x8b\xa4.\n@param WeaponTag \xea\xb5\xac\xeb\xa7\xa4\xed\x95\x98\xeb\xa0\xa4\xeb\x8a\x94 \xeb\xac\xb4\xea\xb8\xb0\xec\x9d\x98 \xea\xb3\xa0\xec\x9c\xa0 \xea\xb2\x8c\xec\x9e\x84\xed\x94\x8c\xeb\xa0\x88\xec\x9d\xb4 \xed\x83\x9c\xea\xb7\xb8\xec\x9e\x85\xeb\x8b\x88\xeb\x8b\xa4." },
+		{ "ToolTip", "\xed\x81\xb4\xeb\x9d\xbc\xec\x9d\xb4\xec\x96\xb8\xed\x8a\xb8\xea\xb0\x80 \xec\x84\x9c\xeb\xb2\x84\xec\x97\x90 \xeb\xac\xb4\xea\xb8\xb0 \xea\xb5\xac\xeb\xa7\xa4\xeb\xa5\xbc \xec\x9a\x94\xec\xb2\xad\xed\x95\xa0 \xeb\x95\x8c \xed\x98\xb8\xec\xb6\x9c\xed\x95\xa9\xeb\x8b\x88\xeb\x8b\xa4.\n@param RequestingPlayerController \xea\xb5\xac\xeb\xa7\xa4\xeb\xa5\xbc \xec\x9a\x94\xec\xb2\xad\xed\x95\x98\xeb\x8a\x94 \xed\x94\x8c\xeb\xa0\x88\xec\x9d\xb4\xec\x96\xb4\xec\x9d\x98 \xec\xbb\xa8\xed\x8a\xb8\xeb\xa1\xa4\xeb\x9f\xac\xec\x9e\x85\xeb\x8b\x88\xeb\x8b\xa4.\n@param EquipmentTag \xea\xb5\xac\xeb\xa7\xa4\xed\x95\x98\xeb\xa0\xa4\xeb\x8a\x94 \xeb\xac\xb4\xea\xb8\xb0\xec\x9d\x98 \xea\xb3\xa0\xec\x9c\xa0 \xea\xb2\x8c\xec\x9e\x84\xed\x94\x8c\xeb\xa0\x88\xec\x9d\xb4 \xed\x83\x9c\xea\xb7\xb8\xec\x9e\x85\xeb\x8b\x88\xeb\x8b\xa4." },
 #endif
 	};
 #endif // WITH_METADATA
-	static const UECodeGen_Private::FObjectPropertyParams NewProp_RequestingPlayer;
-	static const UECodeGen_Private::FStructPropertyParams NewProp_WeaponTag;
+	static const UECodeGen_Private::FObjectPropertyParams NewProp_RequestingPlayerController;
+	static const UECodeGen_Private::FStructPropertyParams NewProp_EquipmentTag;
 	static const UECodeGen_Private::FPropertyParamsBase* const PropPointers[];
 	static const UECodeGen_Private::FFunctionParams FuncParams;
 };
-const UECodeGen_Private::FObjectPropertyParams Z_Construct_UFunction_UNaviCredsShopComponent_PurchaseWeapon_Statics::NewProp_RequestingPlayer = { "RequestingPlayer", nullptr, (EPropertyFlags)0x0010000000000080, UECodeGen_Private::EPropertyGenFlags::Object, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(NaviCredsShopComponent_eventPurchaseWeapon_Parms, RequestingPlayer), Z_Construct_UClass_AController_NoRegister, METADATA_PARAMS(0, nullptr) };
-const UECodeGen_Private::FStructPropertyParams Z_Construct_UFunction_UNaviCredsShopComponent_PurchaseWeapon_Statics::NewProp_WeaponTag = { "WeaponTag", nullptr, (EPropertyFlags)0x0010000000000080, UECodeGen_Private::EPropertyGenFlags::Struct, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(NaviCredsShopComponent_eventPurchaseWeapon_Parms, WeaponTag), Z_Construct_UScriptStruct_FGameplayTag, METADATA_PARAMS(0, nullptr) }; // 1298103297
-const UECodeGen_Private::FPropertyParamsBase* const Z_Construct_UFunction_UNaviCredsShopComponent_PurchaseWeapon_Statics::PropPointers[] = {
-	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UFunction_UNaviCredsShopComponent_PurchaseWeapon_Statics::NewProp_RequestingPlayer,
-	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UFunction_UNaviCredsShopComponent_PurchaseWeapon_Statics::NewProp_WeaponTag,
+const UECodeGen_Private::FObjectPropertyParams Z_Construct_UFunction_UNaviCredsShopComponent_BuyEquipment_Statics::NewProp_RequestingPlayerController = { "RequestingPlayerController", nullptr, (EPropertyFlags)0x0010000000000080, UECodeGen_Private::EPropertyGenFlags::Object, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(NaviCredsShopComponent_eventBuyEquipment_Parms, RequestingPlayerController), Z_Construct_UClass_AController_NoRegister, METADATA_PARAMS(0, nullptr) };
+const UECodeGen_Private::FStructPropertyParams Z_Construct_UFunction_UNaviCredsShopComponent_BuyEquipment_Statics::NewProp_EquipmentTag = { "EquipmentTag", nullptr, (EPropertyFlags)0x0010000000000080, UECodeGen_Private::EPropertyGenFlags::Struct, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(NaviCredsShopComponent_eventBuyEquipment_Parms, EquipmentTag), Z_Construct_UScriptStruct_FGameplayTag, METADATA_PARAMS(0, nullptr) }; // 1298103297
+const UECodeGen_Private::FPropertyParamsBase* const Z_Construct_UFunction_UNaviCredsShopComponent_BuyEquipment_Statics::PropPointers[] = {
+	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UFunction_UNaviCredsShopComponent_BuyEquipment_Statics::NewProp_RequestingPlayerController,
+	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UFunction_UNaviCredsShopComponent_BuyEquipment_Statics::NewProp_EquipmentTag,
 };
-static_assert(UE_ARRAY_COUNT(Z_Construct_UFunction_UNaviCredsShopComponent_PurchaseWeapon_Statics::PropPointers) < 2048);
-const UECodeGen_Private::FFunctionParams Z_Construct_UFunction_UNaviCredsShopComponent_PurchaseWeapon_Statics::FuncParams = { (UObject*(*)())Z_Construct_UClass_UNaviCredsShopComponent, nullptr, "PurchaseWeapon", nullptr, nullptr, Z_Construct_UFunction_UNaviCredsShopComponent_PurchaseWeapon_Statics::PropPointers, UE_ARRAY_COUNT(Z_Construct_UFunction_UNaviCredsShopComponent_PurchaseWeapon_Statics::PropPointers), sizeof(Z_Construct_UFunction_UNaviCredsShopComponent_PurchaseWeapon_Statics::NaviCredsShopComponent_eventPurchaseWeapon_Parms), RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x04020401, 0, 0, METADATA_PARAMS(UE_ARRAY_COUNT(Z_Construct_UFunction_UNaviCredsShopComponent_PurchaseWeapon_Statics::Function_MetaDataParams), Z_Construct_UFunction_UNaviCredsShopComponent_PurchaseWeapon_Statics::Function_MetaDataParams) };
-static_assert(sizeof(Z_Construct_UFunction_UNaviCredsShopComponent_PurchaseWeapon_Statics::NaviCredsShopComponent_eventPurchaseWeapon_Parms) < MAX_uint16);
-UFunction* Z_Construct_UFunction_UNaviCredsShopComponent_PurchaseWeapon()
+static_assert(UE_ARRAY_COUNT(Z_Construct_UFunction_UNaviCredsShopComponent_BuyEquipment_Statics::PropPointers) < 2048);
+const UECodeGen_Private::FFunctionParams Z_Construct_UFunction_UNaviCredsShopComponent_BuyEquipment_Statics::FuncParams = { (UObject*(*)())Z_Construct_UClass_UNaviCredsShopComponent, nullptr, "BuyEquipment", nullptr, nullptr, Z_Construct_UFunction_UNaviCredsShopComponent_BuyEquipment_Statics::PropPointers, UE_ARRAY_COUNT(Z_Construct_UFunction_UNaviCredsShopComponent_BuyEquipment_Statics::PropPointers), sizeof(Z_Construct_UFunction_UNaviCredsShopComponent_BuyEquipment_Statics::NaviCredsShopComponent_eventBuyEquipment_Parms), RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x04020401, 0, 0, METADATA_PARAMS(UE_ARRAY_COUNT(Z_Construct_UFunction_UNaviCredsShopComponent_BuyEquipment_Statics::Function_MetaDataParams), Z_Construct_UFunction_UNaviCredsShopComponent_BuyEquipment_Statics::Function_MetaDataParams) };
+static_assert(sizeof(Z_Construct_UFunction_UNaviCredsShopComponent_BuyEquipment_Statics::NaviCredsShopComponent_eventBuyEquipment_Parms) < MAX_uint16);
+UFunction* Z_Construct_UFunction_UNaviCredsShopComponent_BuyEquipment()
 {
 	static UFunction* ReturnFunction = nullptr;
 	if (!ReturnFunction)
 	{
-		UECodeGen_Private::ConstructUFunction(&ReturnFunction, Z_Construct_UFunction_UNaviCredsShopComponent_PurchaseWeapon_Statics::FuncParams);
+		UECodeGen_Private::ConstructUFunction(&ReturnFunction, Z_Construct_UFunction_UNaviCredsShopComponent_BuyEquipment_Statics::FuncParams);
 	}
 	return ReturnFunction;
 }
-DEFINE_FUNCTION(UNaviCredsShopComponent::execPurchaseWeapon)
+DEFINE_FUNCTION(UNaviCredsShopComponent::execBuyEquipment)
 {
-	P_GET_OBJECT(AController,Z_Param_RequestingPlayer);
-	P_GET_STRUCT(FGameplayTag,Z_Param_WeaponTag);
+	P_GET_OBJECT(AController,Z_Param_RequestingPlayerController);
+	P_GET_STRUCT(FGameplayTag,Z_Param_EquipmentTag);
 	P_FINISH;
 	P_NATIVE_BEGIN;
-	P_THIS->PurchaseWeapon(Z_Param_RequestingPlayer,Z_Param_WeaponTag);
+	P_THIS->BuyEquipment(Z_Param_RequestingPlayerController,Z_Param_EquipmentTag);
 	P_NATIVE_END;
 }
-// End Class UNaviCredsShopComponent Function PurchaseWeapon
+// End Class UNaviCredsShopComponent Function BuyEquipment
 
 // Begin Class UNaviCredsShopComponent
 void UNaviCredsShopComponent::StaticRegisterNativesUNaviCredsShopComponent()
 {
 	UClass* Class = UNaviCredsShopComponent::StaticClass();
 	static const FNameNativePtrPair Funcs[] = {
-		{ "PurchaseWeapon", &UNaviCredsShopComponent::execPurchaseWeapon },
+		{ "BuyEquipment", &UNaviCredsShopComponent::execBuyEquipment },
 	};
 	FNativeFunctionRegistrar::RegisterFunctions(Class, Funcs, UE_ARRAY_COUNT(Funcs));
 }
@@ -116,6 +116,10 @@ struct Z_Construct_UClass_UNaviCredsShopComponent_Statics
 		{ "ToolTip", "\xeb\xac\xb4\xea\xb8\xb0 \xec\x8a\xa4\xed\x83\xaf \xeb\xb0\x8f \xea\xb0\x80\xea\xb2\xa9 \xec\xa0\x95\xeb\xb3\xb4\xea\xb0\x80 \xeb\x93\xa4\xec\x96\xb4\xec\x9e\x88\xeb\x8a\x94 \xeb\x8d\xb0\xec\x9d\xb4\xed\x84\xb0 \xed\x85\x8c\xec\x9d\xb4\xeb\xb8\x94\xec\x9e\x85\xeb\x8b\x88\xeb\x8b\xa4." },
 #endif
 	};
+	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_ArmorStatTable_MetaData[] = {
+		{ "Category", "Navi|Shop|Data" },
+		{ "ModuleRelativePath", "Public/CredsSystem/NaviCredsShopComponent.h" },
+	};
 	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_WeaponDefinitionMap_MetaData[] = {
 		{ "Category", "Navi|Shop|Data" },
 #if !UE_BUILD_SHIPPING
@@ -128,13 +132,14 @@ struct Z_Construct_UClass_UNaviCredsShopComponent_Statics
 	};
 #endif // WITH_METADATA
 	static const UECodeGen_Private::FObjectPropertyParams NewProp_WeaponStatTable;
+	static const UECodeGen_Private::FObjectPropertyParams NewProp_ArmorStatTable;
 	static const UECodeGen_Private::FObjectPropertyParams NewProp_WeaponDefinitionMap_ValueProp;
 	static const UECodeGen_Private::FStructPropertyParams NewProp_WeaponDefinitionMap_Key_KeyProp;
 	static const UECodeGen_Private::FMapPropertyParams NewProp_WeaponDefinitionMap;
 	static const UECodeGen_Private::FPropertyParamsBase* const PropPointers[];
 	static UObject* (*const DependentSingletons[])();
 	static constexpr FClassFunctionLinkInfo FuncInfo[] = {
-		{ &Z_Construct_UFunction_UNaviCredsShopComponent_PurchaseWeapon, "PurchaseWeapon" }, // 32488352
+		{ &Z_Construct_UFunction_UNaviCredsShopComponent_BuyEquipment, "BuyEquipment" }, // 1115016026
 	};
 	static_assert(UE_ARRAY_COUNT(FuncInfo) < 2048);
 	static constexpr FCppClassTypeInfoStatic StaticCppClassTypeInfo = {
@@ -143,11 +148,13 @@ struct Z_Construct_UClass_UNaviCredsShopComponent_Statics
 	static const UECodeGen_Private::FClassParams ClassParams;
 };
 const UECodeGen_Private::FObjectPropertyParams Z_Construct_UClass_UNaviCredsShopComponent_Statics::NewProp_WeaponStatTable = { "WeaponStatTable", nullptr, (EPropertyFlags)0x0124080000010001, UECodeGen_Private::EPropertyGenFlags::Object | UECodeGen_Private::EPropertyGenFlags::ObjectPtr, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UNaviCredsShopComponent, WeaponStatTable), Z_Construct_UClass_UDataTable_NoRegister, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_WeaponStatTable_MetaData), NewProp_WeaponStatTable_MetaData) };
+const UECodeGen_Private::FObjectPropertyParams Z_Construct_UClass_UNaviCredsShopComponent_Statics::NewProp_ArmorStatTable = { "ArmorStatTable", nullptr, (EPropertyFlags)0x0124080000010001, UECodeGen_Private::EPropertyGenFlags::Object | UECodeGen_Private::EPropertyGenFlags::ObjectPtr, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UNaviCredsShopComponent, ArmorStatTable), Z_Construct_UClass_UDataTable_NoRegister, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_ArmorStatTable_MetaData), NewProp_ArmorStatTable_MetaData) };
 const UECodeGen_Private::FObjectPropertyParams Z_Construct_UClass_UNaviCredsShopComponent_Statics::NewProp_WeaponDefinitionMap_ValueProp = { "WeaponDefinitionMap", nullptr, (EPropertyFlags)0x0104000000000001, UECodeGen_Private::EPropertyGenFlags::Object | UECodeGen_Private::EPropertyGenFlags::ObjectPtr, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, 1, Z_Construct_UClass_ULyraWeaponPickupDefinition_NoRegister, METADATA_PARAMS(0, nullptr) };
 const UECodeGen_Private::FStructPropertyParams Z_Construct_UClass_UNaviCredsShopComponent_Statics::NewProp_WeaponDefinitionMap_Key_KeyProp = { "WeaponDefinitionMap_Key", nullptr, (EPropertyFlags)0x0100000000000001, UECodeGen_Private::EPropertyGenFlags::Struct, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, 0, Z_Construct_UScriptStruct_FGameplayTag, METADATA_PARAMS(0, nullptr) }; // 1298103297
 const UECodeGen_Private::FMapPropertyParams Z_Construct_UClass_UNaviCredsShopComponent_Statics::NewProp_WeaponDefinitionMap = { "WeaponDefinitionMap", nullptr, (EPropertyFlags)0x0124080000010001, UECodeGen_Private::EPropertyGenFlags::Map, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UNaviCredsShopComponent, WeaponDefinitionMap), EMapPropertyFlags::None, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_WeaponDefinitionMap_MetaData), NewProp_WeaponDefinitionMap_MetaData) }; // 1298103297
 const UECodeGen_Private::FPropertyParamsBase* const Z_Construct_UClass_UNaviCredsShopComponent_Statics::PropPointers[] = {
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UNaviCredsShopComponent_Statics::NewProp_WeaponStatTable,
+	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UNaviCredsShopComponent_Statics::NewProp_ArmorStatTable,
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UNaviCredsShopComponent_Statics::NewProp_WeaponDefinitionMap_ValueProp,
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UNaviCredsShopComponent_Statics::NewProp_WeaponDefinitionMap_Key_KeyProp,
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UNaviCredsShopComponent_Statics::NewProp_WeaponDefinitionMap,
@@ -193,10 +200,10 @@ UNaviCredsShopComponent::~UNaviCredsShopComponent() {}
 struct Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsShopComponent_h_Statics
 {
 	static constexpr FClassRegisterCompiledInInfo ClassInfo[] = {
-		{ Z_Construct_UClass_UNaviCredsShopComponent, UNaviCredsShopComponent::StaticClass, TEXT("UNaviCredsShopComponent"), &Z_Registration_Info_UClass_UNaviCredsShopComponent, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UNaviCredsShopComponent), 3251304041U) },
+		{ Z_Construct_UClass_UNaviCredsShopComponent, UNaviCredsShopComponent::StaticClass, TEXT("UNaviCredsShopComponent"), &Z_Registration_Info_UClass_UNaviCredsShopComponent, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UNaviCredsShopComponent), 2889391271U) },
 	};
 };
-static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsShopComponent_h_1604478936(TEXT("/Script/NaviShooterCoreRuntime"),
+static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsShopComponent_h_2705754703(TEXT("/Script/NaviShooterCoreRuntime"),
 	Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsShopComponent_h_Statics::ClassInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsShopComponent_h_Statics::ClassInfo),
 	nullptr, 0,
 	nullptr, 0);

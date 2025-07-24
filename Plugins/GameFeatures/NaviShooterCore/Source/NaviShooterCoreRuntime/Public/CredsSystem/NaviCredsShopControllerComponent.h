@@ -22,5 +22,5 @@ protected:
 	virtual void BeginPlay() override;
 	
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Navi|Shop")
-	void ServerRequestPurchaseWeapon(FGameplayTag WeaponTag);
+	void ServerRequesBuyEquipment(FGameplayTag EquipmentTag);
 };

@@ -32,11 +32,11 @@ public:
 
     /**
      * 클라이언트가 서버에 무기 구매를 요청할 때 호출합니다.
-     * @param RequestingPlayer 구매를 요청하는 플레이어의 컨트롤러입니다.
-     * @param WeaponTag 구매하려는 무기의 고유 게임플레이 태그입니다.
+     * @param RequestingPlayerController 구매를 요청하는 플레이어의 컨트롤러입니다.
+     * @param EquipmentTag 구매하려는 무기의 고유 게임플레이 태그입니다.
      */
     UFUNCTION(BlueprintCallable, Category = "Navi|Shop")
-    void PurchaseWeapon(AController* RequestingPlayer, FGameplayTag WeaponTag);
+    void BuyEquipment(AController* RequestingPlayerController, FGameplayTag EquipmentTag);
 
 protected:
     /**
@@ -44,6 +44,9 @@ protected:
      */
     UPROPERTY(EditDefaultsOnly, Category = "Navi|Shop|Data")
     TObjectPtr<UDataTable> WeaponStatTable;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Navi|Shop|Data")
+    TObjectPtr<UDataTable> ArmorStatTable;
     
     /**
      * 빠른 조회를 위해 GameplayTag를 키로 사용하는 무기 정의 맵입니다.
@@ -53,10 +56,10 @@ protected:
 
     /**
      * 태그에 해당하는 무기의 가격을 데이터 테이블에서 찾아 반환합니다.
-     * @param WeaponTag 가격을 조회할 무기의 태그입니다.
+     * @param EquipmentTag 가격을 조회할 무기의 태그입니다.
      * @return 무기의 가격. 찾지 못하면 -1을 반환합니다.
      */
-    int32 GetWeaponCost(const FGameplayTag& WeaponTag) const;
+    int32 GetEquipmentCost(const FGameplayTag& EquipmentTag) const;
 
     /**
      * 플레이어에게 무기 아이템을 지급합니다.

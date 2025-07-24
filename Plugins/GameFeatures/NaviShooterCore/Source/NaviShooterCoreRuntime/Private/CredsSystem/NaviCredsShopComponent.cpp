@@ -1,19 +1,27 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "CredsSystem/NaviCredsShopComponent.h"
-#include "GameFramework/GameStateBase.h"
-#include "Player/LyraPlayerState.h" // ANaviPlayerState 헤더 필요
-#include "AbilitySystem/LyraAbilitySystemComponent.h" // UNaviAbilitySystemComponent 헤더 필요
-#include "NaviCredsSet.h" // UNaviCredsSet 헤더 필요
+
+#include "LyraGameplayTags.h"
+#include "Player/LyraPlayerState.h"
+#include "AbilitySystem/Attributes/LyraHealthSet.h"
+#include "AbilitySystem/LyraAbilitySystemComponent.h"
 #include "Inventory/LyraInventoryManagerComponent.h"
+#include "Inventory/LyraInventoryItemDefinition.h"
+
 #include "Equipment/LyraPickupDefinition.h"
-#include "Engine/DataTable.h"
-#include "NativeGameplayTags.h" // FNativeGameplayTag 필요
 #include "Equipment/NaviQuickBarComponent.h"
+#include "Equipment/Armor/NaviArmorStatDefinition.h"
+
+#include "CredsSystem/NaviCredsSet.h"
+#include "Equipment/Weapons/NaviWeaponStatDefinition.h"
+#include "Equipment/Armor/NaviArmorStatDefinition.h"
+
+#include "Engine/DataTable.h"
+#include "NativeGameplayTags.h" 
+
 #include "GameFramework/Controller.h"
 #include "GameFramework/Pawn.h"
-#include "Weapons/NaviWeaponStatDefinition.h"
-#include "Inventory/LyraInventoryItemDefinition.h"
 
 
 UNaviCredsShopComponent::UNaviCredsShopComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -27,43 +35,23 @@ void UNaviCredsShopComponent::BeginPlay()
     Super::BeginPlay();
 }
 
-int32 UNaviCredsShopComponent::GetWeaponCost(const FGameplayTag& WeaponTag) const
+void UNaviCredsShopComponent::BuyEquipment(AController* RequestingPlayerController, FGameplayTag EquipmentTag)
 {
-    if (!WeaponStatTable)
-    {
-        return -1;
-    }
-
-    // 데이터 테이블에서 태그에 해당하는 행을 찾습니다.
-    // 데이터 테이블의 RowName은 FName이므로, 태그를 FName으로 변환해야 합니다.
-    const FName RowName = WeaponTag.GetTagName();
-    const FNaviWeaponStatDefinition* Row = WeaponStatTable->FindRow<FNaviWeaponStatDefinition>(RowName, TEXT("FindWeaponCost"));
-
-    return Row ? Row->CreditCost : -1;
-}
-
-void UNaviCredsShopComponent::PurchaseWeapon(AController* RequestingPlayer, FGameplayTag WeaponTag)
-{
-    // 서버 권한 확인
-    if (!ensure(GetOwner()->HasAuthority()) || !RequestingPlayer || !WeaponTag.IsValid())
+    if (!ensure(GetOwner()->HasAuthority()) || !RequestingPlayerController || !EquipmentTag.IsValid())
     {
         return;
     }
-
-    // 플레이어 스테이트와 어빌리티 시스템 컴포넌트 가져오기
-    ALyraPlayerState* PlayerState = RequestingPlayer->GetPlayerState<ALyraPlayerState>();
+    
+    ALyraPlayerState* PlayerState = RequestingPlayerController->GetPlayerState<ALyraPlayerState>();
     ULyraAbilitySystemComponent* ASC = PlayerState ? PlayerState->GetLyraAbilitySystemComponent() : nullptr;
     if (!PlayerState || !ASC)
     {
         return;
     }
-
-    // 구매하려는 무기의 가격 조회
-    const int32 Cost = GetWeaponCost(WeaponTag);
-    // 판매 목록에 있는 무기인지, 그리고 유효한 가격인지 확인
-    if (Cost < 0 /* || !WeaponDefinitionMap.Contains(WeaponTag) */) // TODO: BeginPlay에서 Map 초기화 후 주석 해제
+    
+    const int32 Cost = GetEquipmentCost(EquipmentTag);
+    if (Cost == -1)
     {
-        // 판매하지 않는 아이템
         return;
     }
     
@@ -73,41 +61,59 @@ void UNaviCredsShopComponent::PurchaseWeapon(AController* RequestingPlayer, FGam
     {
         return;
     }
-    ULyraWeaponPickupDefinition* WeaponPickupDefinition = WeaponDefinitionMap[WeaponTag];
-    TSubclassOf<ULyraInventoryItemDefinition> WeaponItemDefinition = WeaponPickupDefinition ? WeaponPickupDefinition->InventoryItemDefinition : nullptr;
-    if (WeaponItemDefinition != nullptr)
-    {
-        GiveWeaponToPlayer(WeaponItemDefinition, RequestingPlayer);
-    }
-
-    /*
-    // 크레드가 충분한지 확인
+    
     if (CredsSet->GetCreds() >= Cost)
     {
-        // 크레드 차감 GameplayEffect 생성 및 적용
         UGameplayEffect* CostEffect = NewObject<UGameplayEffect>(GetTransientPackage(), TEXT("CredsCostEffect"));
         CostEffect->DurationPolicy = EGameplayEffectDurationType::Instant;
         
-        // 크레드 속성을 차감하는 Modifier 추가
         FGameplayModifierInfo ModifierInfo;
         ModifierInfo.Attribute = UNaviCredsSet::GetCredsAttribute();
         ModifierInfo.ModifierOp = EGameplayModOp::Additive;
-        ModifierInfo.ModifierMagnitude = FGameplayEffectModifierMagnitude(-Cost); // 음수 값으로 더해서 차감
+        ModifierInfo.ModifierMagnitude = FGameplayEffectModifierMagnitude(-Cost); 
         CostEffect->Modifiers.Add(ModifierInfo);
 
         ASC->ApplyGameplayEffectToSelf(CostEffect, 1.0f, ASC->MakeEffectContext());
 
-        // 무기 지급
-        // TODO: WeaponDefinitionMap에서 WeaponDef 조회 후 전달
-        GiveWeaponToPlayer(*WeaponDefinitionMap[WeaponTag], RequestingPlayer);
-        
-        // TODO: 로그 또는 클라이언트에 성공 피드백 전송
+        if (EquipmentTag.MatchesTag(NaviGameplayTags::Weapon))
+        {
+            ULyraWeaponPickupDefinition* WeaponPickupDefinition = WeaponDefinitionMap[EquipmentTag];
+            TSubclassOf<ULyraInventoryItemDefinition> WeaponItemDefinition = WeaponPickupDefinition ? WeaponPickupDefinition->InventoryItemDefinition : nullptr;
+            if (WeaponItemDefinition != nullptr)
+            {
+                GiveWeaponToPlayer(WeaponItemDefinition, RequestingPlayerController);
+            }
+        }
+        else if (EquipmentTag.MatchesTag(NaviGameplayTags::Armor))
+        {
+            
+            // ArmorStatTable에서 EquipmentTag에 해당하는 방어구 스탯 정보를 찾습니다.
+            // 데이터 테이블의 RowName이 태그의 TagName과 일치한다고 가정합니다.
+            const FName RowName = EquipmentTag.GetTagName();
+            const FNaviArmorStatDefinition* ArmorStat = ArmorStatTable ? ArmorStatTable->FindRow<FNaviArmorStatDefinition>(RowName, TEXT("Find Armor Stat from DataTable")) : nullptr;
+
+            if (ArmorStat)
+            {
+                // Armor 속성을 변경할 GameplayEffect를 생성합니다.
+                UGameplayEffect* ArmorEffect = NewObject<UGameplayEffect>(GetTransientPackage(), TEXT("ArmorPurchaseEffect"));
+                ArmorEffect->DurationPolicy = EGameplayEffectDurationType::Instant;
+
+                FGameplayModifierInfo ArmorModifierInfo;
+                ArmorModifierInfo.Attribute = ULyraHealthSet::GetArmorAttribute();
+                // AbsorbAmount 값으로 Armor 속성을 덮어씁니다.
+                ArmorModifierInfo.ModifierOp = EGameplayModOp::Override;
+                ArmorModifierInfo.ModifierMagnitude = FGameplayEffectModifierMagnitude(ArmorStat->AbsorbAmount); 
+                ArmorEffect->Modifiers.Add(ArmorModifierInfo);
+
+                // 플레이어의 ASC에 GameplayEffect를 적용하여 Armor 속성을 즉시 업데이트합니다.
+                ASC->ApplyGameplayEffectToSelf(ArmorEffect, 1.0f, ASC->MakeEffectContext());
+            }
+        }
     }
     else
     {
-        // TODO: 크레드 부족 피드백 전송
+        
     }
-    */
 }
 
 void UNaviCredsShopComponent::GiveWeaponToPlayer(TSubclassOf<ULyraInventoryItemDefinition> WeaponItemClass, AController* ReceivingController)
@@ -124,4 +130,27 @@ void UNaviCredsShopComponent::GiveWeaponToPlayer(TSubclassOf<ULyraInventoryItemD
     ULyraInventoryItemInstance* LyraInventoryItemDefinition = LyraInventoryManagerComponent->AddItemDefinition(WeaponItemClass);
     int AddedIndex = NaviQuickBarComponent->AddItemToSlot(ItemCDO->ItemTag, LyraInventoryItemDefinition);
     NaviQuickBarComponent->SetActiveSlotIndex(AddedIndex);
+}
+
+int32 UNaviCredsShopComponent::GetEquipmentCost(const FGameplayTag& EquipmentTag) const
+{
+    if (WeaponStatTable == nullptr || ArmorStatTable == nullptr) 
+    {
+        return -1;
+    }
+
+    if (EquipmentTag.MatchesTag(NaviGameplayTags::Weapon))
+    {
+        const FName RowName = EquipmentTag.GetTagName();
+        const FNaviWeaponStatDefinition* Row = WeaponStatTable->FindRow<FNaviWeaponStatDefinition>(RowName, TEXT("FindWeaponCost"));
+        return Row ? Row->CreditCost : -1;
+    }
+    if (EquipmentTag.MatchesTag(NaviGameplayTags::Armor))
+    {
+        const FName RowName = EquipmentTag.GetTagName();
+        const FNaviArmorStatDefinition* Row = ArmorStatTable->FindRow<FNaviArmorStatDefinition>(RowName, TEXT("FindArmorCost"));
+        return Row ? Row->CreditCost : -1;
+    }
+    
+    return -1;
 }

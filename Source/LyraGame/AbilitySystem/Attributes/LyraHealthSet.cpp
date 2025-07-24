@@ -91,7 +91,6 @@ void ULyraHealthSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackD
 	const bool bIsDamageFromSelfDestruct = Data.EffectSpec.GetDynamicAssetTags().HasTagExact(TAG_Gameplay_DamageSelfDestruct);
 	float MinimumHealth = 0.0f;
 	float MinimumArmor = 0.0f;
-	float MinimumShield = 0.0f;
 	
 #if !UE_BUILD_SHIPPING
 	// Godmode and unlimited health stop death unless it's a self destruct

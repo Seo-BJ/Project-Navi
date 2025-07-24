@@ -39,6 +39,7 @@
 /NATVIS:"..\Plugins\FX\Niagara\Intermediate\Build\Win64\x64\UnrealEditor\Development\Niagara\Niagara.natvis"
 "..\Intermediate\Build\Win64\x64\UnrealEditor\Development\UnrealEd\SharedPCH.UnrealEd.Project.ValApi.Cpp20.h.obj"
 "C:\Users\binij\Documents\UnrealProjects\Navi\Plugins\GameFeatures\TopDownArena\Intermediate\Build\Win64\x64\UnrealEditor\Development\TopDownArenaRuntime\Module.TopDownArenaRuntime.cpp.obj"
+"C:\Users\binij\Documents\UnrealProjects\Navi\Plugins\GameFeatures\TopDownArena\Intermediate\Build\Win64\x64\UnrealEditor\Development\TopDownArenaRuntime\PerModuleInline.gen.cpp.obj"
 "..\Intermediate\Build\Win64\x64\UnrealEditor\Development\Default.rc2.res"
 "..\Intermediate\Build\Win64\x64\UnrealEditor\Development\CoreUObject\UnrealEditor-CoreUObject.lib"
 "..\Intermediate\Build\Win64\x64\UnrealEditor\Development\Engine\UnrealEditor-Engine.lib"

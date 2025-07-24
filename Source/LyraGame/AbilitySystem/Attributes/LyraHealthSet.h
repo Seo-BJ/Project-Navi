@@ -24,7 +24,7 @@ struct FGameplayEffectModCallbackData;
  * ULyraHealthSet
  *
  *	Class that defines attributes that are necessary for taking damage.
- *	Attribute examples include: health, shields, and resistances.
+ *	Health, Armor Attribute를 정의
  */
 UCLASS(BlueprintType)
 class LYRAGAME_API ULyraHealthSet : public ULyraAttributeSet
