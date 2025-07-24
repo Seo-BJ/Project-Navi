@@ -88,6 +88,10 @@ namespace LyraGameplayTags
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Lyra_Experience_TestInventory, "Lyra.Experience.TestInventory", "인벤토리 시스템 테스트를 위한 Lyra 경험입니다.");
 	
+	// Shooter Core ini Tag 임시 이동
+	LYRAGAME_API	UE_DEFINE_GAMEPLAY_TAG(Lyra_ShooterGame_Weapon_MagazineAmmo, "Lyra.ShooterGame.Weapon.MagazineAmmo");
+	LYRAGAME_API	UE_DEFINE_GAMEPLAY_TAG(Lyra_ShooterGame_Weapon_MagazineSize, "Lyra.ShooterGame.Weapon.MagazineSize");
+	LYRAGAME_API	UE_DEFINE_GAMEPLAY_TAG(Lyra_ShooterGame_Weapon_SpareAmmo, "Lyra.ShooterGame.Weapon.SpareAmmo");
 	
 	FGameplayTag FindTagByString(const FString& TagString, bool bMatchPartialString)
 	{
@@ -171,6 +175,9 @@ namespace NaviGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Elimination_Message, "Navi.Elimination.Message", "");
 
 	// 무기, 방어 Tag
+	UE_DEFINE_GAMEPLAY_TAG(Weapon_MagazineSize, "Weapon.MagazineSize");
+	UE_DEFINE_GAMEPLAY_TAG(Weapon_MagazineAmmo, "Weapon.MagazineAmmo");
+	UE_DEFINE_GAMEPLAY_TAG(Weapon_SpareAmmo, "Weapon.SpareAmmo");
 	
 	UE_DEFINE_GAMEPLAY_TAG(Weapon, "Weapon");
 	UE_DEFINE_GAMEPLAY_TAG(Weapon_Sidearms, "Weapon.Sidearms");

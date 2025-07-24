@@ -8,8 +8,11 @@
 #if UE_WITH_IRIS
 #include "Iris/ReplicationSystem/ReplicationFragmentUtil.h"
 #endif // UE_WITH_IRIS
+#include "NativeGameplayTags.h"
+#include "GameFramework/GameplayMessageSubsystem.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraInventoryItemInstance)
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_Inventory_Message_StatTagsChanged, "Lyra.Inventory.Message.StatTagsChanged");
 
 class FLifetimeProperty;
 
@@ -39,11 +42,13 @@ void ULyraInventoryItemInstance::RegisterReplicationFragments(UE::Net::FFragment
 void ULyraInventoryItemInstance::AddStatTagStack(FGameplayTag Tag, int32 StackCount)
 {
 	StatTags.AddStack(Tag, StackCount);
+	OnRep_StatTags();
 }
 
 void ULyraInventoryItemInstance::RemoveStatTagStack(FGameplayTag Tag, int32 StackCount)
 {
 	StatTags.RemoveStack(Tag, StackCount);
+	OnRep_StatTags();
 }
 
 int32 ULyraInventoryItemInstance::GetStatTagStackCount(FGameplayTag Tag) const
@@ -59,6 +64,17 @@ bool ULyraInventoryItemInstance::HasStatTag(FGameplayTag Tag) const
 void ULyraInventoryItemInstance::SetItemDef(TSubclassOf<ULyraInventoryItemDefinition> InDef)
 {
 	ItemDef = InDef;
+}
+
+void ULyraInventoryItemInstance::OnRep_StatTags()
+{
+	FLyraInventory_Message_StatTagsChanged Message;
+	Message.Owner = Cast<AController>(GetOuter());
+	Message.ItemInstance = this;
+	Message.StatTags = StatTags;
+
+	UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(GetWorld());
+	MessageSystem.BroadcastMessage(TAG_Lyra_Inventory_Message_StatTagsChanged, Message);
 }
 
 const ULyraInventoryItemFragment* ULyraInventoryItemInstance::FindFragmentByClass(TSubclassOf<ULyraInventoryItemFragment> FragmentClass) const
