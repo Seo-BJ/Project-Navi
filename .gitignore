@@ -73,4 +73,13 @@ Plugins/*/Intermediate/*
 # Cache files for the editor to use
 DerivedDataCache/*
 Content/Effects/Textures/Flipbooks/SmokeSwirl_3_Flipbook_CHANNELPACK.uasset
-Content/Assets
+
+# Build products
+**/Binaries/
+**/Build/
+**/Intermediate/
+
+
+# Plugins/GameFeatures/ 폴더 하위의 모든 플러그인 내 Binaries, Intermediate 무시
+Plugins/GameFeatures/*/Binaries/*
+Plugins/GameFeatures/*/Intermediate/*
