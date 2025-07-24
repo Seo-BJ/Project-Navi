@@ -24,10 +24,10 @@ void UNaviCredsShopControllerComponent::BeginPlay()
 }
 
 
-void UNaviCredsShopControllerComponent::ServerRequestPurchaseWeapon_Implementation(FGameplayTag WeaponTag)
+void UNaviCredsShopControllerComponent::ServerRequesBuyEquipment_Implementation(FGameplayTag EquipmentTag)
 {
 	// 유효하지 않은 태그는 무시합니다.
-	if (!WeaponTag.IsValid())
+	if (!EquipmentTag.IsValid())
 	{
 		return;
 	}
@@ -53,6 +53,6 @@ void UNaviCredsShopControllerComponent::ServerRequestPurchaseWeapon_Implementati
 	{
 		// 찾은 상점 컴포넌트의 서버 함수를 호출합니다.
 		// 이 함수는 서버 RPC이므로, 클라이언트에서 호출하면 서버로 요청이 전송됩니다.
-		ShopComponent->PurchaseWeapon(OwnerController, WeaponTag);
+		ShopComponent->BuyEquipment(OwnerController, EquipmentTag);
 	}
 }

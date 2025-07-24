@@ -5,7 +5,7 @@
 ===========================================================================*/
 
 #include "UObject/GeneratedCppIncludes.h"
-#include "NaviShooterCoreRuntime/Public/NaviCredsSet.h"
+#include "NaviShooterCoreRuntime/Public/CredsSystem/NaviCredsSet.h"
 #include "GameplayAbilities/Public/AttributeSet.h"
 PRAGMA_DISABLE_DEPRECATION_WARNINGS
 void EmptyLinkFunctionForGeneratedCodeNaviCredsSet() {}
@@ -27,7 +27,7 @@ struct Z_Construct_UFunction_UNaviCredsSet_OnRep_Creds_Statics
 	};
 #if WITH_METADATA
 	static constexpr UECodeGen_Private::FMetaDataPairParam Function_MetaDataParams[] = {
-		{ "ModuleRelativePath", "Public/NaviCredsSet.h" },
+		{ "ModuleRelativePath", "Public/CredsSystem/NaviCredsSet.h" },
 	};
 	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_OldValue_MetaData[] = {
 		{ "NativeConst", "" },
@@ -72,7 +72,7 @@ struct Z_Construct_UFunction_UNaviCredsSet_OnRep_MaxCreds_Statics
 	};
 #if WITH_METADATA
 	static constexpr UECodeGen_Private::FMetaDataPairParam Function_MetaDataParams[] = {
-		{ "ModuleRelativePath", "Public/NaviCredsSet.h" },
+		{ "ModuleRelativePath", "Public/CredsSystem/NaviCredsSet.h" },
 	};
 	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_OldValue_MetaData[] = {
 		{ "NativeConst", "" },
@@ -127,8 +127,11 @@ struct Z_Construct_UClass_UNaviCredsSet_Statics
 {
 #if WITH_METADATA
 	static constexpr UECodeGen_Private::FMetaDataPairParam Class_MetaDataParams[] = {
-		{ "IncludePath", "NaviCredsSet.h" },
-		{ "ModuleRelativePath", "Public/NaviCredsSet.h" },
+#if !UE_BUILD_SHIPPING
+		{ "Comment", "/**\n * \n */" },
+#endif
+		{ "IncludePath", "CredsSystem/NaviCredsSet.h" },
+		{ "ModuleRelativePath", "Public/CredsSystem/NaviCredsSet.h" },
 	};
 	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_Creds_MetaData[] = {
 		{ "AllowPrivateAccess", "TRUE" },
@@ -137,7 +140,7 @@ struct Z_Construct_UClass_UNaviCredsSet_Statics
 		{ "Comment", "// The current health attribute.  The health will be capped by the max health attribute.  Health is hidden from modifiers so only executions can modify it.\n" },
 #endif
 		{ "HideFromModifiers", "" },
-		{ "ModuleRelativePath", "Public/NaviCredsSet.h" },
+		{ "ModuleRelativePath", "Public/CredsSystem/NaviCredsSet.h" },
 #if !UE_BUILD_SHIPPING
 		{ "ToolTip", "The current health attribute.  The health will be capped by the max health attribute.  Health is hidden from modifiers so only executions can modify it." },
 #endif
@@ -148,7 +151,7 @@ struct Z_Construct_UClass_UNaviCredsSet_Statics
 #if !UE_BUILD_SHIPPING
 		{ "Comment", "// The current max health attribute.  Max health is an attribute since gameplay effects can modify it.\n" },
 #endif
-		{ "ModuleRelativePath", "Public/NaviCredsSet.h" },
+		{ "ModuleRelativePath", "Public/CredsSystem/NaviCredsSet.h" },
 #if !UE_BUILD_SHIPPING
 		{ "ToolTip", "The current max health attribute.  Max health is an attribute since gameplay effects can modify it." },
 #endif
@@ -159,7 +162,7 @@ struct Z_Construct_UClass_UNaviCredsSet_Statics
 #if !UE_BUILD_SHIPPING
 		{ "Comment", "// Incoming healing. This is mapped directly to +Health\n" },
 #endif
-		{ "ModuleRelativePath", "Public/NaviCredsSet.h" },
+		{ "ModuleRelativePath", "Public/CredsSystem/NaviCredsSet.h" },
 #if !UE_BUILD_SHIPPING
 		{ "ToolTip", "Incoming healing. This is mapped directly to +Health" },
 #endif
@@ -171,7 +174,7 @@ struct Z_Construct_UClass_UNaviCredsSet_Statics
 		{ "Comment", "// Incoming damage. This is mapped directly to -Health\n" },
 #endif
 		{ "HideFromModifiers", "" },
-		{ "ModuleRelativePath", "Public/NaviCredsSet.h" },
+		{ "ModuleRelativePath", "Public/CredsSystem/NaviCredsSet.h" },
 #if !UE_BUILD_SHIPPING
 		{ "ToolTip", "Incoming damage. This is mapped directly to -Health" },
 #endif
@@ -184,8 +187,8 @@ struct Z_Construct_UClass_UNaviCredsSet_Statics
 	static const UECodeGen_Private::FPropertyParamsBase* const PropPointers[];
 	static UObject* (*const DependentSingletons[])();
 	static constexpr FClassFunctionLinkInfo FuncInfo[] = {
-		{ &Z_Construct_UFunction_UNaviCredsSet_OnRep_Creds, "OnRep_Creds" }, // 2542114922
-		{ &Z_Construct_UFunction_UNaviCredsSet_OnRep_MaxCreds, "OnRep_MaxCreds" }, // 3681229098
+		{ &Z_Construct_UFunction_UNaviCredsSet_OnRep_Creds, "OnRep_Creds" }, // 3462160824
+		{ &Z_Construct_UFunction_UNaviCredsSet_OnRep_MaxCreds, "OnRep_MaxCreds" }, // 1785500018
 	};
 	static_assert(UE_ARRAY_COUNT(FuncInfo) < 2048);
 	static constexpr FCppClassTypeInfoStatic StaticCppClassTypeInfo = {
@@ -250,14 +253,14 @@ UNaviCredsSet::~UNaviCredsSet() {}
 // End Class UNaviCredsSet
 
 // Begin Registration
-struct Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_NaviCredsSet_h_Statics
+struct Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsSet_h_Statics
 {
 	static constexpr FClassRegisterCompiledInInfo ClassInfo[] = {
-		{ Z_Construct_UClass_UNaviCredsSet, UNaviCredsSet::StaticClass, TEXT("UNaviCredsSet"), &Z_Registration_Info_UClass_UNaviCredsSet, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UNaviCredsSet), 2459139033U) },
+		{ Z_Construct_UClass_UNaviCredsSet, UNaviCredsSet::StaticClass, TEXT("UNaviCredsSet"), &Z_Registration_Info_UClass_UNaviCredsSet, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UNaviCredsSet), 2162811761U) },
 	};
 };
-static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_NaviCredsSet_h_4181917487(TEXT("/Script/NaviShooterCoreRuntime"),
-	Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_NaviCredsSet_h_Statics::ClassInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_NaviCredsSet_h_Statics::ClassInfo),
+static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsSet_h_2413690746(TEXT("/Script/NaviShooterCoreRuntime"),
+	Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsSet_h_Statics::ClassInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsSet_h_Statics::ClassInfo),
 	nullptr, 0,
 	nullptr, 0);
 // End Registration

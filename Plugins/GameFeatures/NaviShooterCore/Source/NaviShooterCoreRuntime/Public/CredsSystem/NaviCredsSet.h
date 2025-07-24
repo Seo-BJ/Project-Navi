@@ -3,7 +3,6 @@
 #pragma once
 
 #include "AbilitySystemComponent.h"
-
 #include "AbilitySystem/Attributes/LyraAttributeSet.h"
 
 #include "NaviCredsSet.generated.h"
@@ -11,10 +10,6 @@
 /**
  * 
  */
-
-struct FGameplayEffectModCallbackData;
-
-
 UCLASS()
 class UNaviCredsSet : public ULyraAttributeSet
 {
@@ -25,12 +20,14 @@ public:
 
 	ATTRIBUTE_ACCESSORS(UNaviCredsSet, Creds);
 	ATTRIBUTE_ACCESSORS(UNaviCredsSet, MaxCreds);
+	ATTRIBUTE_ACCESSORS(UNaviCredsSet, InComingCredsGain);
+	ATTRIBUTE_ACCESSORS(UNaviCredsSet, IncomingCredsCost);
+	
+	// 크레드 값이 변경될 때 호출되는 델리게이트입니다. (클라이언트 예측 정보가 없을 수 있음)
+	mutable FLyraAttributeEvent OnCredsChanged;
 
-	// Delegate when health changes due to damage/healing, some information may be missing on the client
-	mutable FLyraAttributeEvent OnHealthChanged;
-
-	// Delegate when max health changes
-	mutable FLyraAttributeEvent OnMaxHealthChanged;
+	// 최대 크레드 값이 변경될 때 호출되는 델리게이트입니다.
+	mutable FLyraAttributeEvent OnMaxCredsChanged;
 
 protected:
 
@@ -58,6 +55,8 @@ private:
 	// The current max health attribute.  Max health is an attribute since gameplay effects can modify it.
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MaxCreds, Category = "Navi|creds", Meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData MaxCreds;
+
+	float CredsBeforeAttributeChange;
 
 	void BroadcastCredsChangeMessage(const FGameplayEffectModCallbackData& Data);
 

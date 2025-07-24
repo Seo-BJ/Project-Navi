@@ -4,7 +4,7 @@
 	DO NOT modify this manually! Edit the corresponding .h files instead!
 ===========================================================================*/
 
-// IWYU pragma: private, include "NaviCredsSet.h"
+// IWYU pragma: private, include "CredsSystem/NaviCredsSet.h"
 #include "UObject/ObjectMacros.h"
 #include "UObject/ScriptMacros.h"
 #include "Net/Core/PushModel/PushModelMacros.h"
@@ -16,12 +16,12 @@ struct FGameplayAttributeData;
 #endif
 #define NAVISHOOTERCORERUNTIME_NaviCredsSet_generated_h
 
-#define FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_NaviCredsSet_h_21_RPC_WRAPPERS_NO_PURE_DECLS \
+#define FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsSet_h_16_RPC_WRAPPERS_NO_PURE_DECLS \
 	DECLARE_FUNCTION(execOnRep_MaxCreds); \
 	DECLARE_FUNCTION(execOnRep_Creds);
 
 
-#define FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_NaviCredsSet_h_21_INCLASS_NO_PURE_DECLS \
+#define FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsSet_h_16_INCLASS_NO_PURE_DECLS \
 private: \
 	static void StaticRegisterNativesUNaviCredsSet(); \
 	friend struct Z_Construct_UClass_UNaviCredsSet_Statics; \
@@ -41,7 +41,7 @@ private: \
 public:
 
 
-#define FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_NaviCredsSet_h_21_ENHANCED_CONSTRUCTORS \
+#define FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsSet_h_16_ENHANCED_CONSTRUCTORS \
 private: \
 	/** Private move- and copy-constructors, should never be used */ \
 	UNaviCredsSet(UNaviCredsSet&&); \
@@ -53,13 +53,13 @@ public: \
 	NO_API virtual ~UNaviCredsSet();
 
 
-#define FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_NaviCredsSet_h_18_PROLOG
-#define FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_NaviCredsSet_h_21_GENERATED_BODY \
+#define FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsSet_h_13_PROLOG
+#define FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsSet_h_16_GENERATED_BODY \
 PRAGMA_DISABLE_DEPRECATION_WARNINGS \
 public: \
-	FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_NaviCredsSet_h_21_RPC_WRAPPERS_NO_PURE_DECLS \
-	FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_NaviCredsSet_h_21_INCLASS_NO_PURE_DECLS \
-	FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_NaviCredsSet_h_21_ENHANCED_CONSTRUCTORS \
+	FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsSet_h_16_RPC_WRAPPERS_NO_PURE_DECLS \
+	FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsSet_h_16_INCLASS_NO_PURE_DECLS \
+	FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsSet_h_16_ENHANCED_CONSTRUCTORS \
 private: \
 PRAGMA_ENABLE_DEPRECATION_WARNINGS
 
@@ -67,7 +67,7 @@ PRAGMA_ENABLE_DEPRECATION_WARNINGS
 template<> NAVISHOOTERCORERUNTIME_API UClass* StaticClass<class UNaviCredsSet>();
 
 #undef CURRENT_FILE_ID
-#define CURRENT_FILE_ID FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_NaviCredsSet_h
+#define CURRENT_FILE_ID FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_CredsSystem_NaviCredsSet_h
 
 
 PRAGMA_ENABLE_DEPRECATION_WARNINGS

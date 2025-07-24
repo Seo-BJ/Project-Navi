@@ -171,7 +171,8 @@ namespace NaviGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Navi_Elimination_Message, "Navi.Elimination.Message", "");
 
 	// 무기, 방어 Tag
-
+	
+	UE_DEFINE_GAMEPLAY_TAG(Weapon, "Weapon");
 	UE_DEFINE_GAMEPLAY_TAG(Weapon_Sidearms, "Weapon.Sidearms");
 	UE_DEFINE_GAMEPLAY_TAG(Weapon_Primary, "Weapon.Primary");
 	UE_DEFINE_GAMEPLAY_TAG(Weapon_Melee, "Weapon.Melee");

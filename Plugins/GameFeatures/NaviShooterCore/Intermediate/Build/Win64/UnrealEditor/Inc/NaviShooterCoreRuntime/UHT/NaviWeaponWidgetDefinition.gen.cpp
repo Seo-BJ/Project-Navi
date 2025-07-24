@@ -5,7 +5,7 @@
 ===========================================================================*/
 
 #include "UObject/GeneratedCppIncludes.h"
-#include "NaviShooterCoreRuntime/Public/Weapons/NaviWeaponWidgetDefinition.h"
+#include "NaviShooterCoreRuntime/Public/Equipment/Weapons/NaviWeaponWidgetDefinition.h"
 #include "Runtime/GameplayTags/Classes/GameplayTagContainer.h"
 PRAGMA_DISABLE_DEPRECATION_WARNINGS
 void EmptyLinkFunctionForGeneratedCodeNaviWeaponWidgetDefinition() {}
@@ -41,14 +41,14 @@ struct Z_Construct_UScriptStruct_FNaviWeaponWidgetDefinition_Statics
 #if !UE_BUILD_SHIPPING
 		{ "Comment", "/**\n * \n */" },
 #endif
-		{ "ModuleRelativePath", "Public/Weapons/NaviWeaponWidgetDefinition.h" },
+		{ "ModuleRelativePath", "Public/Equipment/Weapons/NaviWeaponWidgetDefinition.h" },
 	};
 	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_DisplayName_MetaData[] = {
 		{ "Category", "Weapon" },
 #if !UE_BUILD_SHIPPING
 		{ "Comment", "/** \xeb\xac\xb4\xea\xb8\xb0 \xed\x91\x9c\xec\x8b\x9c \xec\x9d\xb4\xeb\xa6\x84 */" },
 #endif
-		{ "ModuleRelativePath", "Public/Weapons/NaviWeaponWidgetDefinition.h" },
+		{ "ModuleRelativePath", "Public/Equipment/Weapons/NaviWeaponWidgetDefinition.h" },
 #if !UE_BUILD_SHIPPING
 		{ "ToolTip", "\xeb\xac\xb4\xea\xb8\xb0 \xed\x91\x9c\xec\x8b\x9c \xec\x9d\xb4\xeb\xa6\x84" },
 #endif
@@ -58,7 +58,7 @@ struct Z_Construct_UScriptStruct_FNaviWeaponWidgetDefinition_Statics
 #if !UE_BUILD_SHIPPING
 		{ "Comment", "/** \xeb\xac\xb4\xea\xb8\xb0\xeb\xa5\xbc \xec\x8b\x9d\xeb\xb3\x84\xed\x95\x98\xea\xb8\xb0 \xec\x9c\x84\xed\x95\x9c \xea\xb2\x8c\xec\x9e\x84\xed\x94\x8c\xeb\xa0\x88\xec\x9d\xb4 \xed\x83\x9c\xea\xb7\xb8 */" },
 #endif
-		{ "ModuleRelativePath", "Public/Weapons/NaviWeaponWidgetDefinition.h" },
+		{ "ModuleRelativePath", "Public/Equipment/Weapons/NaviWeaponWidgetDefinition.h" },
 #if !UE_BUILD_SHIPPING
 		{ "ToolTip", "\xeb\xac\xb4\xea\xb8\xb0\xeb\xa5\xbc \xec\x8b\x9d\xeb\xb3\x84\xed\x95\x98\xea\xb8\xb0 \xec\x9c\x84\xed\x95\x9c \xea\xb2\x8c\xec\x9e\x84\xed\x94\x8c\xeb\xa0\x88\xec\x9d\xb4 \xed\x83\x9c\xea\xb7\xb8" },
 #endif
@@ -68,7 +68,7 @@ struct Z_Construct_UScriptStruct_FNaviWeaponWidgetDefinition_Statics
 #if !UE_BUILD_SHIPPING
 		{ "Comment", "/** \xed\x82\xac \xed\x94\xbc\xeb\x93\x9c\xec\x97\x90 \xed\x91\x9c\xec\x8b\x9c\xeb\x90\xa0 \xec\x95\x84\xec\x9d\xb4\xec\xbd\x98 */" },
 #endif
-		{ "ModuleRelativePath", "Public/Weapons/NaviWeaponWidgetDefinition.h" },
+		{ "ModuleRelativePath", "Public/Equipment/Weapons/NaviWeaponWidgetDefinition.h" },
 #if !UE_BUILD_SHIPPING
 		{ "ToolTip", "\xed\x82\xac \xed\x94\xbc\xeb\x93\x9c\xec\x97\x90 \xed\x91\x9c\xec\x8b\x9c\xeb\x90\xa0 \xec\x95\x84\xec\x9d\xb4\xec\xbd\x98" },
 #endif
@@ -78,7 +78,7 @@ struct Z_Construct_UScriptStruct_FNaviWeaponWidgetDefinition_Statics
 #if !UE_BUILD_SHIPPING
 		{ "Comment", "/** \xec\x9d\xbc\xeb\xb0\x98 \xec\x9c\x84\xec\xa0\xaf\xec\x97\x90 \xed\x91\x9c\xec\x8b\x9c\xeb\x90\xa0 \xec\x95\x84\xec\x9d\xb4\xec\xbd\x98 */" },
 #endif
-		{ "ModuleRelativePath", "Public/Weapons/NaviWeaponWidgetDefinition.h" },
+		{ "ModuleRelativePath", "Public/Equipment/Weapons/NaviWeaponWidgetDefinition.h" },
 #if !UE_BUILD_SHIPPING
 		{ "ToolTip", "\xec\x9d\xbc\xeb\xb0\x98 \xec\x9c\x84\xec\xa0\xaf\xec\x97\x90 \xed\x91\x9c\xec\x8b\x9c\xeb\x90\xa0 \xec\x95\x84\xec\x9d\xb4\xec\xbd\x98" },
 #endif
@@ -130,15 +130,15 @@ UScriptStruct* Z_Construct_UScriptStruct_FNaviWeaponWidgetDefinition()
 // End ScriptStruct FNaviWeaponWidgetDefinition
 
 // Begin Registration
-struct Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_Weapons_NaviWeaponWidgetDefinition_h_Statics
+struct Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_Equipment_Weapons_NaviWeaponWidgetDefinition_h_Statics
 {
 	static constexpr FStructRegisterCompiledInInfo ScriptStructInfo[] = {
-		{ FNaviWeaponWidgetDefinition::StaticStruct, Z_Construct_UScriptStruct_FNaviWeaponWidgetDefinition_Statics::NewStructOps, TEXT("NaviWeaponWidgetDefinition"), &Z_Registration_Info_UScriptStruct_NaviWeaponWidgetDefinition, CONSTRUCT_RELOAD_VERSION_INFO(FStructReloadVersionInfo, sizeof(FNaviWeaponWidgetDefinition), 4184529676U) },
+		{ FNaviWeaponWidgetDefinition::StaticStruct, Z_Construct_UScriptStruct_FNaviWeaponWidgetDefinition_Statics::NewStructOps, TEXT("NaviWeaponWidgetDefinition"), &Z_Registration_Info_UScriptStruct_NaviWeaponWidgetDefinition, CONSTRUCT_RELOAD_VERSION_INFO(FStructReloadVersionInfo, sizeof(FNaviWeaponWidgetDefinition), 2486077950U) },
 	};
 };
-static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_Weapons_NaviWeaponWidgetDefinition_h_3280259653(TEXT("/Script/NaviShooterCoreRuntime"),
+static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_Equipment_Weapons_NaviWeaponWidgetDefinition_h_393392157(TEXT("/Script/NaviShooterCoreRuntime"),
 	nullptr, 0,
-	Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_Weapons_NaviWeaponWidgetDefinition_h_Statics::ScriptStructInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_Weapons_NaviWeaponWidgetDefinition_h_Statics::ScriptStructInfo),
+	Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_Equipment_Weapons_NaviWeaponWidgetDefinition_h_Statics::ScriptStructInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_Users_binij_Documents_UnrealProjects_Navi_Plugins_GameFeatures_NaviShooterCore_Source_NaviShooterCoreRuntime_Public_Equipment_Weapons_NaviWeaponWidgetDefinition_h_Statics::ScriptStructInfo),
 	nullptr, 0);
 // End Registration
 PRAGMA_ENABLE_DEPRECATION_WARNINGS
