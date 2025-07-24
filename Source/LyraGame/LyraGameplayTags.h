@@ -77,7 +77,11 @@ namespace LyraGameplayTags
 	
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Experience_TestInventory);
 
-
+	// Shooter Core ini Tag 임시 이동
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_ShooterGame_Weapon_MagazineAmmo);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_ShooterGame_Weapon_MagazineSize);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_ShooterGame_Weapon_SpareAmmo);
+	
 	
 };
 
@@ -113,6 +117,10 @@ namespace NaviGameplayTags
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Agent_Class_Controller_Brimstone);
 
 	// 무기, 방어 Tag
+	
+	LYRAGAME_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Weapon_MagazineSize);
+	LYRAGAME_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Weapon_MagazineAmmo);
+	LYRAGAME_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Weapon_SpareAmmo);
 	
 	LYRAGAME_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Weapon);
 	LYRAGAME_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Weapon_Sidearms);

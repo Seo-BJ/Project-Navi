@@ -70,11 +70,33 @@ private:
 
 	friend struct FLyraInventoryList;
 
+protected:
+	UFUNCTION()
+	void OnRep_StatTags();
+
 private:
-	UPROPERTY(Replicated)
-	FGameplayTagStackContainer StatTags;
+    UPROPERTY(ReplicatedUsing = OnRep_StatTags)
+    FGameplayTagStackContainer StatTags;
 
 	// The item definition
 	UPROPERTY(Replicated)
 	TSubclassOf<ULyraInventoryItemDefinition> ItemDef;
+	
+};
+
+
+// StatTags 변경 메시지를 위한 구조체 정의
+USTRUCT(BlueprintType)
+struct FLyraInventory_Message_StatTagsChanged
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, Category=Inventory)
+	TObjectPtr<AActor> Owner = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, Category = Inventory)
+	TObjectPtr<ULyraInventoryItemInstance> ItemInstance = nullptr;
+	
+	UPROPERTY(BlueprintReadOnly, Category = Inventory)
+	FGameplayTagStackContainer StatTags;
 };
