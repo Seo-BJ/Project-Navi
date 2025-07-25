@@ -28,7 +28,7 @@ AActor* UTDM_PlayerSpawningManagmentComponent::OnChoosePlayerStart(AController* 
 	const int32 PlayerTeamId = TeamSubsystem->FindTeamFromObject(Player);
 
 	// We should have a TeamId by now, but early login stuff before post login can try to do stuff, ignore it.
-	if (!ensure(PlayerTeamId != INDEX_NONE))
+	if (PlayerTeamId == INDEX_NONE)
 	{
 		return nullptr;
 	}

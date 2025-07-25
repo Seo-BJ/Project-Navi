@@ -85,5 +85,5 @@ public:
 	static TScriptInterface<IPickupable> GetFirstPickupableFromActor(AActor* Actor);
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, meta = (WorldContext = "Ability"))
-	static void AddPickupToInventory(ULyraInventoryManagerComponent* InventoryComponent, TScriptInterface<IPickupable> Pickup);
+	static TArray<ULyraInventoryItemInstance*> AddPickupToInventory(ULyraInventoryManagerComponent* InventoryComponent, TScriptInterface<IPickupable> Pickup);
 };

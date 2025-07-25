@@ -103,16 +103,19 @@ void UNaviQuickBarComponent::SetActiveSlotIndex_Implementation(int32 NewIndex)
 	}
 }
 
-int UNaviQuickBarComponent::AddItemToSlot(const FGameplayTag& ItemTag, ULyraInventoryItemInstance* Item)
+int UNaviQuickBarComponent::AddItemToSlot(ULyraInventoryItemInstance* Item)
 {
 	if (GetOwner()->HasAuthority() && Item != nullptr)
 	{
-		int SlotIndex = GetSlotIndexForItemTag(ItemTag);
-		if (Slots[SlotIndex] == nullptr)
+		if (ULyraInventoryItemDefinition* ItemDef = Item->GetItemDef()->GetDefaultObject<ULyraInventoryItemDefinition>())
 		{
-			Slots[SlotIndex] = Item;
-			OnRep_Slots();
-			return SlotIndex;
+			int SlotIndex = GetSlotIndexForItemTag(ItemDef->ItemTag);
+			if (Slots[SlotIndex] == nullptr)
+			{
+				Slots[SlotIndex] = Item;
+				OnRep_Slots();
+				return SlotIndex;
+			}
 		}
 	}
 	return INDEX_NONE;

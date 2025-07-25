@@ -6,19 +6,27 @@
 #include "Inventory/LyraInventoryItemInstance.h"
 #include "Weapons/LyraRangedWeaponInstance.h"
 #include "LyraGameplayTags.h"
-#include "Equipment/Weapons/NaviWeaponStatDefinition.h" // 생성하신 데이터 구조체 헤더
+#include "Weapons/NaviWeaponStatDefinition.h" // 생성하신 데이터 구조체 헤더
 
 void UNaviInventoryFragment_SetStatsFromDataTable::OnInstanceCreated(ULyraInventoryItemInstance* Instance) const
 {
     Super::OnInstanceCreated(Instance);
-
+    
     if (Instance == nullptr || WeaponStatsTable == nullptr)
     {
         return;
     }
+    
+    // Instance를 통해 장착하는 경우 StatTags의 Count가 0보다 크면 Return. 기존의 StatTags를 그대로 사용.
+    int32 TotalRemainAmmo = Instance->GetStatTagStackCount(LyraGameplayTags::Lyra_ShooterGame_Weapon_SpareAmmo)
+    + Instance->GetStatTagStackCount(LyraGameplayTags::Lyra_ShooterGame_Weapon_MagazineAmmo);
+    if (TotalRemainAmmo > 0)
+    {
+        return;
+    }
+    
     if (TSubclassOf<ULyraInventoryItemDefinition> ItemDefinition = Instance->GetItemDef())
     {
-        // Now you can access the ItemTag property
         const FGameplayTag ItemTag = ItemDefinition->GetDefaultObject<ULyraInventoryItemDefinition>()->ItemTag;
         const FName WeaponRowName = ItemTag.GetTagName();
         const FString ContextString(TEXT("Finding Weapon Stats"));
@@ -29,7 +37,7 @@ void UNaviInventoryFragment_SetStatsFromDataTable::OnInstanceCreated(ULyraInvent
             UE_LOG(LogTemp, Warning, TEXT("WeaponStatsTable [%s]에서 WeaponTag [%s]에 해당하는 행을 찾을 수 없습니다."), *GetNameSafe(WeaponStatsTable), *WeaponRowName.ToString());
             return;
         }
-    
+        
         Instance->AddStatTagStack(LyraGameplayTags::Lyra_ShooterGame_Weapon_MagazineAmmo, WeaponStats->MagazineSize);
         Instance->AddStatTagStack(LyraGameplayTags::Lyra_ShooterGame_Weapon_MagazineSize, WeaponStats->MagazineSize);
         Instance->AddStatTagStack(LyraGameplayTags::Lyra_ShooterGame_Weapon_SpareAmmo, WeaponStats->MaxAmmo);
