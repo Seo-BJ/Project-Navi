@@ -4,10 +4,12 @@
 
 #include "CommonUserWidget.h"
 #include "GameplayTagContainer.h"
+#include "GameFramework/GameplayMessageSubsystem.h"
 
 #include "LyraTaggedWidget.generated.h"
 
 class UObject;
+struct FLyraTagChangedMessage;
 
 /**
  * An widget in a layout that has been tagged (can be hidden or shown via tags on the owning player)
@@ -47,4 +49,7 @@ protected:
 
 private:
 	void OnWatchedTagsChanged();
+	void OnTagChangedMessage(FGameplayTag Channel, const FLyraTagChangedMessage& Message);
+
+	FGameplayMessageListenerHandle MessageListenerHandle;
 };

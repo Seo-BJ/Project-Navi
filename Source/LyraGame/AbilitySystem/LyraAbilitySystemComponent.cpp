@@ -9,12 +9,15 @@
 #include "GameFramework/Pawn.h"
 #include "LyraGlobalAbilitySystem.h"
 #include "LyraLogChannels.h"
+#include "GameFramework/GameplayMessageSubsystem.h"
+#include "Messages/LyraVerbMessage.h"
 #include "System/LyraAssetManager.h"
 #include "System/LyraGameData.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraAbilitySystemComponent)
 
 UE_DEFINE_GAMEPLAY_TAG(TAG_Gameplay_AbilityInputBlocked, "Gameplay.AbilityInputBlocked");
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_AbilitySystem_Message_TagChanged, "Lyra.AbilitySystem.Message.TagChanged");
 
 ULyraAbilitySystemComponent::ULyraAbilitySystemComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -374,6 +377,26 @@ void ULyraAbilitySystemComponent::HandleChangeAbilityCanBeCanceled(const FGamepl
 	Super::HandleChangeAbilityCanBeCanceled(AbilityTags, RequestingAbility, bCanBeCanceled);
 
 	//@TODO: Apply any special logic like blocking input or movement
+}
+
+void ULyraAbilitySystemComponent::OnTagUpdated(const FGameplayTag& Tag, bool TagExists)
+{
+	Super::OnTagUpdated(Tag, TagExists);
+
+	// @TODO: Local Client에서만 실행하도록 변경?
+	if (!GetOwnerActor()->HasAuthority())
+	{
+		UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
+		if (&MessageSubsystem != nullptr)
+		{
+			FLyraTagChangedMessage Message;
+			Message.OwnerActor = GetOwner();
+			Message.UpdatedTag = Tag;
+			Message.bTagExists = TagExists;
+
+			MessageSubsystem.BroadcastMessage(TAG_Lyra_AbilitySystem_Message_TagChanged, Message);
+		}
+	}
 }
 
 void ULyraAbilitySystemComponent::GetAdditionalActivationTagRequirements(const FGameplayTagContainer& AbilityTags, FGameplayTagContainer& OutActivationRequired, FGameplayTagContainer& OutActivationBlocked) const

@@ -81,6 +81,8 @@ protected:
 	virtual void ApplyAbilityBlockAndCancelTags(const FGameplayTagContainer& AbilityTags, UGameplayAbility* RequestingAbility, bool bEnableBlockTags, const FGameplayTagContainer& BlockTags, bool bExecuteCancelTags, const FGameplayTagContainer& CancelTags) override;
 	virtual void HandleChangeAbilityCanBeCanceled(const FGameplayTagContainer& AbilityTags, UGameplayAbility* RequestingAbility, bool bCanBeCanceled) override;
 
+	virtual void OnTagUpdated(const FGameplayTag& Tag, bool TagExists);
+	
 	/** Notify client that an ability failed to activate */
 	UFUNCTION(Client, Unreliable)
 	void ClientNotifyAbilityFailed(const UGameplayAbility* Ability, const FGameplayTagContainer& FailureReason);
@@ -103,4 +105,19 @@ protected:
 
 	// Number of abilities running in each activation group.
 	int32 ActivationGroupCounts[(uint8)ELyraAbilityActivationGroup::MAX];
+};
+
+USTRUCT(BlueprintType)
+struct FLyraTagChangedMessage
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadWrite, Category = Message)
+	TObjectPtr<AActor> OwnerActor = nullptr;
+	
+	UPROPERTY(BlueprintReadWrite, Category = Message)
+	FGameplayTag UpdatedTag;
+
+	UPROPERTY(BlueprintReadWrite, Category = Message)
+	bool bTagExists = false;
 };
