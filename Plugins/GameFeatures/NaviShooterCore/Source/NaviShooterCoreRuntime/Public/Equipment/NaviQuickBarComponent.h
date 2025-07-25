@@ -86,7 +86,7 @@ public:
 	 * @param Item 추가할 아이템 인스턴스입니다.
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Navi|QuickBar")
-	int AddItemToSlot(const FGameplayTag& ItemTag, ULyraInventoryItemInstance* Item);
+	int AddItemToSlot(ULyraInventoryItemInstance* Item);
 
 	/**
 	 * 지정된 슬롯에서 아이템을 제거합니다.

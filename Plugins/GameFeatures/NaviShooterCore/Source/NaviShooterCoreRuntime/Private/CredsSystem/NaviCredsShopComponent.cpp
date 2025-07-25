@@ -14,7 +14,7 @@
 #include "Equipment/Armor/NaviArmorStatDefinition.h"
 
 #include "CredsSystem/NaviCredsSet.h"
-#include "Equipment/Weapons/NaviWeaponStatDefinition.h"
+#include "Weapons/NaviWeaponStatDefinition.h"
 #include "Equipment/Armor/NaviArmorStatDefinition.h"
 
 #include "Engine/DataTable.h"
@@ -124,11 +124,8 @@ void UNaviCredsShopComponent::GiveWeaponToPlayer(TSubclassOf<ULyraInventoryItemD
     ULyraInventoryManagerComponent* LyraInventoryManagerComponent = ReceivingController->GetComponentByClass<ULyraInventoryManagerComponent>();
     if (NaviQuickBarComponent == nullptr|| LyraInventoryManagerComponent == nullptr) return;
     
-    const ULyraInventoryItemDefinition* ItemCDO = WeaponItemClass->GetDefaultObject<ULyraInventoryItemDefinition>();
-    if (ItemCDO == nullptr) return;
-    
     ULyraInventoryItemInstance* LyraInventoryItemDefinition = LyraInventoryManagerComponent->AddItemDefinition(WeaponItemClass);
-    int AddedIndex = NaviQuickBarComponent->AddItemToSlot(ItemCDO->ItemTag, LyraInventoryItemDefinition);
+    int AddedIndex = NaviQuickBarComponent->AddItemToSlot(LyraInventoryItemDefinition);
     NaviQuickBarComponent->SetActiveSlotIndex(AddedIndex);
 }
 

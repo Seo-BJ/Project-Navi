@@ -64,6 +64,10 @@
 		{
 			"Name": "ShooterCore",
 			"Enabled": true
+		},
+		{
+			"Name": "ShooterExplorer",
+			"Enabled": true
 		}
 	]
 }

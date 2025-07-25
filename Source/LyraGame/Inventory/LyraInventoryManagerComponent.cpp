@@ -87,7 +87,6 @@ ULyraInventoryItemInstance* FLyraInventoryList::AddEntry(TSubclassOf<ULyraInvent
 	AActor* OwningActor = OwnerComponent->GetOwner();
 	check(OwningActor->HasAuthority());
 
-
 	FLyraInventoryEntry& NewEntry = Entries.AddDefaulted_GetRef();
 	NewEntry.Instance = NewObject<ULyraInventoryItemInstance>(OwnerComponent->GetOwner());  //@TODO: Using the actor instead of component as the outer due to UE-127172
 	NewEntry.Instance->SetItemDef(ItemDef);
@@ -108,9 +107,40 @@ ULyraInventoryItemInstance* FLyraInventoryList::AddEntry(TSubclassOf<ULyraInvent
 	return Result;
 }
 
-void FLyraInventoryList::AddEntry(ULyraInventoryItemInstance* Instance)
+ULyraInventoryItemInstance* FLyraInventoryList::AddEntry(ULyraInventoryItemInstance* Instance)
 {
-	unimplemented();
+	//unimplemented();
+	ULyraInventoryItemInstance* Result = Instance;
+
+	check(Instance != nullptr);
+	check(OwnerComponent);
+
+	AActor* OwningActor = OwnerComponent->GetOwner();
+	check(OwningActor->HasAuthority()); // 반드시 서버에서만 실행되어야 함
+	
+	Instance->Rename(nullptr,  OwnerComponent->GetOwner());
+	
+	FLyraInventoryEntry& NewEntry = Entries.AddDefaulted_GetRef();
+	NewEntry.Instance = Instance;
+	
+	TSubclassOf<ULyraInventoryItemDefinition> ItemDef = Instance->GetItemDef();
+	if (ItemDef == nullptr)
+	{
+		// 아이템 정의가 없는 경우, 더 이상 진행하지 않습니다.
+		return Result;
+	}
+	
+	for (ULyraInventoryItemFragment* Fragment : GetDefault<ULyraInventoryItemDefinition>(ItemDef)->Fragments)
+	{
+		if (Fragment != nullptr)
+		{
+			Fragment->OnInstanceCreated(NewEntry.Instance);
+		}
+	}
+	NewEntry.StackCount = 1;
+	MarkItemDirty(NewEntry);
+
+	return Result;
 }
 
 void FLyraInventoryList::RemoveEntry(ULyraInventoryItemInstance* Instance)
@@ -178,13 +208,18 @@ ULyraInventoryItemInstance* ULyraInventoryManagerComponent::AddItemDefinition(TS
 	return Result;
 }
 
-void ULyraInventoryManagerComponent::AddItemInstance(ULyraInventoryItemInstance* ItemInstance)
+ULyraInventoryItemInstance* ULyraInventoryManagerComponent::AddItemInstance(ULyraInventoryItemInstance* ItemInstance)
 {
-	InventoryList.AddEntry(ItemInstance);
-	if (IsUsingRegisteredSubObjectList() && IsReadyForReplication() && ItemInstance)
+	ULyraInventoryItemInstance* Result = nullptr;
+	if (ItemInstance != nullptr)
 	{
-		AddReplicatedSubObject(ItemInstance);
+		Result = InventoryList.AddEntry(ItemInstance);
+		if (IsUsingRegisteredSubObjectList() && IsReadyForReplication() && ItemInstance)
+		{
+			AddReplicatedSubObject(ItemInstance);
+		}
 	}
+	return Result;
 }
 
 void ULyraInventoryManagerComponent::RemoveItemInstance(ULyraInventoryItemInstance* ItemInstance)

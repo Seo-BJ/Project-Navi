@@ -92,7 +92,7 @@ public:
 	}
 
 	ULyraInventoryItemInstance* AddEntry(TSubclassOf<ULyraInventoryItemDefinition> ItemClass, int32 StackCount);
-	void AddEntry(ULyraInventoryItemInstance* Instance);
+	ULyraInventoryItemInstance* AddEntry(ULyraInventoryItemInstance* Instance);
 
 	void RemoveEntry(ULyraInventoryItemInstance* Instance);
 
@@ -144,7 +144,7 @@ public:
 	ULyraInventoryItemInstance* AddItemDefinition(TSubclassOf<ULyraInventoryItemDefinition> ItemDef, int32 StackCount = 1);
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category=Inventory)
-	void AddItemInstance(ULyraInventoryItemInstance* ItemInstance);
+	ULyraInventoryItemInstance* AddItemInstance(ULyraInventoryItemInstance* ItemInstance);
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category=Inventory)
 	void RemoveItemInstance(ULyraInventoryItemInstance* ItemInstance);
