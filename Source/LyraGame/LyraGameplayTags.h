@@ -190,6 +190,9 @@ namespace NaviGameplayTags
 	// Creds System Message
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Creds_Award);
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Creds_Spend);
+	
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Creds_CredsShopWidgetOpen);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Creds_CredsShopWidgetClosed);
 
 	
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Creds_Award_PistolRound);

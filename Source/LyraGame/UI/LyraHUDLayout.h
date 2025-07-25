@@ -31,7 +31,6 @@ public:
 
 protected:
 	void HandleEscapeAction();
-	
 	/** 
 	* Callback for when controllers are disconnected. This will check if the player now has 
 	* no mapped input devices to them, which would mean that they can't play the game.

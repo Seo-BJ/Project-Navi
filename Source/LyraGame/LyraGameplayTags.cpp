@@ -228,6 +228,9 @@ namespace NaviGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Navi_Creds_Award, "Navi.Creds.Award");
 	UE_DEFINE_GAMEPLAY_TAG(Navi_Creds_Spend, "Navi.Creds.Spend");
 	
+	UE_DEFINE_GAMEPLAY_TAG(Navi_Creds_CredsShopWidgetOpen, "Navi.Creds.CredsShopWidgetOpen");
+	UE_DEFINE_GAMEPLAY_TAG(Navi_Creds_CredsShopWidgetClosed, "Navi.Creds.CredsShopWidgetClosed");
+
 	UE_DEFINE_GAMEPLAY_TAG(Navi_Creds_Award_PistolRound, "Navi.Creds.Award.PistolRound");
 	UE_DEFINE_GAMEPLAY_TAG(Navi_Creds_Award_Round_Win, "Navi.Creds.Award.Round.Win");
 	UE_DEFINE_GAMEPLAY_TAG(Navi_Creds_Award_Round_Defeat, "Navi.Creds.Award.Round.Defeat");

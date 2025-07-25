@@ -1,8 +1,14 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "LyraTaggedWidget.h"
+#include "NativeGameplayTags.h"
+#include "AbilitySystem/LyraAbilitySystemComponent.h"
+#include "GameFramework/PlayerState.h"
+#include "Player/LyraPlayerState.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraTaggedWidget)
+
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_AbilitySystem_Message_TagChanged, "Lyra.AbilitySystem.Message.TagChanged");
 
 //@TODO: The other TODOs in this file are all related to tag-based showing/hiding of widgets, see UE-142237
 
@@ -17,11 +23,14 @@ void ULyraTaggedWidget::NativeConstruct()
 
 	if (!IsDesignTime())
 	{
-		// Listen for tag changes on our hidden tags
-		//@TODO: That thing I said
+		MessageListenerHandle = UGameplayMessageSubsystem::Get(GetWorld()).RegisterListener(
+			TAG_Lyra_AbilitySystem_Message_TagChanged,
+			this,
+			&ULyraTaggedWidget::OnTagChangedMessage
+		);
 
-		// Set our initial visibility value (checking the tags, etc...)
-		SetVisibility(GetVisibility());
+		// 위젯 초기 설정시 태그 기반 설정
+		OnWatchedTagsChanged();
 	}
 }
 
@@ -29,9 +38,11 @@ void ULyraTaggedWidget::NativeDestruct()
 {
 	if (!IsDesignTime())
 	{
-		//@TODO: Stop listening for tag changes
+		if (MessageListenerHandle.IsValid())
+		{
+			UGameplayMessageSubsystem::Get(GetWorld()).UnregisterListener(MessageListenerHandle);
+		}
 	}
-
 	Super::NativeDestruct();
 }
 
@@ -56,22 +67,36 @@ void ULyraTaggedWidget::SetVisibility(ESlateVisibility InVisibility)
 	{
 		HiddenVisibility = InVisibility;
 	}
+	OnWatchedTagsChanged();
+}
 
-	const bool bHasHiddenTags = false;//@TODO: Foo->HasAnyTags(HiddenByTags);
 
-	// Actually apply the visibility
-	const ESlateVisibility DesiredVisibility = (bWantsToBeVisible && !bHasHiddenTags) ? ShownVisibility : HiddenVisibility;
-	if (GetVisibility() != DesiredVisibility)
+void ULyraTaggedWidget::OnTagChangedMessage(FGameplayTag Channel, const FLyraTagChangedMessage& Message)
+{   
+	if (Message.OwnerActor != nullptr)
 	{
-		Super::SetVisibility(DesiredVisibility);
+		if (GetOwningPlayerState() == Cast<APlayerState>(Message.OwnerActor))
+		{
+			if (HiddenByTags.HasTag(Message.UpdatedTag))
+			{
+				OnWatchedTagsChanged();
+			}
+		}
 	}
 }
 
 void ULyraTaggedWidget::OnWatchedTagsChanged()
 {
-	const bool bHasHiddenTags = false;//@TODO: Foo->HasAnyTags(HiddenByTags);
+	bool bHasHiddenTags = false;
+	if (const ALyraPlayerState* MyPlayerState = GetOwningPlayerState<ALyraPlayerState>())
+	{
+		if (const ULyraAbilitySystemComponent* ASC = MyPlayerState->GetLyraAbilitySystemComponent())
+		{
+			bHasHiddenTags = ASC->HasAnyMatchingGameplayTags(HiddenByTags);
+		}
+	}
 
-	// Actually apply the visibility
+	// 최종 Visibility 계산
 	const ESlateVisibility DesiredVisibility = (bWantsToBeVisible && !bHasHiddenTags) ? ShownVisibility : HiddenVisibility;
 	if (GetVisibility() != DesiredVisibility)
 	{
