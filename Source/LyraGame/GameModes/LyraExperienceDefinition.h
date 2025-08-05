@@ -14,7 +14,7 @@ class ULyraExperienceActionSet;
  * Definition of an experience
  */
 UCLASS(BlueprintType, Const)
-class ULyraExperienceDefinition : public UPrimaryDataAsset
+class LYRAGAME_API ULyraExperienceDefinition : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
 

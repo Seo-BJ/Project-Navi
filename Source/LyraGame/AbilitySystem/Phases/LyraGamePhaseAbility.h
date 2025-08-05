@@ -11,7 +11,7 @@
  * The base gameplay ability for any ability that is used to change the active game phase.
  */
 UCLASS(Abstract, HideCategories = Input)
-class ULyraGamePhaseAbility : public ULyraGameplayAbility
+class LYRAGAME_API ULyraGamePhaseAbility : public ULyraGameplayAbility
 {
 	GENERATED_BODY()
 

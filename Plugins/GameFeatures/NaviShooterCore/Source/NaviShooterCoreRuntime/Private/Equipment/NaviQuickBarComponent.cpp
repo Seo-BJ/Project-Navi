@@ -5,6 +5,7 @@
 #include "Equipment/NaviQuickBarComponent.h"
 
 #include "Inventory/InventoryFragment_EquippableItem.h"
+#include "Inventory/ItemDropAndPickUp/LyraDropAndPickupable.h"
 
 #include "Equipment/LyraEquipmentManagerComponent.h"
 #include "Equipment/LyraEquipmentDefinition.h"
@@ -14,13 +15,17 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/GameplayMessageSubsystem.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Player/LyraPlayerController.h"
+#include "GameFramework/ProjectileMovementComponent.h"
+#include "Inventory/InventoryFragment_PickupIcon.h"
+#include "Weapons/NaviDropAndPickupable_Weapon.h"
+#include "Inventory/ItemDropAndPickUp/LyraDropAndPickupable.h"
 
-
-
-// GameplayMessageSystem에서 사용할 고유 태그를 정의합니다.
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Navi_QuickBar_Message_SlotsChanged, "Navi.QuickBar.Message.SlotsChanged");
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Navi_QuickBar_Message_ActiveIndexChanged, "Navi.QuickBar.Message.ActiveIndexChanged");
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_Item_Dropped, "Lyra.Item.Dropped");
 
 
 UNaviQuickBarComponent::UNaviQuickBarComponent(const FObjectInitializer& ObjectInitializer)
@@ -90,16 +95,36 @@ void UNaviQuickBarComponent::CycleActiveSlotBackward()
 	} while (NewIndex != OldIndex);
 }
 
+void UNaviQuickBarComponent::SecActiveSlotIndexOnEquipmentPickUp()
+{
+	SetActiveSlotIndex(LastActiveSlotIndex);
+}
+
+int32 UNaviQuickBarComponent::GetActiveSlotIndexOnEquipmentBuy(int32 SlotIndex)
+{
+	if (ActiveSlotIndex == 0)
+	{
+		return 0;
+	}
+	if (ActiveSlotIndex == 1)
+	{
+		if (SlotIndex == 0) return 0;
+		return 1;
+	}
+	return -1;
+}
+
 void UNaviQuickBarComponent::SetActiveSlotIndex_Implementation(int32 NewIndex)
 {
 	if (Slots.IsValidIndex(NewIndex) && (ActiveSlotIndex != NewIndex) && (Slots[NewIndex] != nullptr))
 	{
 		UnequipItemInSlot();
+		int32 OldIndex = ActiveSlotIndex;
 		ActiveSlotIndex = NewIndex;
 		EquipItemInSlot();
 
 		// 클라이언트에서도 RepNotify가 즉시 호출되도록 합니다.
-		OnRep_ActiveSlotIndex();
+		OnRep_ActiveSlotIndex(OldIndex);
 	}
 }
 
@@ -129,8 +154,9 @@ ULyraInventoryItemInstance* UNaviQuickBarComponent::RemoveItemFromSlot(int32 Slo
 	if (ActiveSlotIndex == SlotIndex)
 	{
 		UnequipItemInSlot();
+		int32 OldIndex = ActiveSlotIndex;
 		ActiveSlotIndex = -1;
-		OnRep_ActiveSlotIndex();
+		OnRep_ActiveSlotIndex(OldIndex);
 	}
 
 	if (Slots.IsValidIndex(SlotIndex))
@@ -144,6 +170,71 @@ ULyraInventoryItemInstance* UNaviQuickBarComponent::RemoveItemFromSlot(int32 Slo
 	}
 
 	return Result;
+}
+
+void UNaviQuickBarComponent::SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPickupable> DroppedAndPickupableClass, ULyraInventoryItemInstance* ItemInstance)
+{
+	if (DroppedAndPickupableClass == nullptr || ItemInstance == nullptr)
+	{
+		return;
+	}
+
+	AController* OwnerController = GetOwner<AController>();
+	if (OwnerController == nullptr) return;
+	APawn* OwnerPawn = OwnerController->GetPawn();
+	if (OwnerPawn == nullptr) return;
+	
+	FVector CameraLocation;
+	FRotator CameraRotation;
+	OwnerController->GetPlayerViewPoint(CameraLocation, CameraRotation);
+
+	const FRotator ControlRotation = OwnerController->GetControlRotation();
+	const FVector SpawnLocation = OwnerPawn->GetActorLocation() + (ControlRotation.Vector() * 100.0f);
+	const FTransform SpawnTransform(FRotator::ZeroRotator, SpawnLocation);
+    
+	ALyraDropAndPickupable* SpawnedItem = GetWorld()->SpawnActorDeferred<ALyraDropAndPickupable>(
+		DroppedAndPickupableClass,
+		SpawnTransform,
+		OwnerController,
+		nullptr,
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+	);
+
+	if (SpawnedItem)
+	{
+		FPickupInstance PickupInstance;
+		PickupInstance.Item = ItemInstance;
+		// Drop된 Item임을 표시
+		PickupInstance.Item->AddStatTagStack(TAG_Lyra_Item_Dropped, 1);
+		SpawnedItem->StaticInventory.Instances.Add(PickupInstance);
+
+		if (SpawnedItem->IsA(ANaviDropAndPickupable_Weapon::StaticClass()))
+		{
+			ANaviDropAndPickupable_Weapon* SpawnedWeapon = Cast<ANaviDropAndPickupable_Weapon>(SpawnedItem);
+			if (SpawnedWeapon)
+			{
+				const UInventoryFragment_PickupIcon* Fragment = ItemInstance->FindFragmentByClass<UInventoryFragment_PickupIcon>();
+				if (Fragment != nullptr)
+				{
+					if (Fragment->SkeletalMesh)
+					{
+						SpawnedWeapon->SetSkeletalMesh(Fragment->SkeletalMesh);
+					}
+				}
+			}
+		}
+		
+		const FVector LaunchVelocity = ControlRotation.Vector() * 450;
+		if (UProjectileMovementComponent* ProjMovement = SpawnedItem->GetProjectileMovementComponent())
+		{
+			ProjMovement->Velocity = LaunchVelocity;
+		}
+		UGameplayStatics::FinishSpawningActor(SpawnedItem, SpawnTransform);
+		if (UProjectileMovementComponent* ProjMovement = SpawnedItem->GetProjectileMovementComponent())
+		{
+			ProjMovement->Activate();
+		}
+	}
 }
 
 int UNaviQuickBarComponent::GetSlotIndexForItemTag(const FGameplayTag& ItemTag) const
@@ -171,6 +262,11 @@ int UNaviQuickBarComponent::GetSlotIndexForItemTag(const FGameplayTag& ItemTag) 
 ULyraInventoryItemInstance* UNaviQuickBarComponent::GetActiveSlotItem() const
 {
 	return Slots.IsValidIndex(ActiveSlotIndex) ? Slots[ActiveSlotIndex] : nullptr;
+}
+
+ULyraInventoryItemInstance* UNaviQuickBarComponent::GetItemInSlot(int32 SlotIndex) const
+{
+	return Slots.IsValidIndex(SlotIndex) ? Slots[SlotIndex] : nullptr;
 }
 
 
@@ -233,12 +329,14 @@ void UNaviQuickBarComponent::OnRep_Slots()
 	MessageSystem.BroadcastMessage(TAG_Navi_QuickBar_Message_SlotsChanged, Message);
 }
 
-void UNaviQuickBarComponent::OnRep_ActiveSlotIndex()
+void UNaviQuickBarComponent::OnRep_ActiveSlotIndex(int32 OldIndex)
 {
+	LastActiveSlotIndex = OldIndex;
+	UE_LOG(LogTemp, Display, TEXT("OnRep_ActiveSlotIndex %d"), LastActiveSlotIndex);
 	FNaviQuickBarActiveIndexChangedMessage Message;
 	Message.Owner = GetOwner();
 	Message.ActiveIndex = ActiveSlotIndex;
-
+	
 	UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(this);
 	MessageSystem.BroadcastMessage(TAG_Navi_QuickBar_Message_ActiveIndexChanged, Message);
 }
