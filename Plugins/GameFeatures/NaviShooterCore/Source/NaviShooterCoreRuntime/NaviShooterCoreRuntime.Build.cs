@@ -29,7 +29,8 @@ public class NaviShooterCoreRuntime : ModuleRules
 				"LyraGame",
 				"ModularGameplay",
 				"GameplayAbilities",
-				"GameplayTags",
+				"GameplayTags", 
+				"DataRegistry",
 				
 				// ... add other public dependencies that you statically link with here ...
 			}

@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "LyraDropandPickupable.h"
+#include "LyraDropAndPickupable.h"
 
 #include "Async/TaskGraphInterfaces.h"
 #include "Components/BoxComponent.h"
@@ -10,7 +10,7 @@
 
 
 // Sets default values
-ALyraDropandPickupable::ALyraDropandPickupable()
+ALyraDropAndPickupable::ALyraDropAndPickupable()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
@@ -31,34 +31,38 @@ ALyraDropandPickupable::ALyraDropandPickupable()
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
 	ProjectileMovementComponent->bShouldBounce = true; // Hit 이벤트를 발생시키기 위해 true로 설정
 	ProjectileMovementComponent->ProjectileGravityScale = 1.0f;
+
+	bReplicates = true;
+	SetReplicatingMovement(true);
 }
 
 
-void ALyraDropandPickupable::GatherInteractionOptions(const FInteractionQuery& InteractQuery, FInteractionOptionBuilder& InteractionBuilder)
+void ALyraDropAndPickupable::GatherInteractionOptions(const FInteractionQuery& InteractQuery, FInteractionOptionBuilder& InteractionBuilder)
 {
 	InteractionBuilder.AddInteractionOption(Option);
 }
 
-FInventoryPickup ALyraDropandPickupable::GetPickupInventory() const
+FInventoryPickup ALyraDropAndPickupable::GetPickupInventory() const
 {
 	return StaticInventory;
 }
 
-void ALyraDropandPickupable::BeginPlay()
+void ALyraDropAndPickupable::BeginPlay()
 {
 	Super::BeginPlay();
 	if (MovementCollision)
 	{
-		MovementCollision->OnComponentHit.AddDynamic(this, &ALyraDropandPickupable::OnProjectileHit);
+		MovementCollision->OnComponentHit.AddDynamic(this, &ALyraDropAndPickupable::OnProjectileHit);
 	}
 }
 
-void ALyraDropandPickupable::OnProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
+void ALyraDropAndPickupable::OnProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
                                              UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	// 땅이나 벽 등 어떤 것에든 한 번 부딪히면 즉시 물리 효과를 정지시킴
 	if (ProjectileMovementComponent && ProjectileMovementComponent->IsActive())
 	{
+		bIsOnGround = true;
 		// 1. 발사체 컴포넌트 비활성화
 		ProjectileMovementComponent->Deactivate();
 		ProjectileMovementComponent->Velocity = FVector::ZeroVector;
@@ -74,6 +78,6 @@ void ALyraDropandPickupable::OnProjectileHit(UPrimitiveComponent* HitComponent, 
 		SetActorRotation(FRotator(0, GetActorRotation().Yaw, 0)); // 바닥에 평평하게 눕도록 회전 조정
 
 		// 델리게이트를 한 번만 실행하도록 바인딩 해제
-		MovementCollision->OnComponentHit.RemoveDynamic(this, &ALyraDropandPickupable::OnProjectileHit);
+		MovementCollision->OnComponentHit.RemoveDynamic(this, &ALyraDropAndPickupable::OnProjectileHit);
 	}
 }

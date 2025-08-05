@@ -223,6 +223,14 @@ namespace NaviGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Armor_LightArmor, "Armor.LightArmor", "Light Armor");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Armor_RegenShield, "Armor.RegenShield", "Regen Shield");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Armor_HeavyArmor, "Armor.HeavyArmor", "Heavy Armor");
+
+	// Main System
+	UE_DEFINE_GAMEPLAY_TAG(Navi_Score_Eliminations, "Navi.Score.Eliminations");
+	UE_DEFINE_GAMEPLAY_TAG(Navi_Score_Deaths, "Navi.Score.Deaths");
+	UE_DEFINE_GAMEPLAY_TAG(Navi_Score_Assists, "Navi.Score.Assists");
+	
+	UE_DEFINE_GAMEPLAY_TAG(Agent_Ultimate_CurrentPoint, "Agent.Ultimate.CurrentPoint");
+	UE_DEFINE_GAMEPLAY_TAG(Agent_Ultimate_RequiredPoint, "Agent.Ultimate.RequiredPoint");
 	
 	// Creds System Message
 	UE_DEFINE_GAMEPLAY_TAG(Navi_Creds_Award, "Navi.Creds.Award");
