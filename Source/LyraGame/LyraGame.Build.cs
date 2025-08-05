@@ -75,7 +75,7 @@ public class LyraGame : ModuleRules
 				"EngineSettings",
 				"DTLSHandlerComponent",
 				"Json",
-                "GameLiftServerSDK",
+                "GameLiftServerSDK", "NaviShooterCoreRuntime",
 			}
 		);
 

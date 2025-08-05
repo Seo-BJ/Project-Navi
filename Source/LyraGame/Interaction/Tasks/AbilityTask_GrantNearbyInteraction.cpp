@@ -13,6 +13,12 @@
 #include "Physics/LyraCollisionChannels.h"
 #include "TimerManager.h"
 
+
+DECLARE_STATS_GROUP(TEXT("Sample"), STATGROUP_Sample, STATCAT_Advanced);
+DECLARE_CYCLE_STAT(TEXT("Agent [Tick]"), STAT_AgentTick, STATGROUP_Sample);
+
+
+	
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AbilityTask_GrantNearbyInteraction)
 
 UAbilityTask_GrantNearbyInteraction::UAbilityTask_GrantNearbyInteraction(const FObjectInitializer& ObjectInitializer)
@@ -48,6 +54,8 @@ void UAbilityTask_GrantNearbyInteraction::OnDestroy(bool AbilityEnded)
 
 void UAbilityTask_GrantNearbyInteraction::QueryInteractables()
 {
+	SCOPE_CYCLE_COUNTER(STAT_AgentTick)
+	
 	UWorld* World = GetWorld();
 	AActor* ActorOwner = GetAvatarActor();
 	

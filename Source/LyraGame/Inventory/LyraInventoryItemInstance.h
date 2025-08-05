@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "LyraInventoryItemDefinition.h"
 #include "System/GameplayTagStack.h"
 #include "Templates/SubclassOf.h"
 
@@ -49,6 +50,16 @@ public:
 	TSubclassOf<ULyraInventoryItemDefinition> GetItemDef() const
 	{
 		return ItemDef;
+	}
+
+	UFUNCTION(BlueprintCallable, Category=Inventory)
+	FGameplayTag GetItemTag() const
+	{
+		if (ItemDef)
+		{
+			return ItemDef->GetDefaultObject<ULyraInventoryItemDefinition>()->ItemTag;
+		}
+		return FGameplayTag::EmptyTag;
 	}
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure=false, meta=(DeterminesOutputType=FragmentClass))

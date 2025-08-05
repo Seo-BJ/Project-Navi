@@ -97,15 +97,6 @@ struct TStructOpsTypeTraits<FLyraEquipmentList> : public TStructOpsTypeTraitsBas
 	enum { WithNetDeltaSerializer = true };
 };
 
-
-
-
-
-
-
-
-
-
 /**
  * Manages equipment applied to a pawn
  */
