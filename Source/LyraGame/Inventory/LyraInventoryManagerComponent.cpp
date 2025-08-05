@@ -9,6 +9,7 @@
 #include "LyraInventoryItemInstance.h"
 #include "NativeGameplayTags.h"
 #include "Net/UnrealNetwork.h"
+#include "Player/LyraPlayerController.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraInventoryManagerComponent)
 
@@ -255,6 +256,24 @@ ULyraInventoryItemInstance* ULyraInventoryManagerComponent::FindFirstItemStackBy
 	return nullptr;
 }
 
+ULyraInventoryItemInstance* ULyraInventoryManagerComponent::FindFirstItemStackByTag(const FGameplayTag& ItemTag) const
+{
+	for (const FLyraInventoryEntry& Entry : InventoryList.Entries)
+	{
+		ULyraInventoryItemInstance* Instance = Entry.Instance;
+
+		if (IsValid(Instance))
+		{
+			if (Instance->GetItemTag() == ItemTag)
+			{
+				return Instance;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
 int32 ULyraInventoryManagerComponent::GetTotalItemCountByDefinition(TSubclassOf<ULyraInventoryItemDefinition> ItemDef) const
 {
 	int32 TotalCount = 0;
@@ -318,6 +337,7 @@ void ULyraInventoryManagerComponent::ReadyForReplication()
 		}
 	}
 }
+
 
 bool ULyraInventoryManagerComponent::ReplicateSubobjects(UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags)
 {

@@ -6,7 +6,7 @@
 #include "AbilitySystem/Abilities/LyraGameplayAbility.h"
 #include "LyraGameplayAbility_DropItem.generated.h"
 
-class ALyraDropandPickupable;
+class ALyraDropAndPickupable;
 
 /**
  * 
@@ -22,6 +22,8 @@ public:
 protected:
 	
 	UFUNCTION(BlueprintCallable)
-	void SpawnPickupableItemActor(TSubclassOf<ALyraDropandPickupable> DroppedWeaponClass, ULyraInventoryItemInstance* ItemInstance);
+	void SpawnPickupableItemActor(TSubclassOf<ALyraDropAndPickupable> DroppedWeaponClass, ULyraInventoryItemInstance* ItemInstance);
 
+	UPROPERTY(EditAnywhere)
+	float LaunchSpeed = 450.0f;
 };

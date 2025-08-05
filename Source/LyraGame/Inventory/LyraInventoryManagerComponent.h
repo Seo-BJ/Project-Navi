@@ -117,15 +117,6 @@ struct TStructOpsTypeTraits<FLyraInventoryList> : public TStructOpsTypeTraitsBas
 	enum { WithNetDeltaSerializer = true };
 };
 
-
-
-
-
-
-
-
-
-
 /**
  * Manages an inventory
  */
@@ -149,19 +140,25 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category=Inventory)
 	void RemoveItemInstance(ULyraInventoryItemInstance* ItemInstance);
 
+	int32 GetTotalItemCountByDefinition(TSubclassOf<ULyraInventoryItemDefinition> ItemDef) const;
+	bool ConsumeItemsByDefinition(TSubclassOf<ULyraInventoryItemDefinition> ItemDef, int32 NumToConsume);
+	
 	UFUNCTION(BlueprintCallable, Category=Inventory, BlueprintPure=false)
 	TArray<ULyraInventoryItemInstance*> GetAllItems() const;
-
+	
 	UFUNCTION(BlueprintCallable, Category=Inventory, BlueprintPure)
 	ULyraInventoryItemInstance* FindFirstItemStackByDefinition(TSubclassOf<ULyraInventoryItemDefinition> ItemDef) const;
 
-	int32 GetTotalItemCountByDefinition(TSubclassOf<ULyraInventoryItemDefinition> ItemDef) const;
-	bool ConsumeItemsByDefinition(TSubclassOf<ULyraInventoryItemDefinition> ItemDef, int32 NumToConsume);
+	UFUNCTION(BlueprintCallable, Category=Inventory, BlueprintPure)
+	ULyraInventoryItemInstance* FindFirstItemStackByTag(const FGameplayTag& ItemTag) const;
+	
+
 
 	//~UObject interface
 	virtual bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
 	virtual void ReadyForReplication() override;
 	//~End of UObject interface
+
 
 private:
 	UPROPERTY(Replicated)

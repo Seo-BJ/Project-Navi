@@ -73,7 +73,7 @@ public:
 
 /**  */
 UCLASS()
-class UPickupableStatics : public UBlueprintFunctionLibrary
+class LYRAGAME_API UPickupableStatics : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 

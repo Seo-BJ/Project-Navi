@@ -1,0 +1,32 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Blueprint/UserWidget.h"
+#include "UI/ITakesLyraPlayerState.h"
+#include "NaviScoreBoard_Ultimate.generated.h"
+
+class UCommonNumericTextBlock;
+class ALyraPlayerState;
+/**
+ * 
+ */
+UCLASS()
+class NAVISHOOTERCORERUNTIME_API UNaviScoreBoard_Ultimate : public UUserWidget, public ITakesLyraPlayerState
+{
+	GENERATED_BODY()
+	
+public:
+	//~ ITakesLyraPlayerState 
+	virtual void SetPlayerState(ALyraPlayerState* InPlayerState) override;
+	//~ End of ITakesLyraPlayerState
+
+protected:
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UCommonNumericTextBlock> CurrentUltimatePoint_TextBlock;
+	
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UCommonNumericTextBlock> RequiredUltimatePoint_TextBlock;
+	
+};
