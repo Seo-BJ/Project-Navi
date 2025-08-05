@@ -9,6 +9,7 @@
 #include "LyraInventoryItemInstance.h"
 #include "NativeGameplayTags.h"
 #include "Net/UnrealNetwork.h"
+#include "Player/LyraPlayerController.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraInventoryManagerComponent)
 
@@ -318,6 +319,7 @@ void ULyraInventoryManagerComponent::ReadyForReplication()
 		}
 	}
 }
+
 
 bool ULyraInventoryManagerComponent::ReplicateSubobjects(UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags)
 {

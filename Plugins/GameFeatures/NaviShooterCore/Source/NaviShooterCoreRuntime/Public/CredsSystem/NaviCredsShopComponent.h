@@ -11,6 +11,7 @@ class ULyraInventoryItemDefinition;
 class ULyraWeaponPickupDefinition;
 class UDataTable;
 class AController;
+class ALyraDropAndPickupable;
 struct FNaviWeaponStatDefinition;
 
 /**
@@ -33,10 +34,10 @@ public:
     /**
      * 클라이언트가 서버에 무기 구매를 요청할 때 호출합니다.
      * @param RequestingPlayerController 구매를 요청하는 플레이어의 컨트롤러입니다.
-     * @param EquipmentTag 구매하려는 무기의 고유 게임플레이 태그입니다.
+     * @param TargetEquipmentTag 구매하려는 무기의 고유 게임플레이 태그입니다.
      */
     UFUNCTION(BlueprintCallable, Category = "Navi|Shop")
-    void BuyEquipment(AController* RequestingPlayerController, FGameplayTag EquipmentTag);
+    bool TryBuyEquipment(AController* RequestingPlayerController, FGameplayTag TargetEquipmentTag);
 
 protected:
     /**
@@ -67,5 +68,8 @@ protected:
      * @param ReceivingController 지급 대상 Controller
      */
     void GiveWeaponToPlayer(TSubclassOf<ULyraInventoryItemDefinition> WeaponItemClass, AController* ReceivingController);
+
+    UPROPERTY(EditDefaultsOnly, Category = "Navi|Shop")
+    TSubclassOf<ALyraDropAndPickupable> DroppedWeaponClass;
     
 };

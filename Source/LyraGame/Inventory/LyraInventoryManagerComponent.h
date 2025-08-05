@@ -163,6 +163,7 @@ public:
 	virtual void ReadyForReplication() override;
 	//~End of UObject interface
 
+
 private:
 	UPROPERTY(Replicated)
 	FLyraInventoryList InventoryList;

@@ -53,6 +53,6 @@ void UNaviCredsShopControllerComponent::ServerRequesBuyEquipment_Implementation(
 	{
 		// 찾은 상점 컴포넌트의 서버 함수를 호출합니다.
 		// 이 함수는 서버 RPC이므로, 클라이언트에서 호출하면 서버로 요청이 전송됩니다.
-		ShopComponent->BuyEquipment(OwnerController, EquipmentTag);
+		ShopComponent->TryBuyEquipment(OwnerController, EquipmentTag);
 	}
 }
