@@ -4,5 +4,6 @@
 #include "Agent/NaviAgentDefinition.h"
 
 
-
-
+UNaviAgentDefinition::UNaviAgentDefinition(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+{
+}

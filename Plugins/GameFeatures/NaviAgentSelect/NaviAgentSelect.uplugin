@@ -16,8 +16,7 @@
 	"IsExperimentalVersion": false,
 	"Installed": false,
 	"ExplicitlyLoaded": true,
-	"BuiltInInitialFeatureState": "Registered",
-
+	"BuiltInInitialFeatureState": "Active",
 	"Modules": [
 		{
 			"Name": "NaviAgentSelectRuntime",
@@ -60,6 +59,10 @@
 		},
 		{
 			"Name": "LyraExampleContent",
+			"Enabled": true
+		},
+		{
+			"Name": "ShooterCore",
 			"Enabled": true
 		}
 	]

@@ -213,7 +213,7 @@ bool FLyraCharacterPartList::DestroyActorForEntry(FLyraAppliedCharacterPartEntry
 	return bDestroyedAnyActors;
 }
 
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ULyraPawnComponent_CharacterParts::ULyraPawnComponent_CharacterParts(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
