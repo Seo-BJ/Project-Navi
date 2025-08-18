@@ -50,14 +50,13 @@ public:
 
 // A component that configure what cosmetic actors to spawn for the owning controller when it possesses a pawn
 UCLASS(meta = (BlueprintSpawnableComponent))
-class ULyraControllerComponent_CharacterParts : public UControllerComponent
+class LYRAGAME_API ULyraControllerComponent_CharacterParts : public UControllerComponent
 {
 	GENERATED_BODY()
 
 public:
 	ULyraControllerComponent_CharacterParts(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-	//~UActorComponent interface
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	//~End of UActorComponent interface

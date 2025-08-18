@@ -45,7 +45,7 @@ protected:
 	UPROPERTY(ReplicatedUsing = OnRep_RemainingBuyingTime)
 	float RemainingBuyingTime;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Game Phase")
+	UPROPERTY(EditDefaultsOnly, Category = "Game Phase")	
 	TSubclassOf<ULyraGamePhaseAbility> BuyingPhaseAbilityClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Game Phase")

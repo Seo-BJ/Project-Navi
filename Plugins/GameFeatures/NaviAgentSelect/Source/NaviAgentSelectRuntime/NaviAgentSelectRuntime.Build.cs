@@ -27,7 +27,10 @@ public class NaviAgentSelectRuntime : ModuleRules
 			new string[]
 			{
 				"Core",
-				"LyraGame", 
+				"LyraGame",
+				"ModularGameplay",
+				"GameplayAbilities",
+				"GameplayTags", 
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -39,7 +42,8 @@ public class NaviAgentSelectRuntime : ModuleRules
 				"CoreUObject",
 				"Engine",
 				"Slate",
-				"SlateCore",
+				"SlateCore", 
+				"CommonGame",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

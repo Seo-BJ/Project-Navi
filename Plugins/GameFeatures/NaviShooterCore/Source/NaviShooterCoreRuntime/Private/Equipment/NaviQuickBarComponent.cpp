@@ -28,6 +28,7 @@ UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Navi_QuickBar_Message_ActiveIndexChanged, "Nav
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_Item_Dropped, "Lyra.Item.Dropped");
 
 
+
 UNaviQuickBarComponent::UNaviQuickBarComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
