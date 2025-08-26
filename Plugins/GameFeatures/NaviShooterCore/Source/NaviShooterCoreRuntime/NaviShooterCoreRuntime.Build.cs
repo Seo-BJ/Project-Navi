@@ -31,6 +31,7 @@ public class NaviShooterCoreRuntime : ModuleRules
 				"GameplayAbilities",
 				"GameplayTags", 
 				"DataRegistry",
+				"AIModule",
 				
 				// ... add other public dependencies that you statically link with here ...
 			}

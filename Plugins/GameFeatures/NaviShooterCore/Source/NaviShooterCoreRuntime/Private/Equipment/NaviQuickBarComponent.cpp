@@ -29,8 +29,7 @@ UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_Item_Dropped, "Lyra.Item.Dropped");
 
 
 
-UNaviQuickBarComponent::UNaviQuickBarComponent(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+UNaviQuickBarComponent::UNaviQuickBarComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	SetIsReplicatedByDefault(true);
 	NumSlots = 4; // 슬롯 개수를 4로 고정

@@ -23,6 +23,7 @@ class ULyraCameraComponent;
 class ULyraHealthComponent;
 class ULyraPawnExtensionComponent;
 class UObject;
+class USkeletalMeshComponent;
 struct FFrame;
 struct FGameplayTag;
 struct FGameplayTagContainer;
@@ -146,6 +147,11 @@ public:
 
 	virtual bool UpdateSharedReplication();
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE USkeletalMeshComponent* GetFirstPersonMesh() const {return FirstPersonMesh.Get();}
+	
+	FORCEINLINE ULyraCameraComponent* GetLyraCameraComponent() const {return CameraComponent.Get();}
+	
 protected:
 
 	virtual void OnAbilitySystemInitialized();
@@ -189,6 +195,9 @@ protected:
 
 private:
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lyra|Character", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USkeletalMeshComponent> FirstPersonMesh;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lyra|Character", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<ULyraPawnExtensionComponent> PawnExtComponent;
 

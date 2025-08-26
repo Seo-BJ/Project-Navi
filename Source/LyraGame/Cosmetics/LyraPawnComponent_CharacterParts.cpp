@@ -169,9 +169,22 @@ bool FLyraCharacterPartList::SpawnActorForEntry(FLyraAppliedCharacterPartEntry& 
 				PartComponent->SetupAttachment(ComponentToAttachTo, Entry.Part.SocketName);
 				PartComponent->SetChildActorClass(Entry.Part.PartClass);
 				PartComponent->RegisterComponent();
-
+				
 				if (AActor* SpawnedActor = PartComponent->GetChildActor())
 				{
+					// Character Parts 들의 Owner 설정
+					SpawnedActor->SetOwner(OwnerComponent->GetOwner());
+					
+					TArray<UPrimitiveComponent*> PrimitiveComponents;
+					SpawnedActor->GetComponents<UPrimitiveComponent>(PrimitiveComponents);
+					for (UPrimitiveComponent* PrimitiveComponent : PrimitiveComponents)
+					{
+						if (PrimitiveComponent)
+						{
+							PrimitiveComponent->SetOwnerNoSee(true);
+						}
+					}
+					
 					switch (Entry.Part.CollisionMode)
 					{
 					case ECharacterCustomizationCollisionMode::UseCollisionFromCharacterPart:
