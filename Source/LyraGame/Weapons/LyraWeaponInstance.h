@@ -30,6 +30,8 @@ public:
 	//~ULyraEquipmentInstance interface
 	virtual void OnEquipped() override;
 	virtual void OnUnequipped() override;
+
+	virtual void SpawnEquipmentActors(const TArray<FLyraEquipmentActorToSpawn>& ActorsToSpawn);
 	//~End of ULyraEquipmentInstance interface
 
 	UFUNCTION(BlueprintCallable)
@@ -76,6 +78,8 @@ protected:
 
 	/** Remove any device proeprties that were activated in ApplyDeviceProperties. */
 	void RemoveDeviceProperties();
+
+	virtual void OnSpawnedActorsChanged() override;
 
 private:
 

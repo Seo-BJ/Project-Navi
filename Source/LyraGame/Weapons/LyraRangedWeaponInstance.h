@@ -148,7 +148,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Spread|Player Params", meta=(ForceUnits="cm/s"))
 	float StandingStillToMovingSpeedRange = 20.0f;
 
-
 	// Multiplier when crouching, smoothly blended to based on TransitionRate_Crouching
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Spread|Player Params", meta=(ForceUnits=x))
 	float SpreadAngleMultiplier_Crouching = 1.0f;

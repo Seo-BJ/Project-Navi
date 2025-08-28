@@ -62,7 +62,7 @@ void UGameplayMessageSubsystem::Deinitialize()
 	Super::Deinitialize();
 }
 
-void UGameplayMessageSubsystem::BroadcastMessageInternal(FGameplayTag Channel, const UScriptStruct* StructType, const void* MessageBytes)
+void UGameplayMessageSubsystem::BroadcastMessageInternal(FGameplayTag Channel, const UScriptStruct* StructType, const void* MessageBytes) 
 {
 	// Log the message if enabled
 	if (UE::GameplayMessageSubsystem::ShouldLogMessages != 0)
