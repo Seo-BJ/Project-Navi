@@ -4,7 +4,7 @@
 
 #include "Components/ControllerComponent.h"
 #include "Inventory/LyraInventoryItemInstance.h"
-#include "GameplayTagContainer.h"
+#include "NativeGameplayTags.h"
 
 #include "NaviQuickBarComponent.generated.h"
 
@@ -113,7 +113,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Navi|QuickBar")
 	void SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPickupable> DroppedAndPickupableClass, ULyraInventoryItemInstance* ItemInstance);
-	
+
+	UFUNCTION(BlueprintCallable, Category = "Navi|QuickBar")
+	FTransform GetAimPointTransform();
 	/**
 	 * ItemTag에 대하여 지정된 Slot의 Index를 반환한다.
 	 * @param ItemTag Item의 Tag
@@ -156,7 +158,7 @@ private:
 	int32 ActiveSlotIndex = -1;
 
 	/** 현재 장착된 장비의 인스턴스입니다. */
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	TObjectPtr<ULyraEquipmentInstance> EquippedItem; // ULyraEquipmentInstance -> UNaviEquipmentInstance로 변경 가능
 };
 

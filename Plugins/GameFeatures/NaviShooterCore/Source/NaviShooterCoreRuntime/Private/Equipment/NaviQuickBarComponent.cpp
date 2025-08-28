@@ -22,10 +22,12 @@
 #include "Inventory/InventoryFragment_PickupIcon.h"
 #include "Weapons/NaviDropAndPickupable_Weapon.h"
 #include "Inventory/ItemDropAndPickUp/LyraDropAndPickupable.h"
+#include "Weapons/LyraWeaponActor.h"
+#include "Weapons/LyraWeaponInstance.h"
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Navi_QuickBar_Message_SlotsChanged, "Navi.QuickBar.Message.SlotsChanged");
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Navi_QuickBar_Message_ActiveIndexChanged, "Navi.QuickBar.Message.ActiveIndexChanged");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_Item_Dropped, "Lyra.Item.Dropped");
+UE_DEFINE_GAMEPLAY_TAG(TAG_Lyra_Item_Dropped, "Lyra.Item.Dropped");
 
 
 
@@ -42,6 +44,7 @@ void UNaviQuickBarComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 
 	DOREPLIFETIME(ThisClass, Slots);
 	DOREPLIFETIME(ThisClass, ActiveSlotIndex);
+	DOREPLIFETIME(ThisClass, EquippedItem);
 }
 
 void UNaviQuickBarComponent::BeginPlay()
@@ -237,6 +240,25 @@ void UNaviQuickBarComponent::SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPicku
 	}
 }
 
+FTransform UNaviQuickBarComponent::GetAimPointTransform()
+{
+	FTransform AimPoint = FTransform::Identity;
+	if (IsValid(EquippedItem))
+	{
+		if (ULyraWeaponInstance* EquippedWeapon = Cast<ULyraWeaponInstance>(EquippedItem))
+		{
+			for (AActor* SpawnedActor :EquippedWeapon->GetSpawnedActors())
+			{
+				if (ALyraWeaponActor* WeaponActor = Cast<ALyraWeaponActor>(SpawnedActor))
+				{
+					return WeaponActor->GetAimPointTransform();
+				}
+			}
+		}
+	}
+	return AimPoint;
+}
+
 int UNaviQuickBarComponent::GetSlotIndexForItemTag(const FGameplayTag& ItemTag) const
 {
 	if (ItemTag.MatchesTag(NaviGameplayTags::Weapon_Primary))
@@ -303,6 +325,7 @@ void UNaviQuickBarComponent::UnequipItemInSlot()
 		{
 			EquipmentManager->UnequipItem(EquippedItem);
 			EquippedItem = nullptr;
+			
 		}
 	}
 }

@@ -100,7 +100,6 @@ ULyraEquipmentInstance* FLyraEquipmentList::AddEntry(TSubclassOf<ULyraEquipmentD
 
 	Result->SpawnEquipmentActors(EquipmentCDO->ActorsToSpawn);
 
-
 	MarkItemDirty(NewEntry);
 
 	return Result;
