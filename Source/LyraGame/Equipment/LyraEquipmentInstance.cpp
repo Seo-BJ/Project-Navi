@@ -115,12 +115,9 @@ void ULyraEquipmentInstance::OnUnequipped()
 	K2_OnUnequipped();
 }
 
-void ULyraEquipmentInstance::OnSpawnedActorsChanged()
-{
-}
-
 void ULyraEquipmentInstance::OnRep_Instigator()
 {
+	/*
 	APawn* OwningPawn = GetPawn();
 	if (OwningPawn && OwningPawn->IsLocallyControlled())
 	{
@@ -132,11 +129,29 @@ void ULyraEquipmentInstance::OnRep_Instigator()
 				SpawnedInterface->OnEquippedClient();
 			}
 		}
-	}
+	}*/
 }
 
 void ULyraEquipmentInstance::OnRep_SpawnedActors()
 {
 	OnSpawnedActorsChanged();
 }
+
+
+void ULyraEquipmentInstance::OnSpawnedActorsChanged()
+{
+	APawn* OwningPawn = GetPawn();
+	if (OwningPawn && SpawnedActors.Num() > 0 )
+	{
+		for (AActor* SpawnedActor : SpawnedActors)
+		{
+			if (SpawnedActor && SpawnedActor->Implements<UEquipmentInterface>() && SpawnedActor->GetOwner() == OwningPawn)
+			{
+				IEquipmentInterface* SpawnedInterface = Cast<IEquipmentInterface>(SpawnedActor);
+				SpawnedInterface->OnEquippedClient();
+			}
+		}
+	}
+}
+
 

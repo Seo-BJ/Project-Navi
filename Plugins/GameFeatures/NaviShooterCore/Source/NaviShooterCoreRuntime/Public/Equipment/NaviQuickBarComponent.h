@@ -127,6 +127,9 @@ public:
 private:
 	/** 현재 활성화된 슬롯의 아이템을 장착 해제합니다. */
 	void UnequipItemInSlot();
+
+	int32 GetNextActiveSlotIndexOnEquip(int32 SlotIndex);
+
 	
 	/** 현재 활성화된 슬롯의 아이템을 장착합니다. */
 	void EquipItemInSlot();
