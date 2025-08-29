@@ -57,6 +57,8 @@ void ULyraWeaponInstance::OnUnequipped()
 
 void ULyraWeaponInstance::SpawnEquipmentActors(const TArray<FLyraEquipmentActorToSpawn>& ActorsToSpawn)
 {
+	Super::SpawnEquipmentActors(ActorsToSpawn);
+	/*
 	if (APawn* OwningPawn = GetPawn())
 	{
 		USceneComponent* AttachTarget = OwningPawn->GetRootComponent();
@@ -68,9 +70,10 @@ void ULyraWeaponInstance::SpawnEquipmentActors(const TArray<FLyraEquipmentActorT
 		for (const FLyraEquipmentActorToSpawn& SpawnInfo : ActorsToSpawn)
 		{
 			AActor* NewActor = GetWorld()->SpawnActorDeferred<AActor>(SpawnInfo.ActorToSpawn, FTransform::Identity, OwningPawn);
-			NewActor->FinishSpawning(FTransform::Identity, /*bIsDefaultTransform=*/ true);
+			NewActor->FinishSpawning(FTransform::Identity, true);
 			//NewActor->SetActorRelativeTransform(SpawnInfo.AttachTransform);
 			NewActor->AttachToComponent(AttachTarget, FAttachmentTransformRules::KeepRelativeTransform, SpawnInfo.AttachSocket);
+
 			if (ALyraWeaponActor* WeaponActor = Cast<ALyraWeaponActor>(NewActor))
 			{
 				WeaponActor->OnEquipped(SpawnInfo.AttachSocket, SpawnInfo.AttachTransform);
@@ -78,7 +81,8 @@ void ULyraWeaponInstance::SpawnEquipmentActors(const TArray<FLyraEquipmentActorT
 
 			SpawnedActors.Add(NewActor);
 		}
-	}
+	}*/
+
 }
 
 void ULyraWeaponInstance::UpdateFiringTime()
@@ -165,13 +169,6 @@ void ULyraWeaponInstance::RemoveDeviceProperties()
 void ULyraWeaponInstance::OnSpawnedActorsChanged()
 {
 	Super::OnSpawnedActorsChanged();
-	for (AActor* SpawnedActor: GetSpawnedActors())
-	{
-		if (ALyraWeaponActor* WeaponActor = Cast<ALyraWeaponActor>(SpawnedActor))
-		{
-			WeaponActor->OnEquipped(FName("weapon_r"), FTransform::Identity);
-		}
-	}
 }
 
 void ULyraWeaponInstance::OnDeathStarted(AActor* OwningActor)

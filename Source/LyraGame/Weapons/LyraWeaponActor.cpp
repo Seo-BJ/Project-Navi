@@ -10,26 +10,27 @@
 ALyraWeaponActor::ALyraWeaponActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
 
 	USceneComponent* SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("SceneComponent"));
 	RootComponent = SceneComponent;
 
-	MeshFpp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshFpp"));
-	MeshFpp->SetupAttachment(RootComponent);
-	MeshFpp->SetCollisionEnabled(ECollisionEnabled::NoCollision); 
+	FppMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FppMesh"));
+	FppMesh->SetupAttachment(RootComponent);
+	FppMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision); 
 
-	MeshFpp->SetOnlyOwnerSee(true);
-	MeshFpp->bCastDynamicShadow = false;
-	MeshFpp->CastShadow = false;
+	FppMesh->SetOnlyOwnerSee(true);
+	FppMesh->bCastDynamicShadow = false;
+	FppMesh->CastShadow = false;
 
-	MeshFpp->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
-	MeshFpp->bUseAttachParentBound = true;
+	FppMesh->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
+	FppMesh->bUseAttachParentBound = true;
 
-	MeshTpp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshTpp"));
-	MeshTpp->SetupAttachment(RootComponent);
-	MeshTpp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	TppMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("TppMesh"));
+	TppMesh->SetupAttachment(RootComponent);
+	TppMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	MeshTpp->SetOwnerNoSee(true);}
+	TppMesh->SetOwnerNoSee(true);}
 
 void ALyraWeaponActor::OnEquipped(FName AttachSocket, FTransform AttachTransform)
 {
@@ -53,8 +54,8 @@ void ALyraWeaponActor::OnEquippedClient()
 
 FTransform ALyraWeaponActor::GetAimPointTransform()
 {
-	if (MeshFpp == nullptr) return FTransform::Identity;
-	return MeshFpp->GetSocketTransform("aimsocket");
+	if (FppMesh == nullptr) return FTransform::Identity;
+	return FppMesh->GetSocketTransform("aimsocket");
 }
 
 
@@ -67,19 +68,19 @@ void ALyraWeaponActor::AttachMeshToPawn(FName AttachSocket, FTransform AttachTra
 			USkeletalMeshComponent* CharacterMesh1p = OwnerPawn->GetFirstPersonMesh();
 			USkeletalMeshComponent* CharacterPawnMesh3p = OwnerPawn->GetMesh();
 			
-			MeshFpp->SetHiddenInGame( false );
-			// MeshFpp->SetRelativeTransform(AttachTransform);
-			MeshFpp->AttachToComponent(CharacterMesh1p, FAttachmentTransformRules::KeepRelativeTransform, AttachSocket);
+			FppMesh->SetHiddenInGame( false );
+			// FppMesh->SetRelativeTransform(AttachTransform);
+			FppMesh->AttachToComponent(CharacterMesh1p, FAttachmentTransformRules::KeepRelativeTransform, AttachSocket);
 			
-			MeshTpp->SetHiddenInGame( false );
-			MeshTpp->SetRelativeTransform(AttachTransform);
-			MeshTpp->AttachToComponent(CharacterPawnMesh3p, FAttachmentTransformRules::KeepRelativeTransform, AttachSocket);
+			// TppMesh->SetHiddenInGame( false );
+			// TppMesh->SetRelativeTransform(AttachTransform);
+			// TppMesh->AttachToComponent(CharacterPawnMesh3p, FAttachmentTransformRules::KeepRelativeTransform, AttachSocket);
 		}
 		else
 		{
-			USkeletalMeshComponent* UseWeaponMesh = MeshFpp;
-			USkeletalMeshComponent* UsePawnMesh = OwnerPawn->GetFirstPersonMesh();
-			MeshTpp->SetRelativeTransform(AttachTransform);
+			USkeletalMeshComponent* UseWeaponMesh = TppMesh;
+			USkeletalMeshComponent* UsePawnMesh = OwnerPawn->GetMesh();
+			// TppMesh->SetRelativeTransform(AttachTransform);
 			UseWeaponMesh->AttachToComponent(UsePawnMesh, FAttachmentTransformRules::KeepRelativeTransform, AttachSocket);
 			UseWeaponMesh->SetHiddenInGame( false );
 		}

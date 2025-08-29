@@ -18,8 +18,8 @@ class LYRAGAME_API ALyraWeaponActor : public AActor, public IEquipmentInterface
 public:
 	ALyraWeaponActor();
 
-	FORCEINLINE USkeletalMeshComponent* GetFirstPersonPerspectiveMesh() { return MeshFpp; }
-	FORCEINLINE USkeletalMeshComponent* GetThirdPersonPerspectiveMesh() { return MeshTpp; }
+	FORCEINLINE USkeletalMeshComponent* GetFirstPersonPerspectiveMesh() { return FppMesh; }
+	FORCEINLINE USkeletalMeshComponent* GetThirdPersonPerspectiveMesh() { return TppMesh; }
 
 	void OnEquipped(FName AttachSocket, FTransform AttachTransform);
 
@@ -39,14 +39,12 @@ public:
 protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
-	TObjectPtr<USkeletalMeshComponent> MeshFpp;
+	TObjectPtr<USkeletalMeshComponent> FppMesh;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
-	TObjectPtr<USkeletalMeshComponent> MeshTpp;
+	TObjectPtr<USkeletalMeshComponent> TppMesh;
 
 private:
 	void AttachMeshToPawn(FName AttachSocket, FTransform AttachTransform);
-
 	
-
 };

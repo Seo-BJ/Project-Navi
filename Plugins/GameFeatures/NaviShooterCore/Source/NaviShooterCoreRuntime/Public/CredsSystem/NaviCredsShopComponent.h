@@ -52,7 +52,7 @@ protected:
     /**
      * 빠른 조회를 위해 GameplayTag를 키로 사용하는 무기 정의 맵입니다.
      */
-    UPROPERTY(EditDefaultsOnly, Category = "Navi|Shop|Data")
+    UPROPERTY(EditDefaultsOnly, Category = "Navi|Shop|Data", meta = (Categories = "Weapon"))
     TMap<FGameplayTag, TObjectPtr<ULyraWeaponPickupDefinition>> WeaponDefinitionMap;
 
     /**

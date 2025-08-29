@@ -27,7 +27,7 @@
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Navi_QuickBar_Message_SlotsChanged, "Navi.QuickBar.Message.SlotsChanged");
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Navi_QuickBar_Message_ActiveIndexChanged, "Navi.QuickBar.Message.ActiveIndexChanged");
-UE_DEFINE_GAMEPLAY_TAG(TAG_Lyra_Item_Dropped, "Lyra.Item.Dropped");
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_Item_Dropped, "Lyra.Item.Dropped");
 
 
 
@@ -158,7 +158,14 @@ ULyraInventoryItemInstance* UNaviQuickBarComponent::RemoveItemFromSlot(int32 Slo
 	{
 		UnequipItemInSlot();
 		int32 OldIndex = ActiveSlotIndex;
-		ActiveSlotIndex = -1;
+		if (SlotIndex == 0)
+		{
+			ActiveSlotIndex = Slots.IsValidIndex(1) ? 1  : 2;
+		}
+		else if (SlotIndex == 1)
+		{
+			ActiveSlotIndex = Slots.IsValidIndex(0) ? 0  : 2;
+		}
 		OnRep_ActiveSlotIndex(OldIndex);
 	}
 
