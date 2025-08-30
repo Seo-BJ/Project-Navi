@@ -23,7 +23,7 @@ protected:
 	
 	UFUNCTION(BlueprintCallable)
 	void SpawnPickupableItemActor(TSubclassOf<ALyraDropAndPickupable> DroppedWeaponClass, ULyraInventoryItemInstance* ItemInstance);
-
+	
 	UPROPERTY(EditAnywhere)
 	float LaunchSpeed = 450.0f;
 };

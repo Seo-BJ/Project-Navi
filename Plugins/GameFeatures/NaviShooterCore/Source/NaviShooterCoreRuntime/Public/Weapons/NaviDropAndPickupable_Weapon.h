@@ -32,6 +32,8 @@ protected:
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	virtual void OnDropFinished() override;
+
 private:
 	
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponMesh)

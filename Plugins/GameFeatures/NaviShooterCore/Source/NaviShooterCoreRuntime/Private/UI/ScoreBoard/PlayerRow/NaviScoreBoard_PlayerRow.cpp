@@ -11,11 +11,14 @@ TArray<UWidget*> UNaviScoreBoard_PlayerRow::GetPlayerStateAwareChildren() const
 	if (HorizontalBox)
 	{
 		PlayerStateAwareChildren = HorizontalBox->GetAllChildren();;
-		for (UWidget* ChildWidget : PlayerStateAwareChildren)
+		if (PlayerStateAwareChildren.Num() > 0)
 		{
-			if (ChildWidget && ChildWidget->Implements<UTakesLyraPlayerState>())
+			for (UWidget* ChildWidget : PlayerStateAwareChildren)
 			{
-				PlayerStateAwareChildren.Add(ChildWidget);
+				if (ChildWidget && ChildWidget->Implements<UTakesLyraPlayerState>())
+				{
+					PlayerStateAwareChildren.Add(ChildWidget);
+				}
 			}
 		}
 	}

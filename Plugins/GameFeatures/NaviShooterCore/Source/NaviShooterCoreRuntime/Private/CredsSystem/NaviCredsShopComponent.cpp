@@ -106,7 +106,7 @@ bool UNaviCredsShopComponent::TryBuyEquipment(AController* RequestingPlayerContr
                     CostEffect->Modifiers.Add(ModifierInfo);
                     ASC->ApplyGameplayEffectToSelf(CostEffect, 1.0f, ASC->MakeEffectContext());
                     
-                    QuickBarComponent->SpawnAndDropEquipment(DroppedWeaponClass, ItemInstanceInSlot);
+                    QuickBarComponent->SpawnAndDropEquipment(DroppedWeaponClass);
                 }
             }
             else

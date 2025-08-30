@@ -117,7 +117,7 @@ ULyraInventoryItemInstance* FLyraInventoryList::AddEntry(ULyraInventoryItemInsta
 	check(OwnerComponent);
 
 	AActor* OwningActor = OwnerComponent->GetOwner();
-	check(OwningActor->HasAuthority()); // 반드시 서버에서만 실행되어야 함
+	check(OwningActor->HasAuthority()); 
 	
 	Instance->Rename(nullptr,  OwnerComponent->GetOwner());
 	

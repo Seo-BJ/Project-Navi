@@ -27,7 +27,7 @@
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Navi_QuickBar_Message_SlotsChanged, "Navi.QuickBar.Message.SlotsChanged");
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Navi_QuickBar_Message_ActiveIndexChanged, "Navi.QuickBar.Message.ActiveIndexChanged");
-UE_DEFINE_GAMEPLAY_TAG(TAG_Lyra_Item_Dropped, "Lyra.Item.Dropped");
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_Item_Dropped, "Lyra.Item.Dropped");
 
 
 
@@ -98,7 +98,7 @@ void UNaviQuickBarComponent::CycleActiveSlotBackward()
 	} while (NewIndex != OldIndex);
 }
 
-void UNaviQuickBarComponent::SecActiveSlotIndexOnEquipmentPickUp()
+void UNaviQuickBarComponent::SetActiveSlotIndexOnEquipmentPickUp()
 {
 	SetActiveSlotIndex(LastActiveSlotIndex);
 }
@@ -160,11 +160,25 @@ ULyraInventoryItemInstance* UNaviQuickBarComponent::RemoveItemFromSlot(int32 Slo
 		int32 OldIndex = ActiveSlotIndex;
 		if (SlotIndex == 0)
 		{
-			ActiveSlotIndex = Slots.IsValidIndex(1) ? 1  : 2;
+			if (Slots.IsValidIndex(1) && Slots[1] != nullptr)
+			{
+				SetActiveSlotIndex_Implementation(1);
+			}
+			else
+			{
+				SetActiveSlotIndex_Implementation(2);
+			}
 		}
 		else if (SlotIndex == 1)
 		{
-			ActiveSlotIndex = Slots.IsValidIndex(0) ? 0  : 2;
+			if (Slots.IsValidIndex(0) && Slots[0] != nullptr)
+			{
+				SetActiveSlotIndex_Implementation(0);
+			}
+			else
+			{
+				SetActiveSlotIndex_Implementation(2);
+			}
 		}
 		OnRep_ActiveSlotIndex(OldIndex);
 	}
@@ -182,9 +196,9 @@ ULyraInventoryItemInstance* UNaviQuickBarComponent::RemoveItemFromSlot(int32 Slo
 	return Result;
 }
 
-void UNaviQuickBarComponent::SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPickupable> DroppedAndPickupableClass, ULyraInventoryItemInstance* ItemInstance)
+void UNaviQuickBarComponent::SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPickupable> DroppedAndPickupableClass)
 {
-	if (DroppedAndPickupableClass == nullptr || ItemInstance == nullptr)
+	if (DroppedAndPickupableClass == nullptr || EquippedItem == nullptr)
 	{
 		return;
 	}
@@ -210,10 +224,24 @@ void UNaviQuickBarComponent::SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPicku
 		ESpawnActorCollisionHandlingMethod::AlwaysSpawn
 	);
 
+
+	USkeletalMesh* EquippetItemMesh = nullptr;
+	
+	if (ULyraWeaponInstance* EquippedWeapon = Cast<ULyraWeaponInstance>(EquippedItem))
+	{
+		for (AActor* SpawnedActor :EquippedWeapon->GetSpawnedActors())
+		{
+			if (ALyraWeaponActor* WeaponActor = Cast<ALyraWeaponActor>(SpawnedActor))
+			{
+				EquippetItemMesh = WeaponActor->GetThirdPersonPerspectiveMesh()->GetSkeletalMeshAsset();
+			}
+		}
+	}
+	
 	if (SpawnedItem)
 	{
 		FPickupInstance PickupInstance;
-		PickupInstance.Item = ItemInstance;
+		PickupInstance.Item = GetActiveSlotItem();
 		// Drop된 Item임을 표시
 		PickupInstance.Item->AddStatTagStack(TAG_Lyra_Item_Dropped, 1);
 		SpawnedItem->StaticInventory.Instances.Add(PickupInstance);
@@ -221,16 +249,9 @@ void UNaviQuickBarComponent::SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPicku
 		if (SpawnedItem->IsA(ANaviDropAndPickupable_Weapon::StaticClass()))
 		{
 			ANaviDropAndPickupable_Weapon* SpawnedWeapon = Cast<ANaviDropAndPickupable_Weapon>(SpawnedItem);
-			if (SpawnedWeapon)
+			if (SpawnedWeapon && EquippetItemMesh)
 			{
-				const UInventoryFragment_PickupIcon* Fragment = ItemInstance->FindFragmentByClass<UInventoryFragment_PickupIcon>();
-				if (Fragment != nullptr)
-				{
-					if (Fragment->SkeletalMesh)
-					{
-						SpawnedWeapon->SetSkeletalMesh(Fragment->SkeletalMesh);
-					}
-				}
+				SpawnedWeapon->SetSkeletalMesh(EquippetItemMesh);
 			}
 		}
 		

@@ -45,6 +45,16 @@ struct FNaviQuickBarActiveIndexChangedMessage
 	FGameplayTag ActiveEquipmentTag;*/
 };
 
+UENUM(BlueprintType)
+enum class ENaviQuickBarSlotNum : uint8
+{
+	Primary    UMETA(DisplayName = "Primary"), 
+	Sidearms UMETA(DisplayName = "Sidearms"), 
+	Melee     UMETA(DisplayName = "Melee"),          
+	Spike   UMETA(DisplayName = "Spike"),    
+	MAX       UMETA(Hidden) 
+};
+
 /**
  * 발로란트의 슬롯 규칙을 따르는 QuickBarComponent
  * 4개의 고정된 슬롯으로, 특정 아이템(Primary, Sidearms, Melee, Spike) 타입만 허용
@@ -71,7 +81,7 @@ public:
 	void CycleActiveSlotBackward();
 
 	UFUNCTION(BlueprintCallable, Category = "Navi|QuickBar")
-	void SecActiveSlotIndexOnEquipmentPickUp();
+	void SetActiveSlotIndexOnEquipmentPickUp();
 
 	/** 지정된 인덱스의 슬롯을 활성화(장착)합니다. 서버에서만 호출해야 합니다. */
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Navi|QuickBar")
@@ -112,7 +122,7 @@ public:
 	ULyraInventoryItemInstance* RemoveItemFromSlot(int32 SlotIndex);
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Navi|QuickBar")
-	void SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPickupable> DroppedAndPickupableClass, ULyraInventoryItemInstance* ItemInstance);
+	void SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPickupable> DroppedAndPickupableClass);
 
 	UFUNCTION(BlueprintCallable, Category = "Navi|QuickBar")
 	FTransform GetAimPointTransform();
@@ -149,20 +159,17 @@ protected:
 	void OnRep_ActiveSlotIndex(int32 OldIndex);
 
 private:
-	/** 슬롯 아이템 목록. 서버에서 클라이언트로 복제됩니다. */
 	UPROPERTY(ReplicatedUsing = OnRep_Slots)
 	TArray<TObjectPtr<ULyraInventoryItemInstance>> Slots;
 
-	/** 현재 활성화된 슬롯의 인덱스. 서버에서 클라이언트로 복제됩니다. */
 	UPROPERTY()
-	int32 LastActiveSlotIndex = -1;
+	int32 LastActiveSlotIndex = 2;
 
 	UPROPERTY(ReplicatedUsing = OnRep_ActiveSlotIndex)
 	int32 ActiveSlotIndex = -1;
-
-	/** 현재 장착된 장비의 인스턴스입니다. */
+	
 	UPROPERTY(Replicated)
-	TObjectPtr<ULyraEquipmentInstance> EquippedItem; // ULyraEquipmentInstance -> UNaviEquipmentInstance로 변경 가능
+	TObjectPtr<ULyraEquipmentInstance> EquippedItem; 
 };
 
 /**
