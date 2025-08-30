@@ -42,10 +42,12 @@ protected:
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovementComponent;
 	
 	UFUNCTION()
-	void OnProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, 
+	void OnProjectileComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, 
 	FVector NormalImpulse, const FHitResult& Hit);
 
 	bool bIsOnGround = false;
+
+	virtual void OnDropFinished();
 	
 public:
 	

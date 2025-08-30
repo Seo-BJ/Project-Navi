@@ -53,6 +53,7 @@ void ANaviDropAndPickupable_Weapon::SetSkeletalMesh(USkeletalMesh* SkeletalMesh)
 void ANaviDropAndPickupable_Weapon::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	/*
 	// @TODO: 처음 Drop 할때는 Owner를 막기
 	// @TODO: 던진 Actor에 대해서는 OWNER를 누구로 설정해야하는가? OUTER는?
 	if (!HasAuthority() || !OtherActor || OtherActor == this)
@@ -75,7 +76,7 @@ void ANaviDropAndPickupable_Weapon::OnOverlapBegin(UPrimitiveComponent* Overlapp
 		int SlotIndex = QuickBarComponent->AddItemToSlot(ItemInstances[0]);
 		QuickBarComponent->SetActiveSlotIndex(SlotIndex);
 	}
-	Destroy();
+	Destroy();*/
 }
 
 void ANaviDropAndPickupable_Weapon::OnRep_WeaponMesh()
@@ -84,4 +85,9 @@ void ANaviDropAndPickupable_Weapon::OnRep_WeaponMesh()
 	{
 		WeaponMeshComponent->SetSkeletalMeshAsset(ReplicatedWeaponMesh);
 	}
+}
+
+void ANaviDropAndPickupable_Weapon::OnDropFinished()
+{
+	Super::OnDropFinished();
 }

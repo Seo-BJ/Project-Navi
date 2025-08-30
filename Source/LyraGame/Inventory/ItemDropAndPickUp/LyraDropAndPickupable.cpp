@@ -52,11 +52,11 @@ void ALyraDropAndPickupable::BeginPlay()
 	Super::BeginPlay();
 	if (MovementCollision)
 	{
-		MovementCollision->OnComponentHit.AddDynamic(this, &ALyraDropAndPickupable::OnProjectileHit);
+		MovementCollision->OnComponentHit.AddDynamic(this, &ALyraDropAndPickupable::OnProjectileComponentHit);
 	}
 }
 
-void ALyraDropAndPickupable::OnProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
+void ALyraDropAndPickupable::OnProjectileComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
                                              UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	// 땅이나 벽 등 어떤 것에든 한 번 부딪히면 즉시 물리 효과를 정지시킴
@@ -78,6 +78,12 @@ void ALyraDropAndPickupable::OnProjectileHit(UPrimitiveComponent* HitComponent, 
 		SetActorRotation(FRotator(0, GetActorRotation().Yaw, 0)); // 바닥에 평평하게 눕도록 회전 조정
 
 		// 델리게이트를 한 번만 실행하도록 바인딩 해제
-		MovementCollision->OnComponentHit.RemoveDynamic(this, &ALyraDropAndPickupable::OnProjectileHit);
+		MovementCollision->OnComponentHit.RemoveDynamic(this, &ALyraDropAndPickupable::OnProjectileComponentHit);
+
+		OnDropFinished();
 	}
+}
+
+void ALyraDropAndPickupable::OnDropFinished()
+{
 }
