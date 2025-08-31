@@ -10,7 +10,7 @@
  * 
  */
 UCLASS()
-class LYRAGAME_API UNaviDamageExecution : public UGameplayEffectExecutionCalculation
+class NAVISHOOTERCORERUNTIME_API UNaviDamageExecution : public UGameplayEffectExecutionCalculation
 {
 	GENERATED_BODY()
 

@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "NaviDamageExecution.h"
+#include "AbilitySystem/Executions/NaviDamageExecution.h"
 
 #include "AbilitySystem/Attributes/LyraHealthSet.h"
 #include "AbilitySystem/LyraGameplayEffectContext.h"
@@ -17,6 +17,7 @@
 struct FNaviDamageStatics
 {
 	FGameplayEffectAttributeCaptureDefinition BaseDamageDef;
+	FGameplayEffectAttributeCaptureDefinition HealthDef;
 	FGameplayEffectAttributeCaptureDefinition ArmorDef;
 	
 	FNaviDamageStatics()
@@ -57,8 +58,7 @@ void UNaviDamageExecution::Execute_Implementation(const FGameplayEffectCustomExe
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(NaviDamageStatics().BaseDamageDef, EvaluateParameters, SourceBaseDamage);
 	float TargetArmor = 0.0f;
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(NaviDamageStatics().ArmorDef, EvaluateParameters, TargetArmor);
-	float TargetShield = 0.0f;
-	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(NaviDamageStatics().BaseDamageDef, EvaluateParameters, TargetShield);
+
 
 	const AActor* EffectCauser = TypedContext->GetEffectCauser();
 	const FHitResult* HitActorResult = TypedContext->GetHitResult();
@@ -159,6 +159,10 @@ void UNaviDamageExecution::Execute_Implementation(const FGameplayEffectCustomExe
 				DamageToArmor = TargetArmor;
 				DamageToHealth = FMath::Max(0.0f, (PotentialDamageToHealth + PotentialArmorAbsorption - TargetArmor));
 			}
+		}
+		else
+		{
+			DamageToHealth = AdjustedDamage;
 		}
 		
 	}
