@@ -118,6 +118,10 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnRangedWeaponTargetDataReady(const FGameplayAbilityTargetDataHandle& TargetData);
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float FireRateTimeSeconds = 1.0f;
+
 private:
 	FDelegateHandle OnTargetDataReadyCallbackDelegateHandle;
+
 };

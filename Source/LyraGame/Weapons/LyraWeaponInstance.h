@@ -81,12 +81,14 @@ protected:
 
 	virtual void OnSpawnedActorsChanged() override;
 
+	double TimeLastEquipped = 0.0;
+	
+	double TimeLastFired = 0.0;
 private:
 
 	/** Set of device properties activated by this weapon. Populated by ApplyDeviceProperties */
 	UPROPERTY(Transient)
 	TSet<FInputDevicePropertyHandle> DevicePropertyHandles;
 
-	double TimeLastEquipped = 0.0;
-	double TimeLastFired = 0.0;
+
 };

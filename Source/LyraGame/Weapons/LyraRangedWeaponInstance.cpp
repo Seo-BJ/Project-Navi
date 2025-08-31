@@ -80,6 +80,8 @@ void ULyraRangedWeaponInstance::Tick(float DeltaSeconds)
 
 	bHasFirstShotAccuracy = bAllowFirstShotAccuracy && bMinMultipliers && bMinSpread;
 
+	UpdateRecoil(DeltaSeconds);
+
 #if WITH_EDITOR
 	UpdateDebugVisualization();
 #endif
@@ -147,8 +149,9 @@ float ULyraRangedWeaponInstance::GetPhysicalMaterialAttenuation(const UPhysicalM
 
 bool ULyraRangedWeaponInstance::UpdateSpread(float DeltaSeconds)
 {
-	const float TimeSinceFired = GetWorld()->TimeSince(LastFireTime);
-
+	// const float TimeSinceFired = GetWorld()->TimeSince(LastFireTime);
+	const float TimeSinceFired = GetWorld()->TimeSince(TimeLastFired);
+	
 	if (TimeSinceFired > SpreadRecoveryCooldownDelay)
 	{
 		const float CooldownRate = HeatToCoolDownPerSecondCurve.GetRichCurveConst()->Eval(CurrentHeat);
@@ -216,3 +219,77 @@ bool ULyraRangedWeaponInstance::UpdateMultipliers(float DeltaSeconds)
 	return bStandingStillMultiplierAtMin && bCrouchingMultiplierAtTarget && bJumpFallMultiplerIs1 && bAimingMultiplierAtTarget;
 }
 
+void ULyraRangedWeaponInstance::StartRecoil()
+{
+	APawn* const Pawn = GetPawn();
+	if (Pawn == nullptr) return;
+	
+	bIsFiring = true;
+	
+	TargetRecoil.X += FMath::FRandRange(HorizontalRecoilStep.X, HorizontalRecoilStep.Y);
+	TargetRecoil.Y += FMath::FRandRange(VerticalRecoilStep.X, VerticalRecoilStep.Y);
+
+	TargetRecoil.X = FMath::Clamp(TargetRecoil.X, -90.f, 90.f);
+	TargetRecoil.Y = FMath::Clamp(TargetRecoil.Y, -90.f, 90.f);
+}
+
+void ULyraRangedWeaponInstance::StopRecoil()
+{
+	if (!bIsFiring) return;
+    
+	bIsFiring = false;
+	ApplyInputCompensation();
+}
+
+void ULyraRangedWeaponInstance::UpdateRecoil(float DeltaTime)
+{
+	APawn* const Pawn = GetPawn();
+	if (Pawn == nullptr) return;
+	
+	if (bIsFiring)
+	{
+		if (const APlayerController* PC = Cast<APlayerController>(Pawn->GetController()))
+		{
+			FVector2D MouseDelta;
+			PC->GetInputMouseDelta(MouseDelta.X, MouseDelta.Y);
+			InputCompensation += MouseDelta;
+		}
+	}
+	else
+	{
+		TargetRecoil = FMath::Vector2DInterpTo(TargetRecoil, FVector2D::ZeroVector, DeltaTime, Damping);
+	}
+
+	const FVector2D PreviousRecoil = CurrentRecoil;
+
+	CurrentRecoil.X = FMath::FInterpTo(CurrentRecoil.X, TargetRecoil.X, DeltaTime, RecoilSmoothing.X);
+	CurrentRecoil.Y = FMath::FInterpTo(CurrentRecoil.Y, TargetRecoil.Y, DeltaTime, RecoilSmoothing.Y);
+    
+	Pawn->AddControllerYawInput(CurrentRecoil.X - PreviousRecoil.X);
+	Pawn->AddControllerPitchInput(CurrentRecoil.Y - PreviousRecoil.Y);
+}
+
+void ULyraRangedWeaponInstance::ApplyInputCompensation()
+{
+	const float CompWeight = Compensation;
+	const float YawMultiplier = GetInputCompensationMultiplier(CurrentRecoil.X, InputCompensation.X * CompWeight);
+	const float PitchMultiplier = GetInputCompensationMultiplier(CurrentRecoil.Y, -InputCompensation.Y * CompWeight);
+
+	CurrentRecoil.X *= YawMultiplier;
+	CurrentRecoil.Y *= PitchMultiplier;
+
+	TargetRecoil = CurrentRecoil;
+	InputCompensation = FVector2D::ZeroVector;
+}
+
+float ULyraRangedWeaponInstance::GetInputCompensationMultiplier(float RecoilValue, float CompensationValue) const
+{
+	const bool bIsOpposite = (RecoilValue * CompensationValue) <= 0.f;
+
+	if (!FMath::IsNearlyZero(RecoilValue) && bIsOpposite)
+	{
+		const float Reduction = FMath::Clamp(FMath::Abs(CompensationValue / RecoilValue), 0.f, 1.f);
+		return 1.f - Reduction;
+	}
+	return 1.f;
+}

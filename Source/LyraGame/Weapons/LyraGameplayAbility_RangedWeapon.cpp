@@ -11,6 +11,8 @@
 #include "AbilitySystem/LyraGameplayAbilityTargetData_SingleTargetHit.h"
 #include "DrawDebugHelpers.h"
 
+#include "TimerManager.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraGameplayAbility_RangedWeapon)
 
 namespace LyraConsoleVariables
@@ -470,6 +472,10 @@ void ULyraGameplayAbility_RangedWeapon::EndAbility(const FGameplayAbilitySpecHan
 		MyAbilityComponent->AbilityTargetDataSetDelegate(CurrentSpecHandle, CurrentActivationInfo.GetActivationPredictionKey()).Remove(OnTargetDataReadyCallbackDelegateHandle);
 		MyAbilityComponent->ConsumeClientReplicatedTargetData(CurrentSpecHandle, CurrentActivationInfo.GetActivationPredictionKey());
 
+		ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
+		check(WeaponData);
+		WeaponData->StopRecoil();
+		
 		Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 	}
 }
@@ -525,8 +531,7 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 			}
 		}
 #endif //WITH_SERVER_CODE
-
-
+		
 		// See if we still have ammo
 		if (bIsTargetDataValid && CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
 		{
@@ -534,6 +539,7 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 			ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
 			check(WeaponData);
 			WeaponData->AddSpread();
+			WeaponData->StartRecoil();
 
 			// Let the blueprint do stuff like apply effects to the targets
 			OnRangedWeaponTargetDataReady(LocalTargetDataHandle);
@@ -597,3 +603,30 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 	OnTargetDataReadyCallback(TargetData, FGameplayTag());
 }
 
+/*
+void ULyraGameplayAbility_RangedWeapon::AddRecoil()
+{
+	ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
+	check(WeaponData)
+	
+	APawn* const AvatarPawn = Cast<APawn>(GetAvatarActorFromActorInfo());
+	check(AvatarPawn);
+	
+	float RandomVertialRecoil = FMath::FRandRange(WeaponData->GetMinVerticalRecoil(), WeaponData->GetMaxVerticalRecoil());
+	float RandomHorizontalRecoil = FMath::FRandRange(WeaponData->GetMinHorizontalRecoil(), WeaponData->GetMaxHorizontalRecoil());
+
+	AvatarPawn->AddControllerPitchInput(RandomVertialRecoil);
+	AvatarPawn->AddControllerYawInput(RandomHorizontalRecoil);
+	
+	GetWorld()->GetTimerManager().SetTimer(
+		TimerHandle_WeaponFire,     
+		this,                       
+		&ULyraGameplayAbility_RangedWeapon::ResetRecoil, 
+		FireRateTimeSeconds,     
+		false                      
+	);
+
+
+}
+
+*/

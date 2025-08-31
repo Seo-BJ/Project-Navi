@@ -155,16 +155,33 @@ protected:
 	// Rate at which we transition to/from the crouching accuracy (higher values are faster, though zero is instant; @see FInterpTo)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Spread|Player Params")
 	float TransitionRate_Crouching = 5.0f;
-
-
+	
 	// Spread multiplier while jumping/falling, smoothly blended to based on TransitionRate_JumpingOrFalling
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Spread|Player Params", meta=(ForceUnits=x))
 	float SpreadAngleMultiplier_JumpingOrFalling = 1.0f;
 
-	// Rate at which we transition to/from the jumping/falling accuracy (higher values are faster, though zero is instant; @see FInterpTo)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Spread|Player Params")
 	float TransitionRate_JumpingOrFalling = 5.0f;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Recoil")
+	FVector2D HorizontalRecoilStep{ FVector2D::ZeroVector };
+    
+	// 한 발 당 수직 반동 값의 (최소, 최대) 범위
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Recoil")
+	FVector2D VerticalRecoilStep = FVector2D::ZeroVector;
 
+	// 목표 반동 값으로의 보간 속도 (높을수록 빠르게 도달)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Recoil")
+	FVector2D RecoilSmoothing = FVector2D(15.0f, 15.0f);
+
+	// 사격 중지 시 반동 회복 속도
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Recoil", meta = (ClampMin="0.0"))
+	float Damping = 8.0f;
+
+	// 플레이어의 반동 제어(마우스 움직임)가 실제 반동에 영향을 미치는 정도 (0.0 ~ 1.0)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Recoil", meta = (ClampMin="0.0", ClampMax="1.0"))
+	float Compensation = 0.6f;
+	
 	// Number of bullets to fire in a single cartridge (typically 1, but may be more for shotguns)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Weapon Config")
 	int32 BulletsPerCartridge = 1;
@@ -246,4 +263,26 @@ private:
 
 	// Updates the multipliers and returns true if they are at minimum
 	bool UpdateMultipliers(float DeltaSeconds);
+	
+public:
+	void StartRecoil();
+	void StopRecoil();
+
+private:
+	void UpdateRecoil(float DeltaTime);
+
+	void ApplyInputCompensation();
+
+	float GetInputCompensationMultiplier(float RecoilValue, float CompensationValue) const;
+
+	UPROPERTY()
+	TObjectPtr<ACharacter> OwnerCharacter;
+
+	FVector2D TargetRecoil;
+    
+	FVector2D CurrentRecoil;
+    
+	FVector2D InputCompensation;
+    
+	bool bIsFiring;
 };
