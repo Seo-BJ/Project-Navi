@@ -68,6 +68,10 @@
 		{
 			"Name": "ShooterExplorer",
 			"Enabled": true
+		},
+		{
+			"Name": "ShooterMaps",
+			"Enabled": true
 		}
 	]
 }
