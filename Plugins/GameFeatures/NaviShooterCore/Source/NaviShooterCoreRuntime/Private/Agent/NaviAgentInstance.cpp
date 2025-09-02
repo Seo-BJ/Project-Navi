@@ -58,27 +58,14 @@ void UNaviAgentInstance::OnEquipped()
     // 2. 기본 스탯(Attribute) 적용
     if (ULyraAbilitySystemComponent* ASC = OuterLyraCharacter->GetLyraAbilitySystemComponent())
     {
-        if (DefaultAttributes)
+        if (AdditionalAttributes)
         {
             FGameplayEffectContextHandle EffectContext = ASC->MakeEffectContext();
             EffectContext.AddSourceObject(this);
-            FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(DefaultAttributes, 1.0f, EffectContext);
+            FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(AdditionalAttributes, 1.0f, EffectContext);
             if (SpecHandle.IsValid())
             {
                 AppliedGEHandle = ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
-            }
-        }
-    }
-
-    // 3. 시작 인벤토리 지급
-    if (ALyraPlayerController* PC = OuterLyraCharacter->GetController<ALyraPlayerController>())
-    {
-        if (ULyraInventoryManagerComponent* InventoryManager = PC->FindComponentByClass<ULyraInventoryManagerComponent>())
-        {
-            for (TSubclassOf<ULyraInventoryItemDefinition> Definition : GrantedInventory)
-            {
-                ULyraInventoryItemInstance* AddedInstance = InventoryManager->AddItemDefinition(Definition);
-                GrantedItemInstances.Add(AddedInstance);
             }
         }
     }

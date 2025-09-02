@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "NaviAgentSelectionComponent.h"
+#include "Agent/NaviAgentSelectionComponent.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Agent/NaviAgentDefinition.h"
@@ -67,7 +67,6 @@ void UNaviAgentSelectionComponent::ServerRequestAgentSelectionByTag_Implementati
 			UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(OldPawn, LyraGameplayTags::GameplayEvent_RequestReset, Payload);
 		}
 	}
-	
 }
 
 
@@ -82,8 +81,7 @@ void UNaviAgentSelectionComponent::ApplyAgentToPawn(APawn* TargetPawn)
 	{
 		return;
 	}
-
-	// 실제 장비 장착은 서버에서만 수행
+	
 	if (GetOwner()->HasAuthority())
 	{
 		if (ULyraEquipmentManagerComponent* EquipmentManager = TargetPawn->FindComponentByClass<ULyraEquipmentManagerComponent>())
