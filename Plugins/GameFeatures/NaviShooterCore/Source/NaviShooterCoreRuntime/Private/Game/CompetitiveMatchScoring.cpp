@@ -3,8 +3,8 @@
 
 #include "Game/CompetitiveMatchScoring.h"
 
+#include "LyraGameplayTags.h"
 #include "Net/UnrealNetwork.h"
-#include "AbilitySystem/Phases/LyraGamePhaseSubsystem.h" 
 #include "AbilitySystem/Phases/LyraGamePhaseAbility.h" 
 #include "GameModes/LyraExperienceManagerComponent.h"
 
@@ -26,8 +26,8 @@ void UCompetitiveMatchScoring::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 
 	DOREPLIFETIME(UCompetitiveMatchScoring, TargetScore);
 	DOREPLIFETIME(UCompetitiveMatchScoring, RemainingTime);
-	DOREPLIFETIME(UCompetitiveMatchScoring, RemainingBuyingTime); 
-
+	DOREPLIFETIME(UCompetitiveMatchScoring, RemainingBuyingTime);
+	DOREPLIFETIME(UCompetitiveMatchScoring, RemainingSpikeTime);
 }
 
 
@@ -36,13 +36,11 @@ void UCompetitiveMatchScoring::BeginPlay()
 	Super::BeginPlay();
 	if (HasAuthority())
 	{
-		
 		AGameStateBase* GameState = GetWorld()->GetGameState();
 		check(GameState);
 		ULyraExperienceManagerComponent* ExperienceComponent = GameState->FindComponentByClass<ULyraExperienceManagerComponent>();
 		check(ExperienceComponent);
 		ExperienceComponent->CallOrRegister_OnExperienceLoaded(FOnLyraExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
-		
 	}
 }
 
@@ -58,9 +56,10 @@ void UCompetitiveMatchScoring::OnExperienceLoaded(const ULyraExperienceDefinitio
 	if (ensure(PhaseSubsystem) && ensure(BuyingPhaseAbilityClass))
 	{
 		FLyraGamePhaseDelegate BuyingPhaseEndDelegate;
-		BuyingPhaseEndDelegate.BindUObject(this, &UCompetitiveMatchScoring::OnPlayingPhaseStarted);
+		// BuyingPhaseEndDelegate.BindUObject(this, &UCompetitiveMatchScoring::OnPlayingPhaseStarted);
+		
 		PhaseSubsystem->StartPhase(BuyingPhaseAbilityClass, BuyingPhaseEndDelegate);
-
+		
 		RemainingBuyingTime = BuyingTime;
 		GetWorld()->GetTimerManager().SetTimer(
 			BuyingPhaseTimerHandle,
@@ -71,6 +70,7 @@ void UCompetitiveMatchScoring::OnExperienceLoaded(const ULyraExperienceDefinitio
 	}
 }
 
+// Buying PHase /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void UCompetitiveMatchScoring::BuyingTimeCountDown()
 {
@@ -89,25 +89,23 @@ void UCompetitiveMatchScoring::EndBuyingPhase()
 	if (ensure(PhaseSubsystem) && ensure(StartingPhaseAbilityClass))
 	{
 		FLyraGamePhaseDelegate PlayingPhaseEndDelegate;
-		PlayingPhaseEndDelegate.BindUObject(this, &UCompetitiveMatchScoring::OnPostGamePhaseStarted);
+		// PlayingPhaseEndDelegate.BindUObject(this, &UCompetitiveMatchScoring::OnPostGamePhaseStarted);
 		PhaseSubsystem->StartPhase(StartingPhaseAbilityClass, PlayingPhaseEndDelegate);
+		
+		PlayingPhaseStartDelegate.Broadcast();
+
+		RemainingTime = RoundInitialTime;
+		GetWorld()->GetTimerManager().SetTimer(
+			RoundTimerHandle,
+			this,
+			&UCompetitiveMatchScoring::PlayingTimeCountDown,
+			1.0f,
+			true);
 	}
 }
+// End of Buying PHase /////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-void UCompetitiveMatchScoring::OnPlayingPhaseStarted(const ULyraGamePhaseAbility* PhaseAbility)
-{
-	RemainingTime = RoundInitialTime;
-
-	GetWorld()->GetTimerManager().SetTimer(
-		RoundTimerHandle,
-		this,
-		&UCompetitiveMatchScoring::CountDown,
-		1.0f,
-		true);
-}
-
-void UCompetitiveMatchScoring::CountDown()
+void UCompetitiveMatchScoring::PlayingTimeCountDown()
 {
 	RemainingTime -= 1.0f;
 
@@ -117,6 +115,55 @@ void UCompetitiveMatchScoring::CountDown()
 		HandlePostMatch();
 	}
 }
+
+void UCompetitiveMatchScoring::HandleSpikePlanted(APawn* SpikePlanter)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	GetWorld()->GetTimerManager().ClearTimer(RoundTimerHandle);
+	Multicast_BroadcastSpikePlantedMessage(SpikePlanter);
+
+	RemainingSpikeTime = SpikeDetonationTime;
+	GetWorld()->GetTimerManager().SetTimer(
+		SpikePhaseTimerHandle,
+		this,
+		&UCompetitiveMatchScoring::SpikeTimeCountDown,
+		1.0f,
+		true);
+
+	ULyraGamePhaseSubsystem* PhaseSubsystem = GetWorld()->GetSubsystem<ULyraGamePhaseSubsystem>();
+	if (ensure(PhaseSubsystem) && ensure(SpikePlantedPhaseAbilityClass))
+	{
+		FLyraGamePhaseDelegate SpikePhaseEndDelegate;
+		// 스파이크 페이즈가 끝나면(폭발하면) PostGame 페이즈로 갑니다.
+		// SpikePhaseEndDelegate.BindUObject(this, &UCompetitiveMatchScoring::OnPostGamePhaseStarted);
+		PhaseSubsystem->StartPhase(SpikePlantedPhaseAbilityClass, SpikePhaseEndDelegate);
+	}
+}
+void UCompetitiveMatchScoring::Multicast_BroadcastSpikePlantedMessage_Implementation(APawn* SpikePlanter)
+{
+	UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
+	FSpikePlantedMessage Message;
+	Message.SpikePlantInstigator = SpikePlanter;
+
+	MessageSubsystem.BroadcastMessage(NaviGameplayTags::Navi_Spike_Plant_Finish, Message);
+}
+
+
+void UCompetitiveMatchScoring::SpikeTimeCountDown()
+{
+	RemainingSpikeTime -= 1.0f;
+	if (RemainingSpikeTime <= 0.0f)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(SpikePhaseTimerHandle);
+		HandlePostMatch();
+	}
+}
+
+
 
 void UCompetitiveMatchScoring::OnPostGamePhaseStarted(const ULyraGamePhaseAbility* PhaseAbility)
 {
@@ -128,6 +175,7 @@ void UCompetitiveMatchScoring::HandlePostMatch()
 {
 
 	GetWorld()->GetTimerManager().ClearTimer(RoundTimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(SpikePhaseTimerHandle);
 }
 
 
@@ -144,4 +192,9 @@ void UCompetitiveMatchScoring::OnRep_RemainingTime()
 void UCompetitiveMatchScoring::OnRep_RemainingBuyingTime()
 {
 	OnRemainingBuyingTimeChanged.Broadcast(RemainingBuyingTime);
+}
+
+void UCompetitiveMatchScoring::OnRep_RemainingSpikeTime()
+{
+	OnRemainingSpikeTimeChanged.Broadcast(RemainingSpikeTime);
 }
