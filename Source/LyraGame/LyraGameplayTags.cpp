@@ -231,8 +231,11 @@ namespace NaviGameplayTags
 	
 	UE_DEFINE_GAMEPLAY_TAG(Agent_Ultimate_CurrentPoint, "Agent.Ultimate.CurrentPoint");
 	UE_DEFINE_GAMEPLAY_TAG(Agent_Ultimate_RequiredPoint, "Agent.Ultimate.RequiredPoint");
+	
+	// Spkie
 
-	// Spkie 
+	LYRAGAME_API UE_DEFINE_GAMEPLAY_TAG(Navi_Spike_InPlantArea, "Navi.Spike.InPlantArea");
+
 	UE_DEFINE_GAMEPLAY_TAG(Navi_Spike_Plant_Start, "Navi.Spike.Plant.Start");
 	UE_DEFINE_GAMEPLAY_TAG(Navi_Spike_Plant_Finish, "Navi.Spike.Plant.Finish");
 	UE_DEFINE_GAMEPLAY_TAG(Navi_Spike_Explosion, "Navi.Spike.Explosion");
