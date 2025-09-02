@@ -129,3 +129,15 @@ float ULyraCharacterMovementComponent::GetMaxSpeed() const
 
 	return Super::GetMaxSpeed();
 }
+
+float ULyraCharacterMovementComponent::GetMinAnalogSpeed() const
+{
+	if (UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetOwner()))
+	{
+		if (ASC->HasMatchingGameplayTag(TAG_Gameplay_MovementStopped))
+		{
+			return 0;
+		}
+	}
+	return Super::GetMinAnalogSpeed();
+}
