@@ -352,6 +352,14 @@
 		{
 			"Name": "NaviShooterCore",
 			"Enabled": true
+		},
+		{
+			"Name": "NaviAgentSelect",
+			"Enabled": false
+		},
+		{
+			"Name": "NaviFpsSystem",
+			"Enabled": false
 		}
 	],
 	"EpicSampleNameHash": "451731683"

@@ -11,7 +11,7 @@
 class UNaviAgentDefinition;
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class NAVIAGENTSELECTRUNTIME_API UNaviAgentSelectionComponent : public UControllerComponent
+class NAVISHOOTERCORERUNTIME_API UNaviAgentSelectionComponent : public UControllerComponent
 {
 	GENERATED_BODY()
 

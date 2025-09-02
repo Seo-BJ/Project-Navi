@@ -17,7 +17,7 @@ class UAnimInstance;
  * 
  */
 UCLASS()
-class NAVIAGENTSELECTRUNTIME_API UNaviAgentDefinition : public ULyraEquipmentDefinition
+class NAVISHOOTERCORERUNTIME_API UNaviAgentDefinition : public ULyraEquipmentDefinition
 {
 	GENERATED_BODY()
 

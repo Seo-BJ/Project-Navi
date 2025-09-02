@@ -22,7 +22,7 @@ struct FActiveGameplayEffectHandle;
  * 
  */
 UCLASS()
-class NAVIAGENTSELECTRUNTIME_API UNaviAgentInstance : public ULyraEquipmentInstance
+class NAVISHOOTERCORERUNTIME_API UNaviAgentInstance : public ULyraEquipmentInstance
 {
 	GENERATED_BODY()
 	
@@ -40,11 +40,8 @@ protected:
 	TArray<FLyraCharacterPart> CharacterParts;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Navi Agent | Instance")
-	TSubclassOf<UGameplayEffect> DefaultAttributes;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Navi Agent | Instance")
-	TArray<TSubclassOf<ULyraInventoryItemDefinition>> GrantedInventory;
-
+	TSubclassOf<UGameplayEffect> AdditionalAttributes;
+;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Navi Agent | Instance")
 	TSoftObjectPtr<USkeletalMesh> SkeletalMeshOverride;
 
