@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ControllerComponent.h"
-
+#include "GameplayTags.h"
 #include "NaviAgentSelectionComponent.generated.h"
 
 
@@ -26,11 +26,14 @@ protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditDefaultsOnly)
-	TArray<TSubclassOf<UNaviAgentDefinition>> SelectableAgents;
+	TMap<FGameplayTag, TSubclassOf<UNaviAgentDefinition>> SelectableAgentMap;
 
 	
 	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void ServerRequestAgentSelectionByTag(const FGameplayTag& AgentTag);
+	void ServerRespawnWithNewAgent(const FGameplayTag& AgentTag);
+
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void ServerApplyAgentSelection(const FGameplayTag& AgentTag);
 
 	UFUNCTION()
 	void OnPossessedPawnChanged(APawn* OldPawn, APawn* NewPawn);
