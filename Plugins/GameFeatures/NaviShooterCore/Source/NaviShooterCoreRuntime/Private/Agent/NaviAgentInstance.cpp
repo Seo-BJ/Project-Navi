@@ -27,6 +27,30 @@ void UNaviAgentInstance::OnEquipped()
     {
         return;
     }
+    USkeletalMeshComponent* TppMeshComponent = OuterLyraCharacter->GetMesh();
+    USkeletalMeshComponent* FppMeshComponent = OuterLyraCharacter->GetFirstPersonMesh();
+    if (!TppMeshComponent || ! FppMeshComponent)
+    {
+        return;
+    }
+
+    // 1. 외형 적용 (Skeletal Mesh 및 Character Parts)
+    if (USkeletalMesh* TargetMesh = Cast<USkeletalMesh>(SkeletalMeshOverride.LoadSynchronous()))
+    {
+        TppMeshComponent->SetSkeletalMeshAsset(TargetMesh);
+        FppMeshComponent->SetSkeletalMeshAsset(TargetMesh);
+
+        const TArray<FSkeletalMaterial>& SkeletalMaterials = TargetMesh->GetMaterials();
+        for (int32 MaterialIndex = 0; MaterialIndex < SkeletalMaterials.Num(); ++MaterialIndex)
+        {
+            if (UMaterialInterface* MaterialToApply = SkeletalMaterials[MaterialIndex].MaterialInterface)
+            {
+                TppMeshComponent->SetMaterial(MaterialIndex, MaterialToApply);
+                FppMeshComponent->SetMaterial(MaterialIndex, MaterialToApply);
+            }
+        }
+    }
+    
     ALyraPlayerController* LyraPC = OuterLyraCharacter->GetLyraPlayerController();
     if (!LyraPC)
     {
@@ -36,17 +60,6 @@ void UNaviAgentInstance::OnEquipped()
     if (!CosmeticController)
     {
         return;
-    }
-    USkeletalMeshComponent* MeshComponent = OuterLyraCharacter->GetMesh();
-    if (!MeshComponent)
-    {
-        return;
-    }
-
-    // 1. 외형 적용 (Skeletal Mesh 및 Character Parts)
-    if (USkeletalMesh* TargetMesh = Cast<USkeletalMesh>(SkeletalMeshOverride.LoadSynchronous()))
-    {
-        MeshComponent->SetSkeletalMeshAsset(TargetMesh);
     }
     
     CosmeticController->RemoveAllCharacterParts();
