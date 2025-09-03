@@ -6,8 +6,6 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Agent/NaviAgentDefinition.h"
 #include "Agent/NaviAgentInstance.h"
-
-#include "GameplayTags.h"
 #include "LyraGameplayTags.h"
 #include "Character/LyraHealthComponent.h"
 #include "Equipment/LyraEquipmentManagerComponent.h"
@@ -37,22 +35,18 @@ void UNaviAgentSelectionComponent::GetLifetimeReplicatedProps(TArray<FLifetimePr
 }
 
 
-void UNaviAgentSelectionComponent::ServerRequestAgentSelectionByTag_Implementation(const FGameplayTag& AgentTag)
+void UNaviAgentSelectionComponent::ServerRespawnWithNewAgent_Implementation(const FGameplayTag& AgentTag)
 {
 	APlayerController* OwningController = GetOwner<APlayerController>();
-	if (!ensure(OwningController) || !OwningController->HasAuthority())
+	if (!ensure(OwningController) || !OwningController->HasAuthority() || AgentTag == FGameplayTag::EmptyTag)
 	{
 		return;
 	}
 	
-	
-	UNaviAgentDefinition* TargetAgentDef = nullptr;
-	for (TSubclassOf<UNaviAgentDefinition> Definition : SelectableAgents)
+	TSubclassOf<UNaviAgentDefinition>* Definition = SelectableAgentMap.Find(AgentTag);
+	if (Definition)
 	{
-		if (Definition && Definition.GetDefaultObject()->AgentTag == AgentTag)
-		{
-			SelectedAgentDefinition = Definition;
-		}
+		SelectedAgentDefinition = *Definition;
 	}
 	
 	APawn* OldPawn = OwningController->GetPawn();
@@ -69,6 +63,25 @@ void UNaviAgentSelectionComponent::ServerRequestAgentSelectionByTag_Implementati
 	}
 }
 
+
+void UNaviAgentSelectionComponent::ServerApplyAgentSelection_Implementation(const FGameplayTag& AgentTag)
+{
+	AController* OwnerController = GetOwner<AController>();
+	if (OwnerController && OwnerController->HasAuthority())
+	{
+		if (APawn* Pawn = OwnerController->GetPawn())
+		{
+			if (ULyraEquipmentManagerComponent* EquipmentManager = Pawn->FindComponentByClass<ULyraEquipmentManagerComponent>())
+			{
+				TSubclassOf<UNaviAgentDefinition>* Definition = SelectableAgentMap.Find(AgentTag);
+				if (Definition)
+				{
+					EquipmentManager->EquipItem(*Definition);
+				}
+			}
+		}
+	}
+}
 
 void UNaviAgentSelectionComponent::OnPossessedPawnChanged(APawn* OldPawn, APawn* NewPawn)
 {

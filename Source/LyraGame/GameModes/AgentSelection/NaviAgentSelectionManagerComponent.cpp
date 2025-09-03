@@ -70,7 +70,6 @@ void UNaviAgentSelectionManagerComponent::HandleConfirmSelectionRequest(const FS
     {
         AgentSelectionInfoArray.ConfirmAgentSelection(UserName);
     }
-    
 }
 
 

@@ -72,9 +72,7 @@ void ALyraPlayerState::ClientInitialize(AController* C)
 void ALyraPlayerState::CopyProperties(APlayerState* PlayerState)
 {
 	Super::CopyProperties(PlayerState);
-
-	//@TODO: Copy stats
-
+	
 	if (ALyraPlayerState* NewPlayerState = Cast<ALyraPlayerState>(PlayerState))
 	{
 		NewPlayerState->MyTeamID = MyTeamID;
@@ -83,7 +81,6 @@ void ALyraPlayerState::CopyProperties(APlayerState* PlayerState)
 		NewPlayerState->MyIndexInTeam = MyIndexInTeam;
 		NewPlayerState->MyAgentTag = MyAgentTag;
 	}
-	
 }
 
 void ALyraPlayerState::OnDeactivated()
@@ -298,7 +295,6 @@ void ALyraPlayerState::SetSelectedAgentTag(const FGameplayTag NewAgentTag)
 		const FGameplayTag OldAgentTag = MyAgentTag;
 		MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, MyAgentTag, this);
 		MyAgentTag = NewAgentTag;
-		// ConditionalBroadcastTeamChanged(this, OldAgentTag, MyIndexInTeam);
 	}
 	else
 	{
