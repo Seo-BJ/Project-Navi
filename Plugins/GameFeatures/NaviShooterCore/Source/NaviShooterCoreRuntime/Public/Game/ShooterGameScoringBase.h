@@ -10,6 +10,8 @@
 
 struct FLyraVerbMessage;
 
+
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class NAVISHOOTERCORERUNTIME_API UShooterGameScoringBase : public UGameStateComponent
 {

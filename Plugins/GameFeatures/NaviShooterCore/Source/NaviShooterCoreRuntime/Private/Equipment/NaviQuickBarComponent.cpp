@@ -27,7 +27,7 @@
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Navi_QuickBar_Message_SlotsChanged, "Navi.QuickBar.Message.SlotsChanged");
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Navi_QuickBar_Message_ActiveIndexChanged, "Navi.QuickBar.Message.ActiveIndexChanged");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_Item_Dropped, "Lyra.Item.Dropped");
+UE_DEFINE_GAMEPLAY_TAG(TAG_Lyra_Item_Dropped, "Lyra.Item.Dropped");
 
 
 
@@ -49,12 +49,16 @@ void UNaviQuickBarComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 
 void UNaviQuickBarComponent::BeginPlay()
 {
-	// 슬롯 배열의 크기를 NumSlots에 맞게 초기화합니다.
+	// 슬롯 배열의 크기를 NumSlots에 맞게 초기화.
 	if (Slots.Num() < NumSlots)
 	{
 		Slots.AddDefaulted(NumSlots - Slots.Num());
 	}
 	
+	if (AController* Controller = GetOwner<AController>())
+	{
+		Controller->OnPossessedPawnChanged.AddDynamic(this, &UNaviQuickBarComponent::ResetQuickBarComponent);
+	}
 	Super::BeginPlay();
 }
 
@@ -126,7 +130,6 @@ void UNaviQuickBarComponent::SetActiveSlotIndex_Implementation(int32 NewIndex)
 		ActiveSlotIndex = NewIndex;
 		EquipItemInSlot();
 
-		// 클라이언트에서도 RepNotify가 즉시 호출되도록 합니다.
 		OnRep_ActiveSlotIndex(OldIndex);
 	}
 }
@@ -394,4 +397,12 @@ void UNaviQuickBarComponent::OnRep_ActiveSlotIndex(int32 OldIndex)
 	
 	UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(this);
 	MessageSystem.BroadcastMessage(TAG_Navi_QuickBar_Message_ActiveIndexChanged, Message);
+}
+
+void UNaviQuickBarComponent::ResetQuickBarComponent(APawn* OldPawn, APawn* NewPawn)
+{
+	if (HasAuthority())
+	{
+		ActiveSlotIndex = -1;
+	}
 }

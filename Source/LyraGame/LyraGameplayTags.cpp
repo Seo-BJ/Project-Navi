@@ -259,6 +259,14 @@ namespace NaviGameplayTags
 	
 	UE_DEFINE_GAMEPLAY_TAG(Navi_Cheat_InfiniteCreds, "Navi.Cheat.InfiniteCreds");
 
+	// Competitive Match
+
+	UE_DEFINE_GAMEPLAY_TAG(Navi_CompetitiveMatch_TeamScore, "Navi.CompetitiveMatch.TeamScore");
+
+	UE_DEFINE_GAMEPLAY_TAG(TAG_Navi_Team_Role_Attacker, "Navi.Team.Role.Attacker");
+	UE_DEFINE_GAMEPLAY_TAG(TAG_Navi_Team_Role_Defender, "Navi.Team.Role.Defender");
+
+
 	
 }
 
