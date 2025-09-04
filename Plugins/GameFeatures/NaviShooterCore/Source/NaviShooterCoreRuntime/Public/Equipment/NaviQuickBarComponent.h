@@ -158,6 +158,9 @@ protected:
 	UFUNCTION()
 	void OnRep_ActiveSlotIndex(int32 OldIndex);
 
+	UFUNCTION()
+	void ResetQuickBarComponent(APawn* OldPawn, APawn* NewPawn);
+
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_Slots)
 	TArray<TObjectPtr<ULyraInventoryItemInstance>> Slots;

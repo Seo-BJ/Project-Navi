@@ -228,6 +228,22 @@ void ALyraCharacter::PossessedBy(AController* NewController)
 		ControllerAsTeamProvider->GetTeamChangedDelegateChecked().AddDynamic(this, &ThisClass::OnControllerChangedTeam);
 	}
 	ConditionalBroadcastTeamChanged(this, OldTeamID, MyTeamID);
+
+	if (Controller)
+	{
+		Controller->SetIgnoreMoveInput(false);
+	}
+	
+	UCapsuleComponent* CapsuleComp = GetCapsuleComponent();
+	check(CapsuleComp);
+	// 캡슐의 콜리전을 'Pawn' 기본값으로 되돌립니다.
+	CapsuleComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	CapsuleComp->SetCollisionResponseToAllChannels(ECR_Block);
+	CapsuleComp->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore); // Lyra 기본 설정
+
+	ULyraCharacterMovementComponent* LyraMoveComp = CastChecked<ULyraCharacterMovementComponent>(GetCharacterMovement());
+	// 이동 모드를 기본값(Walking)으로 되돌립니다.
+	LyraMoveComp->SetMovementMode(MOVE_Walking);
 }
 
 void ALyraCharacter::UnPossessed()

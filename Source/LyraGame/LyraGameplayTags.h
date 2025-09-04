@@ -219,6 +219,12 @@ namespace NaviGameplayTags
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Creds_Award_Kill);
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Experience_PlantSpike);
 
+	// Competitive Match
+	
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_CompetitiveMatch_TeamScore);
+
+	LYRAGAME_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Navi_Team_Role_Attacker);
+	LYRAGAME_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Navi_Team_Role_Defender);
 
 	// Cheat Tags
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Navi_Cheat_InfiniteCreds);
