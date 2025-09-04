@@ -9,6 +9,26 @@
 
 struct FGameplayTagStackContainer;
 struct FNetDeltaSerializeInfo;
+class ULyraTeamSubsystem;
+
+/** A message when an Tag is added to the Stack */
+USTRUCT(BlueprintType)
+struct FLyraGameplayTagStackChangeMessage
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, Category=GameplayTagStack)
+	TObjectPtr<UObject> StackOwner = nullptr;
+	
+	UPROPERTY(BlueprintReadOnly, Category=GameplayTagStack)
+	FGameplayTag GameplayTag = FGameplayTag::EmptyTag;
+
+	UPROPERTY(BlueprintReadOnly, Category=GameplayTagStack)
+	int32 OldStackCount = 0;
+	
+	UPROPERTY(BlueprintReadOnly, Category=GameplayTagStack)
+	int32 NewStackCount = 0;
+};
 
 /**
  * Represents one stack of a gameplay tag (tag + count)
@@ -46,10 +66,10 @@ struct FGameplayTagStackContainer : public FFastArraySerializer
 	GENERATED_BODY()
 
 	FGameplayTagStackContainer()
-	//	: Owner(nullptr)
+	: Owner(nullptr)
 	{
 	}
-
+	
 public:
 	// Adds a specified number of stacks to the tag (does nothing if StackCount is below 1)
 	void AddStack(FGameplayTag Tag, int32 StackCount);
@@ -69,6 +89,11 @@ public:
 		return TagToCountMap.Contains(Tag);
 	}
 
+	UPROPERTY(NotReplicated)
+	TObjectPtr<UObject> Owner;
+
+	void RegisterWithOwner(UObject* InOwner);
+
 	//~FFastArraySerializer contract
 	void PreReplicatedRemove(const TArrayView<int32> RemovedIndices, int32 FinalSize);
 	void PostReplicatedAdd(const TArrayView<int32> AddedIndices, int32 FinalSize);
@@ -87,6 +112,8 @@ private:
 	
 	// Accelerated list of tag stacks for queries
 	TMap<FGameplayTag, int32> TagToCountMap;
+	
+	void BroadcastChangeMessage(const FGameplayTag& TagStack, int32 OldCount, int32 NewCount) const;
 };
 
 template<>

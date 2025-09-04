@@ -22,6 +22,7 @@ class ALyraTeamInfoBase : public AInfo
 public:
 	ALyraTeamInfoBase(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int32 GetTeamId() const { return TeamId; }
 
 	//~AActor interface

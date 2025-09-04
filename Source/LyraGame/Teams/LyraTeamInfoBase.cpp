@@ -53,6 +53,7 @@ void ALyraTeamInfoBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ALyraTeamInfoBase::RegisterWithTeamSubsystem(ULyraTeamSubsystem* Subsystem)
 {
 	Subsystem->RegisterTeamInfo(this);
+	TeamTags.RegisterWithOwner(this);
 }
 
 void ALyraTeamInfoBase::TryRegisterWithTeamSubsystem()
