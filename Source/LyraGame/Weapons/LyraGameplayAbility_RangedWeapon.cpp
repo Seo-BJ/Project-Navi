@@ -12,6 +12,10 @@
 #include "DrawDebugHelpers.h"
 
 #include "TimerManager.h"
+#include "Character/LyraCharacter.h"
+#include "LagCompensation/LyraLagCompensationComponent.h"
+#include "LagCompensation/LyraTimeSyncComponent.h"
+#include "Player/LyraPlayerController.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraGameplayAbility_RangedWeapon)
 
@@ -139,7 +143,14 @@ void ULyraGameplayAbility_RangedWeapon::AddAdditionalTraceIgnoreActors(FCollisio
 
 ECollisionChannel ULyraGameplayAbility_RangedWeapon::DetermineTraceChannel(FCollisionQueryParams& TraceParams, bool bIsSimulated) const
 {
-	return Lyra_TraceChannel_Weapon;
+	if (bUseServerSideRewind)
+	{
+		return LagCompensation_TraceChannel_HitBox;
+	}
+	else
+	{
+		return Lyra_TraceChannel_Weapon;
+	}
 }
 
 FHitResult ULyraGameplayAbility_RangedWeapon::WeaponTrace(const FVector& StartTrace, const FVector& EndTrace, float SweepRadius, bool bIsSimulated, OUT TArray<FHitResult>& OutHitResults) const
@@ -509,45 +520,110 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 			{
 				if (Controller->GetLocalRole() == ROLE_Authority)
 				{
-					// Confirm hit markers
-					if (ULyraWeaponStateComponent* WeaponStateComponent = Controller->FindComponentByClass<ULyraWeaponStateComponent>())
+					if (bUseServerSideRewind)
 					{
-						TArray<uint8> HitReplaces;
-						for (uint8 i = 0; (i < LocalTargetDataHandle.Num()) && (i < 255); ++i)
+						bool bOverallHitSuccess = false; // 이번 발사가 최소 1회 유효한 Hit가 발생했는지
+						TArray<uint8> ConfirmedHitIndices; // 서버에서 확인된 Hit들의 인덱스
+
+						ALyraCharacter* AttackerCharacter = GetLyraCharacterFromActorInfo();
+						ULyraLagCompensationComponent* LagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraLagCompensationComponent>() : nullptr;
+						if (IsValid(LagComp))
 						{
-							if (FGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<FGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
+							for (uint8 i = 0; i < LocalTargetDataHandle.Num(); ++i)
 							{
-								if (SingleTargetHit->bHitReplaced)
+								if (FLyraGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<FLyraGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
 								{
-									HitReplaces.Add(i);
+									const float HitTime = SingleTargetHit->HitTime;
+									const FHitResult& ClientHitResult = SingleTargetHit->HitResult;
+									
+									// 서버 사이드 리와인드 실행
+									FServerSideRewindResult RewindResult = LagComp->ServerSideRewind(ClientHitResult.GetActor(), ClientHitResult.TraceStart, ClientHitResult.ImpactPoint, HitTime);
+
+									if (RewindResult.bHitConfirmed)
+									{
+										bOverallHitSuccess = true;
+										ConfirmedHitIndices.Add(i);
+									}
+								}
+							}
+							if (ULyraWeaponStateComponent* WeaponStateComponent = Controller->FindComponentByClass<ULyraWeaponStateComponent>())
+							{
+								WeaponStateComponent->ClientConfirmTargetData(LocalTargetDataHandle.UniqueId, bOverallHitSuccess, ConfirmedHitIndices);
+							}
+							
+							// 서버 사이드 리와인드 Hit 결과 확인. Ammo 확인. 
+							if (CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
+							{
+								ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
+								check(WeaponData);
+								WeaponData->AddSpread();
+								WeaponData->StartRecoil();
+								if (bOverallHitSuccess)
+								{
+									OnRangedWeaponTargetDataReady(LocalTargetDataHandle); 
 								}
 							}
 						}
-
-						WeaponStateComponent->ClientConfirmTargetData(LocalTargetDataHandle.UniqueId, bIsTargetDataValid, HitReplaces);
 					}
-
+					else
+					{
+						// Confirm hit markers
+						if (ULyraWeaponStateComponent* WeaponStateComponent = Controller->FindComponentByClass<ULyraWeaponStateComponent>())
+						{
+							TArray<uint8> HitReplaces;
+							for (uint8 i = 0; (i < LocalTargetDataHandle.Num()) && (i < 255); ++i)
+							{
+								if (FGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<FGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
+								{
+									if (SingleTargetHit->bHitReplaced)
+									{
+										HitReplaces.Add(i);
+									}
+								}
+							}
+							WeaponStateComponent->ClientConfirmTargetData(LocalTargetDataHandle.UniqueId, bIsTargetDataValid, HitReplaces);
+						}
+					}
 				}
 			}
 		}
 #endif //WITH_SERVER_CODE
-		
-		// See if we still have ammo
-		if (bIsTargetDataValid && CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
-		{
-			// We fired the weapon, add spread
-			ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
-			check(WeaponData);
-			WeaponData->AddSpread();
-			WeaponData->StartRecoil();
 
-			// Let the blueprint do stuff like apply effects to the targets
-			OnRangedWeaponTargetDataReady(LocalTargetDataHandle);
+		if (bUseServerSideRewind)
+		{
+			if (AController* Controller = GetControllerFromActorInfo())
+			{
+				if (Controller->GetLocalRole() != ROLE_Authority && CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
+				{
+					ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
+					check(WeaponData);
+					WeaponData->AddSpread();
+					WeaponData->StartRecoil();
+					
+					// Let the blueprint do stuff like apply effects to the targets
+					OnRangedWeaponTargetDataReady(LocalTargetDataHandle);
+				}
+			}
 		}
 		else
 		{
-			UE_LOG(LogLyraAbilitySystem, Warning, TEXT("Weapon ability %s failed to commit (bIsTargetDataValid=%d)"), *GetPathName(), bIsTargetDataValid ? 1 : 0);
-			K2_EndAbility();
+			// See if we still have ammo
+			if (bIsTargetDataValid && CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
+			{
+				// We fired the weapon, add spread
+				ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
+				check(WeaponData);
+				WeaponData->AddSpread();
+				WeaponData->StartRecoil();
+
+				// Let the blueprint do stuff like apply effects to the targets
+				OnRangedWeaponTargetDataReady(LocalTargetDataHandle);
+			}
+			else
+			{
+				UE_LOG(LogLyraAbilitySystem, Warning, TEXT("Weapon ability %s failed to commit (bIsTargetDataValid=%d)"), *GetPathName(), bIsTargetDataValid ? 1 : 0);
+				K2_EndAbility();
+			}
 		}
 	}
 
@@ -581,12 +657,23 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 	if (FoundHits.Num() > 0)
 	{
 		const int32 CartridgeID = FMath::Rand();
-
+		
 		for (const FHitResult& FoundHit : FoundHits)
 		{
 			FLyraGameplayAbilityTargetData_SingleTargetHit* NewTargetData = new FLyraGameplayAbilityTargetData_SingleTargetHit();
 			NewTargetData->HitResult = FoundHit;
 			NewTargetData->CartridgeID = CartridgeID;
+			
+			if (bUseServerSideRewind)
+			{
+				ALyraPlayerController* LyraPC = GetLyraPlayerControllerFromActorInfo();
+				if (IsValid(LyraPC))
+				{
+					ULyraTimeSyncComponent* TimeSyncComponent = LyraPC->GetComponentByClass<ULyraTimeSyncComponent>();
+					const float HitTime = (IsValid(TimeSyncComponent)) ? (TimeSyncComponent->GetServerTime() - TimeSyncComponent->GetSingleTripTime()) : GetWorld()->GetTimeSeconds();
+					NewTargetData->HitTime = HitTime;
+				}
+			}
 
 			TargetData.Add(NewTargetData);
 		}
@@ -602,31 +689,3 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 	// Process the target data immediately
 	OnTargetDataReadyCallback(TargetData, FGameplayTag());
 }
-
-/*
-void ULyraGameplayAbility_RangedWeapon::AddRecoil()
-{
-	ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
-	check(WeaponData)
-	
-	APawn* const AvatarPawn = Cast<APawn>(GetAvatarActorFromActorInfo());
-	check(AvatarPawn);
-	
-	float RandomVertialRecoil = FMath::FRandRange(WeaponData->GetMinVerticalRecoil(), WeaponData->GetMaxVerticalRecoil());
-	float RandomHorizontalRecoil = FMath::FRandRange(WeaponData->GetMinHorizontalRecoil(), WeaponData->GetMaxHorizontalRecoil());
-
-	AvatarPawn->AddControllerPitchInput(RandomVertialRecoil);
-	AvatarPawn->AddControllerYawInput(RandomHorizontalRecoil);
-	
-	GetWorld()->GetTimerManager().SetTimer(
-		TimerHandle_WeaponFire,     
-		this,                       
-		&ULyraGameplayAbility_RangedWeapon::ResetRecoil, 
-		FireRateTimeSeconds,     
-		false                      
-	);
-
-
-}
-
-*/

@@ -18,6 +18,7 @@ void FLyraGameplayAbilityTargetData_SingleTargetHit::AddTargetDataToContext(FGam
 	if (FLyraGameplayEffectContext* TypedContext = FLyraGameplayEffectContext::ExtractEffectContext(Context))
 	{
 		TypedContext->CartridgeID = CartridgeID;
+		TypedContext->ClientHitTime = HitTime;
 	}
 }
 
@@ -26,6 +27,7 @@ bool FLyraGameplayAbilityTargetData_SingleTargetHit::NetSerialize(FArchive& Ar, 
 	FGameplayAbilityTargetData_SingleTargetHit::NetSerialize(Ar, Map, bOutSuccess);
 
 	Ar << CartridgeID;
+	Ar << HitTime;
 
 	return true;
 }

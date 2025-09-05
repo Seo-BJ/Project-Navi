@@ -87,6 +87,9 @@ protected:
 		}
 	};
 
+	UPROPERTY(EditDefaultsOnly, Category="Lyra|Ability")
+	bool bUseServerSideRewind = true;
+	
 protected:
 	static int32 FindFirstPawnHitResult(const TArray<FHitResult>& HitResults);
 
