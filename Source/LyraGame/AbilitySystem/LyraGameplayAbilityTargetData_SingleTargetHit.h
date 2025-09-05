@@ -12,12 +12,12 @@ struct FGameplayEffectContextHandle;
 
 /** Game-specific additions to SingleTargetHit tracking */
 USTRUCT()
-struct FLyraGameplayAbilityTargetData_SingleTargetHit : public FGameplayAbilityTargetData_SingleTargetHit
+struct LYRAGAME_API FLyraGameplayAbilityTargetData_SingleTargetHit : public FGameplayAbilityTargetData_SingleTargetHit
 {
 	GENERATED_BODY()
 
 	FLyraGameplayAbilityTargetData_SingleTargetHit()
-		: CartridgeID(-1)
+		: CartridgeID(-1), HitTime(-1.0f)
 	{ }
 
 	virtual void AddTargetDataToContext(FGameplayEffectContextHandle& Context, bool bIncludeActorArray) const override;
@@ -25,6 +25,9 @@ struct FLyraGameplayAbilityTargetData_SingleTargetHit : public FGameplayAbilityT
 	/** ID to allow the identification of multiple bullets that were part of the same cartridge */
 	UPROPERTY()
 	int32 CartridgeID;
+
+	UPROPERTY()
+	float HitTime;
 
 	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess);
 

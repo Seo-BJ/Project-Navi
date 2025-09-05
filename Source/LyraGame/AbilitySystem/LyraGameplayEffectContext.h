@@ -142,6 +142,9 @@ public:
 	UPROPERTY()
 	int32 CartridgeID = -1;
 
+	UPROPERTY()
+	float ClientHitTime = -1.0f;
+
 protected:
 	/** Ability Source object (should implement ILyraAbilitySourceInterface). NOT replicated currently */
 	UPROPERTY()

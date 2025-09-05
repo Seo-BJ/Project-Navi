@@ -20,5 +20,7 @@
 // Trace used by by weapons, will trace through multiple pawns rather than stopping on the first hit
 #define Lyra_TraceChannel_Weapon_Multi					ECC_GameTraceChannel4
 
+#define LagCompensation_TraceChannel_HitBox					ECC_GameTraceChannel6
+
 // Allocated to aim assist by the ShooterCore game feature
 // ECC_GameTraceChannel5
