@@ -9,6 +9,8 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Camera/LyraCameraComponent.h"
+#include "Components/BoxComponent.h"
+#include "LagCompensation/LyraLagCompensationComponent.h"
 
 
 ANaviFppCharacter::ANaviFppCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)

@@ -7,7 +7,11 @@
 
 #include "NaviFppCharacter.generated.h"
 
+
 class USpringArmComponent;
+class UBoxComponent;
+class ULyraLagCompensationComponent;
+
 /**
  * 
  */
@@ -18,10 +22,10 @@ class NAVISHOOTERCORERUNTIME_API ANaviFppCharacter : public ALyraCharacter
 
 public:
 	ANaviFppCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());;
-
+	
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Navi|Camera", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	TObjectPtr<USpringArmComponent> SpringArm;
 };

@@ -510,7 +510,6 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 		}
 
 		const bool bIsTargetDataValid = true;
-
 		bool bProjectileWeapon = false;
 
 #if WITH_SERVER_CODE
@@ -520,11 +519,11 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 			{
 				if (Controller->GetLocalRole() == ROLE_Authority)
 				{
+					bool bOverallHitSuccess = false; // 이번 발사가 최소 1회 유효한 Hit가 발생했는지
+					TArray<uint8> ConfirmedHitIndices;	// 서버에서 확인된 Hit들의 인덱스
+
 					if (bUseServerSideRewind)
 					{
-						bool bOverallHitSuccess = false; // 이번 발사가 최소 1회 유효한 Hit가 발생했는지
-						TArray<uint8> ConfirmedHitIndices; // 서버에서 확인된 Hit들의 인덱스
-
 						ALyraCharacter* AttackerCharacter = GetLyraCharacterFromActorInfo();
 						ULyraLagCompensationComponent* LagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraLagCompensationComponent>() : nullptr;
 						if (IsValid(LagComp))
@@ -546,88 +545,86 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 									}
 								}
 							}
-							if (ULyraWeaponStateComponent* WeaponStateComponent = Controller->FindComponentByClass<ULyraWeaponStateComponent>())
-							{
-								WeaponStateComponent->ClientConfirmTargetData(LocalTargetDataHandle.UniqueId, bOverallHitSuccess, ConfirmedHitIndices);
-							}
-							
-							// 서버 사이드 리와인드 Hit 결과 확인. Ammo 확인. 
-							if (CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
-							{
-								ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
-								check(WeaponData);
-								WeaponData->AddSpread();
-								WeaponData->StartRecoil();
-								if (bOverallHitSuccess)
-								{
-									OnRangedWeaponTargetDataReady(LocalTargetDataHandle); 
-								}
-							}
 						}
 					}
 					else
 					{
-						// Confirm hit markers
-						if (ULyraWeaponStateComponent* WeaponStateComponent = Controller->FindComponentByClass<ULyraWeaponStateComponent>())
+						// 클라이언트가 보낸 모든 피격 데이터를 하나씩 검증
+						for (uint8 i = 0; i < LocalTargetDataHandle.Num(); ++i)
 						{
-							TArray<uint8> HitReplaces;
-							for (uint8 i = 0; (i < LocalTargetDataHandle.Num()) && (i < 255); ++i)
+							if (const FGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<const FGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
 							{
-								if (FGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<FGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
+								const FHitResult& ClientHitResult = SingleTargetHit->HitResult;
+								AActor* ClientHitActor = ClientHitResult.GetActor();
+
+								if (ClientHitActor)
 								{
-									if (SingleTargetHit->bHitReplaced)
+									// 서버가 '현재 시간' 기준으로 직접 트레이스를 수행
+									FHitResult ServerHitResult;
+									FCollisionQueryParams TraceParams;
+									const FVector TraceEnd = ClientHitResult.TraceStart + (ClientHitResult.Location - ClientHitResult.TraceStart) * 1.25f; // 클라이언트가 쏜 위치보다 약간 더 길게 트레이스 설정
+									TraceParams.AddIgnoredActor(GetAvatarActorFromActorInfo()); // 자기 자신 외에 피격 대상의 캡슐도 무시하고 히트박스만 보도록로 검사
+									GetWorld()->LineTraceSingleByChannel(ServerHitResult, ClientHitResult.TraceStart, TraceEnd, LagCompensation_TraceChannel_HitBox, TraceParams);
+									
+									// 서버의 트레이스 결과와 클라이언트가 맞췄다고 주장하는 액터가 동일한지 확인
+									if (ServerHitResult.bBlockingHit && (ServerHitResult.GetActor() == ClientHitActor))
 									{
-										HitReplaces.Add(i);
+										// 동일하다면, 이 피격은 유효하다고 간주
+										bOverallHitSuccess = true;
+										ConfirmedHitIndices.Add(i);
 									}
 								}
 							}
-							WeaponStateComponent->ClientConfirmTargetData(LocalTargetDataHandle.UniqueId, bIsTargetDataValid, HitReplaces);
 						}
 					}
+
+					// 검증 결과를 바탕으로 클라이언트에 통보
+					if (ULyraWeaponStateComponent* WeaponStateComponent = Controller->FindComponentByClass<ULyraWeaponStateComponent>())
+					{
+						WeaponStateComponent->ClientConfirmTargetData(LocalTargetDataHandle.UniqueId, bOverallHitSuccess, ConfirmedHitIndices);
+					}
+					
+					// 서버 사이드 리와인드 Hit 결과 확인. Ammo 확인. 
+					if (CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
+					{
+						ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
+						check(WeaponData);
+						WeaponData->AddSpread();
+						WeaponData->StartRecoil();
+						if (bOverallHitSuccess)
+						{
+							OnRangedWeaponTargetDataReady(LocalTargetDataHandle); 
+						}
+					}
+					else
+					{
+						K2_EndAbility();
+					}
 				}
+				
 			}
 		}
 #endif //WITH_SERVER_CODE
-
-		if (bUseServerSideRewind)
+		
+		if (AController* Controller = GetControllerFromActorInfo())
 		{
-			if (AController* Controller = GetControllerFromActorInfo())
+			if (Controller->GetLocalRole() != ROLE_Authority && CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
 			{
-				if (Controller->GetLocalRole() != ROLE_Authority && CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
-				{
-					ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
-					check(WeaponData);
-					WeaponData->AddSpread();
-					WeaponData->StartRecoil();
-					
-					// Let the blueprint do stuff like apply effects to the targets
-					OnRangedWeaponTargetDataReady(LocalTargetDataHandle);
-				}
-			}
-		}
-		else
-		{
-			// See if we still have ammo
-			if (bIsTargetDataValid && CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
-			{
-				// We fired the weapon, add spread
 				ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
 				check(WeaponData);
 				WeaponData->AddSpread();
 				WeaponData->StartRecoil();
-
+						
 				// Let the blueprint do stuff like apply effects to the targets
 				OnRangedWeaponTargetDataReady(LocalTargetDataHandle);
 			}
 			else
 			{
-				UE_LOG(LogLyraAbilitySystem, Warning, TEXT("Weapon ability %s failed to commit (bIsTargetDataValid=%d)"), *GetPathName(), bIsTargetDataValid ? 1 : 0);
 				K2_EndAbility();
 			}
 		}
+		
 	}
-
-	// We've processed the data
 	MyAbilityComponent->ConsumeClientReplicatedTargetData(CurrentSpecHandle, CurrentActivationInfo.GetActivationPredictionKey());
 }
 
