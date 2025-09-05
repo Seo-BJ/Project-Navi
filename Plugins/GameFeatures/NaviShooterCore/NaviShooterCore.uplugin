@@ -20,6 +20,11 @@
 			"Name": "NaviShooterCoreRuntime",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "LagCompensation",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
 		}
 	],
 	"ExplicitlyLoaded": true,
