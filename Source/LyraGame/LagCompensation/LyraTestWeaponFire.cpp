@@ -12,7 +12,7 @@ ALyraTestWeaponFire::ALyraTestWeaponFire(const FObjectInitializer& ObjectInitial
 
 	if (BoxComponent)
 	{
-		HitCollisionBoxes.Add(FName("Body"), BoxComponent);
+		HitCollisionBoxes.Add(FName("head"), BoxComponent);
 	}
 }
 
