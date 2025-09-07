@@ -30,6 +30,8 @@ public:
 	//~ULyraEquipmentInstance interface
 	virtual void OnEquipped() override;
 	virtual void OnUnequipped() override;
+
+	virtual void SpawnEquipmentActors(const TArray<FLyraEquipmentActorToSpawn>& ActorsToSpawn);
 	//~End of ULyraEquipmentInstance interface
 
 	UFUNCTION(BlueprintCallable)
@@ -77,12 +79,16 @@ protected:
 	/** Remove any device proeprties that were activated in ApplyDeviceProperties. */
 	void RemoveDeviceProperties();
 
+	virtual void OnSpawnedActorsChanged() override;
+
+	double TimeLastEquipped = 0.0;
+	
+	double TimeLastFired = 0.0;
 private:
 
 	/** Set of device properties activated by this weapon. Populated by ApplyDeviceProperties */
 	UPROPERTY(Transient)
 	TSet<FInputDevicePropertyHandle> DevicePropertyHandles;
 
-	double TimeLastEquipped = 0.0;
-	double TimeLastFired = 0.0;
+
 };

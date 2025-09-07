@@ -122,7 +122,7 @@ void FAgentSelectionInfoArray::ConfirmAgentSelection(const FString& UserName)
 	if (ExistingEntry)
 	{
 		ExistingEntry->bConfirmSelection = true;
-		MarkItemDirty(*ExistingEntry); // 변경된 항목 자체를 전달
+		MarkItemDirty(*ExistingEntry); 
 	}
 	else
 	{

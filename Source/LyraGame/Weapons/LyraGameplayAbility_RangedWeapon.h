@@ -87,6 +87,9 @@ protected:
 		}
 	};
 
+	UPROPERTY(EditDefaultsOnly, Category="Lyra|Ability")
+	bool bUseServerSideRewind = true;
+	
 protected:
 	static int32 FindFirstPawnHitResult(const TArray<FHitResult>& HitResults);
 
@@ -118,6 +121,10 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnRangedWeaponTargetDataReady(const FGameplayAbilityTargetDataHandle& TargetData);
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float FireRateTimeSeconds = 1.0f;
+
 private:
 	FDelegateHandle OnTargetDataReadyCallbackDelegateHandle;
+
 };

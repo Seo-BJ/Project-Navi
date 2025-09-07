@@ -13,7 +13,6 @@ UCommonSession_HostSessionRequest* UNaviHostingRequestSubsystem::CreateCombinedH
 	const UObject* WorldContextObject, const UNaviExperienceDefinition* ExperienceDefinition,
 	const UNaviMapDefinition* MapDefinition)
 {
-    // 입력 유효성 검사
     if (!WorldContextObject || !ExperienceDefinition || !MapDefinition)
     {
         UE_LOG(LogTemp, Warning, TEXT("CreateCombinedHostingRequest: 유효하지 않은 입력값입니다 (WorldContext, ExperienceDefinition 또는 MapDefinition이 null)."));
@@ -59,9 +58,7 @@ UCommonSession_HostSessionRequest* UNaviHostingRequestSubsystem::CreateCombinedH
        }
     }
 
-    // 최종 결합된 Request 반환
     return Result;
-	
 }
 
 FString UNaviHostingRequestSubsystem::GetTravelURL(UCommonSession_HostSessionRequest* Request)
@@ -70,7 +67,6 @@ FString UNaviHostingRequestSubsystem::GetTravelURL(UCommonSession_HostSessionReq
 	FString PendingTravelURL = Request->ConstructTravelURL();
 	return PendingTravelURL; 
 	// GetWorld()->ServerTravel(PendingTravelURL);
-	
 }
 
 void UNaviHostingRequestSubsystem::ServerTravelWithSavedDefinitions(const UObject* WorldContextObject)
@@ -79,9 +75,6 @@ void UNaviHostingRequestSubsystem::ServerTravelWithSavedDefinitions(const UObjec
 	FString URL = GetTravelURL(Request);
 	WorldContextObject->GetWorld()->ServerTravel(URL);
 }
-
-
-
 
 void UNaviHostingRequestSubsystem::SaveSelectedMapAndExperienceDefinition(UNaviExperienceDefinition* ExperienceDefinition, UNaviMapDefinition* MapDefinition)
 {

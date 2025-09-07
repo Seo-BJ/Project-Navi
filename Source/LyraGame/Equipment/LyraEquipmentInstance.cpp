@@ -3,13 +3,15 @@
 #include "LyraEquipmentInstance.h"
 
 #include "Components/SkeletalMeshComponent.h"
-#include "GameFramework/Character.h"
 #include "LyraEquipmentDefinition.h"
+#include "GameFramework/Character.h"
+#include "EquipmentInterface.h"
 #include "Net/UnrealNetwork.h"
 
 #if UE_WITH_IRIS
 #include "Iris/ReplicationSystem/ReplicationFragmentUtil.h"
 #endif // UE_WITH_IRIS
+
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraEquipmentInstance)
 
@@ -115,5 +117,41 @@ void ULyraEquipmentInstance::OnUnequipped()
 
 void ULyraEquipmentInstance::OnRep_Instigator()
 {
+	/*
+	APawn* OwningPawn = GetPawn();
+	if (OwningPawn && OwningPawn->IsLocallyControlled())
+	{
+		for (AActor* SpawnedActor : SpawnedActors)
+		{
+			if (SpawnedActor && SpawnedActor->Implements<UEquipmentInterface>())
+			{
+				IEquipmentInterface* SpawnedInterface = Cast<IEquipmentInterface>(SpawnedActor);
+				SpawnedInterface->OnEquippedClient();
+			}
+		}
+	}*/
 }
+
+void ULyraEquipmentInstance::OnRep_SpawnedActors()
+{
+	OnSpawnedActorsChanged();
+}
+
+
+void ULyraEquipmentInstance::OnSpawnedActorsChanged()
+{
+	APawn* OwningPawn = GetPawn();
+	if (OwningPawn && SpawnedActors.Num() > 0 )
+	{
+		for (AActor* SpawnedActor : SpawnedActors)
+		{
+			if (SpawnedActor && SpawnedActor->Implements<UEquipmentInterface>() && SpawnedActor->GetOwner() == OwningPawn)
+			{
+				IEquipmentInterface* SpawnedInterface = Cast<IEquipmentInterface>(SpawnedActor);
+				SpawnedInterface->OnEquippedClient();
+			}
+		}
+	}
+}
+
 

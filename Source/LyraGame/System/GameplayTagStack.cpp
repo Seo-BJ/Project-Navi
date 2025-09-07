@@ -2,9 +2,15 @@
 
 #include "GameplayTagStack.h"
 
+#include "GameFramework/GameplayMessageSubsystem.h"
+#include "Teams/LyraTeamSubsystem.h"
 #include "UObject/Stack.h"
+#include "NativeGameplayTags.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GameplayTagStack)
+
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_GameplayTagStack_Message_StackChanged, "Lyra.GameplayTagStack.Message.StackChanged");
+
 
 //////////////////////////////////////////////////////////////////////
 // FGameplayTagStack
@@ -80,12 +86,19 @@ void FGameplayTagStackContainer::RemoveStack(FGameplayTag Tag, int32 StackCount)
 	}
 }
 
+void FGameplayTagStackContainer::RegisterWithOwner(UObject* InOwner)
+{
+	Owner = InOwner;
+}
+
 void FGameplayTagStackContainer::PreReplicatedRemove(const TArrayView<int32> RemovedIndices, int32 FinalSize)
 {
 	for (int32 Index : RemovedIndices)
 	{
 		const FGameplayTag Tag = Stacks[Index].Tag;
-		TagToCountMap.Remove(Tag);
+		int32 OldCount = Stacks[Index].StackCount;
+		int32 NewCount = TagToCountMap.Remove(Tag);
+		BroadcastChangeMessage(Tag, OldCount, NewCount);
 	}
 }
 
@@ -94,7 +107,9 @@ void FGameplayTagStackContainer::PostReplicatedAdd(const TArrayView<int32> Added
 	for (int32 Index : AddedIndices)
 	{
 		const FGameplayTagStack& Stack = Stacks[Index];
-		TagToCountMap.Add(Stack.Tag, Stack.StackCount);
+		int32 OldCount = Stacks[Index].StackCount;
+		int32 NewCount = TagToCountMap.Add(Stack.Tag, Stack.StackCount);
+		BroadcastChangeMessage(Stack.Tag, OldCount, NewCount);
 	}
 }
 
@@ -102,8 +117,27 @@ void FGameplayTagStackContainer::PostReplicatedChange(const TArrayView<int32> Ch
 {
 	for (int32 Index : ChangedIndices)
 	{
+		int32 OldCount = Stacks[Index].StackCount;
 		const FGameplayTagStack& Stack = Stacks[Index];
 		TagToCountMap[Stack.Tag] = Stack.StackCount;
+		int32 NewCount = Stack.StackCount;
+		BroadcastChangeMessage(Stack.Tag, OldCount, NewCount);
 	}
 }
 
+void FGameplayTagStackContainer::BroadcastChangeMessage(const FGameplayTag& TagStack, int32 OldCount, int32 NewCount) const
+{
+	if (!IsValid(Owner))
+	{
+		return;
+	}
+	
+	FLyraGameplayTagStackChangeMessage Message;
+	Message.StackOwner = Owner;
+	Message.GameplayTag = TagStack;
+	Message.OldStackCount = OldCount;
+	Message.NewStackCount = NewCount;
+	
+	UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(Owner->GetWorld());
+	MessageSystem.BroadcastMessage(TAG_Lyra_GameplayTagStack_Message_StackChanged, Message);
+}

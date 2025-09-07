@@ -232,6 +232,18 @@ namespace NaviGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Agent_Ultimate_CurrentPoint, "Agent.Ultimate.CurrentPoint");
 	UE_DEFINE_GAMEPLAY_TAG(Agent_Ultimate_RequiredPoint, "Agent.Ultimate.RequiredPoint");
 	
+	// Spkie
+
+	LYRAGAME_API UE_DEFINE_GAMEPLAY_TAG(Navi_Spike_InPlantArea, "Navi.Spike.InPlantArea");
+
+	UE_DEFINE_GAMEPLAY_TAG(Navi_Spike_Plant_Start, "Navi.Spike.Plant.Start");
+	UE_DEFINE_GAMEPLAY_TAG(Navi_Spike_Plant_Finish, "Navi.Spike.Plant.Finish");
+	UE_DEFINE_GAMEPLAY_TAG(Navi_Spike_Explosion, "Navi.Spike.Explosion");
+	
+	UE_DEFINE_GAMEPLAY_TAG(Navi_Spike_Defuse_Start, "Navi.Spike.Defuse.Start");
+	UE_DEFINE_GAMEPLAY_TAG(Navi_Spike_Defuse_Finish, "Navi.Spike.Defuse.Finish");
+
+	
 	// Creds System Message
 	UE_DEFINE_GAMEPLAY_TAG(Navi_Creds_Award, "Navi.Creds.Award");
 	UE_DEFINE_GAMEPLAY_TAG(Navi_Creds_Spend, "Navi.Creds.Spend");
@@ -246,6 +258,14 @@ namespace NaviGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Navi_Experience_PlantSpike, "Navi.Creds.Award.PlantSpike");
 	
 	UE_DEFINE_GAMEPLAY_TAG(Navi_Cheat_InfiniteCreds, "Navi.Cheat.InfiniteCreds");
+
+	// Competitive Match
+
+	UE_DEFINE_GAMEPLAY_TAG(Navi_CompetitiveMatch_TeamScore, "Navi.CompetitiveMatch.TeamScore");
+
+	UE_DEFINE_GAMEPLAY_TAG(TAG_Navi_Team_Role_Attacker, "Navi.Team.Role.Attacker");
+	UE_DEFINE_GAMEPLAY_TAG(TAG_Navi_Team_Role_Defender, "Navi.Team.Role.Defender");
+
 
 	
 }

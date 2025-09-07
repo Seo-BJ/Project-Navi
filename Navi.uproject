@@ -302,10 +302,6 @@
 			"Enabled": true
 		},
 		{
-			"Name": "TopDownArena",
-			"Enabled": true
-		},
-		{
 			"Name": "FunctionalTestingEditor",
 			"Enabled": true
 		},

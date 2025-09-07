@@ -13,7 +13,10 @@
 #include "Character/LyraCharacter.h"
 #include "DrawDebugHelpers.h"
 #include "NativeGameplayTags.h"
+#include "Equipment/NaviQuickBarComponent.h"
+#include "Inventory/LyraInventoryManagerComponent.h"
 
+#include "GameFramework/Controller.h"
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_Item_Dropped, "Lyra.Item.Dropped")
 
 ULyraGameplayAbility_DropItem::ULyraGameplayAbility_DropItem(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -75,3 +78,5 @@ void ULyraGameplayAbility_DropItem::SpawnPickupableItemActor(TSubclassOf<ALyraDr
         }
     }
 }
+
+

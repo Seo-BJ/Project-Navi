@@ -22,6 +22,8 @@
 #include "Inventory/InventoryFragment_PickupIcon.h"
 #include "Weapons/NaviDropAndPickupable_Weapon.h"
 #include "Inventory/ItemDropAndPickUp/LyraDropAndPickupable.h"
+#include "Weapons/LyraWeaponActor.h"
+#include "Weapons/LyraWeaponInstance.h"
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Navi_QuickBar_Message_SlotsChanged, "Navi.QuickBar.Message.SlotsChanged");
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Navi_QuickBar_Message_ActiveIndexChanged, "Navi.QuickBar.Message.ActiveIndexChanged");
@@ -29,8 +31,7 @@ UE_DEFINE_GAMEPLAY_TAG(TAG_Lyra_Item_Dropped, "Lyra.Item.Dropped");
 
 
 
-UNaviQuickBarComponent::UNaviQuickBarComponent(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+UNaviQuickBarComponent::UNaviQuickBarComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	SetIsReplicatedByDefault(true);
 	NumSlots = 4; // 슬롯 개수를 4로 고정
@@ -43,16 +44,21 @@ void UNaviQuickBarComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 
 	DOREPLIFETIME(ThisClass, Slots);
 	DOREPLIFETIME(ThisClass, ActiveSlotIndex);
+	DOREPLIFETIME(ThisClass, EquippedItem);
 }
 
 void UNaviQuickBarComponent::BeginPlay()
 {
-	// 슬롯 배열의 크기를 NumSlots에 맞게 초기화합니다.
+	// 슬롯 배열의 크기를 NumSlots에 맞게 초기화.
 	if (Slots.Num() < NumSlots)
 	{
 		Slots.AddDefaulted(NumSlots - Slots.Num());
 	}
 	
+	if (AController* Controller = GetOwner<AController>())
+	{
+		Controller->OnPossessedPawnChanged.AddDynamic(this, &UNaviQuickBarComponent::ResetQuickBarComponent);
+	}
 	Super::BeginPlay();
 }
 
@@ -96,7 +102,7 @@ void UNaviQuickBarComponent::CycleActiveSlotBackward()
 	} while (NewIndex != OldIndex);
 }
 
-void UNaviQuickBarComponent::SecActiveSlotIndexOnEquipmentPickUp()
+void UNaviQuickBarComponent::SetActiveSlotIndexOnEquipmentPickUp()
 {
 	SetActiveSlotIndex(LastActiveSlotIndex);
 }
@@ -124,7 +130,6 @@ void UNaviQuickBarComponent::SetActiveSlotIndex_Implementation(int32 NewIndex)
 		ActiveSlotIndex = NewIndex;
 		EquipItemInSlot();
 
-		// 클라이언트에서도 RepNotify가 즉시 호출되도록 합니다.
 		OnRep_ActiveSlotIndex(OldIndex);
 	}
 }
@@ -156,7 +161,32 @@ ULyraInventoryItemInstance* UNaviQuickBarComponent::RemoveItemFromSlot(int32 Slo
 	{
 		UnequipItemInSlot();
 		int32 OldIndex = ActiveSlotIndex;
-		ActiveSlotIndex = -1;
+		if (SlotIndex == 0)
+		{
+			if (Slots.IsValidIndex(1) && Slots[1] != nullptr)
+			{
+				SetActiveSlotIndex_Implementation(1);
+			}
+			else
+			{
+				SetActiveSlotIndex_Implementation(2);
+			}
+		}
+		else if (SlotIndex == 1)
+		{
+			if (Slots.IsValidIndex(0) && Slots[0] != nullptr)
+			{
+				SetActiveSlotIndex_Implementation(0);
+			}
+			else
+			{
+				SetActiveSlotIndex_Implementation(2);
+			}
+		}
+		else if (SlotIndex == 3)
+		{
+			SetActiveSlotIndex_Implementation(LastActiveSlotIndex);
+		}
 		OnRep_ActiveSlotIndex(OldIndex);
 	}
 
@@ -173,9 +203,9 @@ ULyraInventoryItemInstance* UNaviQuickBarComponent::RemoveItemFromSlot(int32 Slo
 	return Result;
 }
 
-void UNaviQuickBarComponent::SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPickupable> DroppedAndPickupableClass, ULyraInventoryItemInstance* ItemInstance)
+void UNaviQuickBarComponent::SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPickupable> DroppedAndPickupableClass)
 {
-	if (DroppedAndPickupableClass == nullptr || ItemInstance == nullptr)
+	if (DroppedAndPickupableClass == nullptr || EquippedItem == nullptr)
 	{
 		return;
 	}
@@ -201,10 +231,24 @@ void UNaviQuickBarComponent::SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPicku
 		ESpawnActorCollisionHandlingMethod::AlwaysSpawn
 	);
 
+
+	USkeletalMesh* EquippetItemMesh = nullptr;
+	
+	if (ULyraWeaponInstance* EquippedWeapon = Cast<ULyraWeaponInstance>(EquippedItem))
+	{
+		for (AActor* SpawnedActor :EquippedWeapon->GetSpawnedActors())
+		{
+			if (ALyraWeaponActor* WeaponActor = Cast<ALyraWeaponActor>(SpawnedActor))
+			{
+				EquippetItemMesh = WeaponActor->GetThirdPersonPerspectiveMesh()->GetSkeletalMeshAsset();
+			}
+		}
+	}
+	
 	if (SpawnedItem)
 	{
 		FPickupInstance PickupInstance;
-		PickupInstance.Item = ItemInstance;
+		PickupInstance.Item = GetActiveSlotItem();
 		// Drop된 Item임을 표시
 		PickupInstance.Item->AddStatTagStack(TAG_Lyra_Item_Dropped, 1);
 		SpawnedItem->StaticInventory.Instances.Add(PickupInstance);
@@ -212,16 +256,9 @@ void UNaviQuickBarComponent::SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPicku
 		if (SpawnedItem->IsA(ANaviDropAndPickupable_Weapon::StaticClass()))
 		{
 			ANaviDropAndPickupable_Weapon* SpawnedWeapon = Cast<ANaviDropAndPickupable_Weapon>(SpawnedItem);
-			if (SpawnedWeapon)
+			if (SpawnedWeapon && EquippetItemMesh)
 			{
-				const UInventoryFragment_PickupIcon* Fragment = ItemInstance->FindFragmentByClass<UInventoryFragment_PickupIcon>();
-				if (Fragment != nullptr)
-				{
-					if (Fragment->SkeletalMesh)
-					{
-						SpawnedWeapon->SetSkeletalMesh(Fragment->SkeletalMesh);
-					}
-				}
+				SpawnedWeapon->SetSkeletalMesh(EquippetItemMesh);
 			}
 		}
 		
@@ -236,6 +273,25 @@ void UNaviQuickBarComponent::SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPicku
 			ProjMovement->Activate();
 		}
 	}
+}
+
+FTransform UNaviQuickBarComponent::GetAimPointTransform()
+{
+	FTransform AimPoint = FTransform::Identity;
+	if (IsValid(EquippedItem))
+	{
+		if (ULyraWeaponInstance* EquippedWeapon = Cast<ULyraWeaponInstance>(EquippedItem))
+		{
+			for (AActor* SpawnedActor :EquippedWeapon->GetSpawnedActors())
+			{
+				if (ALyraWeaponActor* WeaponActor = Cast<ALyraWeaponActor>(SpawnedActor))
+				{
+					return WeaponActor->GetAimPointTransform();
+				}
+			}
+		}
+	}
+	return AimPoint;
 }
 
 int UNaviQuickBarComponent::GetSlotIndexForItemTag(const FGameplayTag& ItemTag) const
@@ -304,6 +360,7 @@ void UNaviQuickBarComponent::UnequipItemInSlot()
 		{
 			EquipmentManager->UnequipItem(EquippedItem);
 			EquippedItem = nullptr;
+			
 		}
 	}
 }
@@ -340,4 +397,12 @@ void UNaviQuickBarComponent::OnRep_ActiveSlotIndex(int32 OldIndex)
 	
 	UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(this);
 	MessageSystem.BroadcastMessage(TAG_Navi_QuickBar_Message_ActiveIndexChanged, Message);
+}
+
+void UNaviQuickBarComponent::ResetQuickBarComponent(APawn* OldPawn, APawn* NewPawn)
+{
+	if (HasAuthority())
+	{
+		ActiveSlotIndex = -1;
+	}
 }

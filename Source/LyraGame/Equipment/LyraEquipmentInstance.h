@@ -60,15 +60,23 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent, Category=Equipment, meta=(DisplayName="OnUnequipped"))
 	void K2_OnUnequipped();
-
+	
+	virtual void OnSpawnedActorsChanged();
+	
+	UPROPERTY(ReplicatedUsing=OnRep_SpawnedActors)
+	TArray<TObjectPtr<AActor>> SpawnedActors;
+	
 private:
 	UFUNCTION()
 	void OnRep_Instigator();
 
-private:
+	UFUNCTION()
+	void OnRep_SpawnedActors();
+
 	UPROPERTY(ReplicatedUsing=OnRep_Instigator)
 	TObjectPtr<UObject> Instigator;
 
-	UPROPERTY(Replicated)
-	TArray<TObjectPtr<AActor>> SpawnedActors;
+
+
+
 };

@@ -47,4 +47,6 @@ private:
 
 	TObjectPtr<UNaviExperienceDefinition> SavedExperienceDefinition;
 	TObjectPtr<UNaviMapDefinition> SavedMapDefinition;
+
+	
 };

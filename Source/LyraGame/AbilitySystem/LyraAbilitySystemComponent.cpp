@@ -76,11 +76,24 @@ PRAGMA_ENABLE_DEPRECATION_WARNINGS
 			GlobalAbilitySystem->RegisterASC(this);
 		}
 
-		if (ULyraAnimInstance* LyraAnimInst = Cast<ULyraAnimInstance>(ActorInfo->GetAnimInstance()))
+		// @Important First-person perspective Change
+		// For Avatar actor has two or more SkeletalMesh, Get all AnimInstance and InitializeWithAbilitySystem
+		if (AActor* Avator = GetAvatarActor())
 		{
-			LyraAnimInst->InitializeWithAbilitySystem(this);
+			TArray<UActorComponent*> SkeletalMeshComponents;
+			Avator->GetComponents(USkeletalMeshComponent::StaticClass(), SkeletalMeshComponents);
+			for (UActorComponent* Component : SkeletalMeshComponents)
+			{
+				if (USkeletalMeshComponent* SkelMesh = Cast<USkeletalMeshComponent>(Component))
+				{
+					if (ULyraAnimInstance* LyraAnimInst = Cast<ULyraAnimInstance>(SkelMesh->GetAnimInstance()))
+					{
+						LyraAnimInst->InitializeWithAbilitySystem(this);
+					}
+				}
+			}
 		}
-
+		
 		TryActivateAbilitiesOnSpawn();
 	}
 }

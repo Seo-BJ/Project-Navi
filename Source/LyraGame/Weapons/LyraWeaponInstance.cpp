@@ -2,6 +2,8 @@
 
 #include "LyraWeaponInstance.h"
 
+#include "LyraWeaponActor.h"
+#include "Character/LyraCharacter.h"
 #include "GameFramework/Pawn.h"
 #include "Engine/World.h"
 #include "Math/UnrealMathUtility.h"
@@ -9,6 +11,8 @@
 #include "GameFramework/InputDeviceSubsystem.h"
 #include "GameFramework/InputDeviceProperties.h"
 #include "Character/LyraHealthComponent.h"
+#include "Equipment/LyraEquipmentDefinition.h"
+#include "Inventory/InventoryFragment_EquippableItem.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraWeaponInstance)
 
@@ -49,6 +53,36 @@ void ULyraWeaponInstance::OnUnequipped()
 	Super::OnUnequipped();
 
 	RemoveDeviceProperties();
+}
+
+void ULyraWeaponInstance::SpawnEquipmentActors(const TArray<FLyraEquipmentActorToSpawn>& ActorsToSpawn)
+{
+	Super::SpawnEquipmentActors(ActorsToSpawn);
+	/*
+	if (APawn* OwningPawn = GetPawn())
+	{
+		USceneComponent* AttachTarget = OwningPawn->GetRootComponent();
+		if (ACharacter* Char = Cast<ACharacter>(OwningPawn))
+		{
+			AttachTarget = Char->GetMesh();
+		}
+
+		for (const FLyraEquipmentActorToSpawn& SpawnInfo : ActorsToSpawn)
+		{
+			AActor* NewActor = GetWorld()->SpawnActorDeferred<AActor>(SpawnInfo.ActorToSpawn, FTransform::Identity, OwningPawn);
+			NewActor->FinishSpawning(FTransform::Identity, true);
+			//NewActor->SetActorRelativeTransform(SpawnInfo.AttachTransform);
+			NewActor->AttachToComponent(AttachTarget, FAttachmentTransformRules::KeepRelativeTransform, SpawnInfo.AttachSocket);
+
+			if (ALyraWeaponActor* WeaponActor = Cast<ALyraWeaponActor>(NewActor))
+			{
+				WeaponActor->OnEquipped(SpawnInfo.AttachSocket, SpawnInfo.AttachTransform);
+			}
+
+			SpawnedActors.Add(NewActor);
+		}
+	}*/
+
 }
 
 void ULyraWeaponInstance::UpdateFiringTime()
@@ -130,6 +164,11 @@ void ULyraWeaponInstance::RemoveDeviceProperties()
 			DevicePropertyHandles.Empty();
 		}
 	}
+}
+
+void ULyraWeaponInstance::OnSpawnedActorsChanged()
+{
+	Super::OnSpawnedActorsChanged();
 }
 
 void ULyraWeaponInstance::OnDeathStarted(AActor* OwningActor)

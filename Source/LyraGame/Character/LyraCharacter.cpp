@@ -16,6 +16,9 @@
 #include "Player/LyraPlayerState.h"
 #include "System/LyraSignificanceManager.h"
 #include "TimerManager.h"
+#include "Components/BoxComponent.h"
+#include "LagCompensation/LyraLagCompensationComponent.h"
+#include "Physics/LyraCollisionChannels.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraCharacter)
 
@@ -72,12 +75,102 @@ ALyraCharacter::ALyraCharacter(const FObjectInitializer& ObjectInitializer)
 	CameraComponent = CreateDefaultSubobject<ULyraCameraComponent>(TEXT("CameraComponent"));
 	CameraComponent->SetRelativeLocation(FVector(-300.0f, 0.0f, 75.0f));
 
+	FirstPersonMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FirstPersonMesh"));
+	FirstPersonMesh->SetupAttachment(CameraComponent);
+	FirstPersonMesh->SetOnlyOwnerSee(true);
+
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
 
 	BaseEyeHeight = 80.0f;
 	CrouchedEyeHeight = 50.0f;
+
+	
+	LagCompensation = CreateDefaultSubobject<ULyraLagCompensationComponent>(TEXT("LagCompensation"));
+	
+	head = CreateDefaultSubobject<UBoxComponent>(TEXT("head"));
+	head->SetupAttachment(GetMesh(), FName("head"));
+	HitCollisionBoxes.Add(FName("head"), head);
+
+	Pelvis = CreateDefaultSubobject<UBoxComponent>(TEXT("Pelvis"));
+	Pelvis->SetupAttachment(GetMesh(), FName("Pelvis"));
+	HitCollisionBoxes.Add(FName("Pelvis"), Pelvis);
+
+	spine_02 = CreateDefaultSubobject<UBoxComponent>(TEXT("spine_02"));
+	spine_02->SetupAttachment(GetMesh(), FName("spine_02"));
+	HitCollisionBoxes.Add(FName("spine_02"), spine_02);
+
+	spine_03 = CreateDefaultSubobject<UBoxComponent>(TEXT("spine_03"));
+	spine_03->SetupAttachment(GetMesh(), FName("spine_03"));
+	HitCollisionBoxes.Add(FName("spine_03"), spine_03);
+
+	UpperArm_L = CreateDefaultSubobject<UBoxComponent>(TEXT("UpperArm_L"));
+	UpperArm_L->SetupAttachment(GetMesh(), FName("UpperArm_L"));
+	HitCollisionBoxes.Add(FName("UpperArm_L"), UpperArm_L);
+
+	lowerarm_l = CreateDefaultSubobject<UBoxComponent>(TEXT("lowerarm_l"));
+	lowerarm_l->SetupAttachment(GetMesh(), FName("lowerarm_l"));
+	HitCollisionBoxes.Add(FName("lowerarm_l"), lowerarm_l);
+
+	Hand_L = CreateDefaultSubobject<UBoxComponent>(TEXT("Hand_L"));
+	Hand_L->SetupAttachment(GetMesh(), FName("Hand_L"));
+	HitCollisionBoxes.Add(FName("Hand_L"), Hand_L);
+
+	UpperArm_R = CreateDefaultSubobject<UBoxComponent>(TEXT("UpperArm_R"));
+	UpperArm_R->SetupAttachment(GetMesh(), FName("UpperArm_R"));
+	HitCollisionBoxes.Add(FName("UpperArm_R"), UpperArm_R);
+
+	lowerarm_r = CreateDefaultSubobject<UBoxComponent>(TEXT("lowerarm_r"));
+	lowerarm_r->SetupAttachment(GetMesh(), FName("lowerarm_r"));
+	HitCollisionBoxes.Add(FName("lowerarm_r"), lowerarm_r);
+
+	Hand_R = CreateDefaultSubobject<UBoxComponent>(TEXT("Hand_R"));
+	Hand_R->SetupAttachment(GetMesh(), FName("Hand_R"));
+	HitCollisionBoxes.Add(FName("Hand_R"), Hand_R);
+
+	backpack = CreateDefaultSubobject<UBoxComponent>(TEXT("backpack"));
+	backpack->SetupAttachment(GetMesh(), FName("backpack"));
+	HitCollisionBoxes.Add(FName("backpack"), backpack);
+
+	blanket = CreateDefaultSubobject<UBoxComponent>(TEXT("blanket"));
+	blanket->SetupAttachment(GetMesh(), FName("blanket_l"));
+	HitCollisionBoxes.Add(FName("blanket_l"), blanket);
+
+	Thigh_L = CreateDefaultSubobject<UBoxComponent>(TEXT("Thigh_L"));
+	Thigh_L->SetupAttachment(GetMesh(), FName("Thigh_L"));
+	HitCollisionBoxes.Add(FName("Thigh_L"), Thigh_L);
+
+	calf_l = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_l"));
+	calf_l->SetupAttachment(GetMesh(), FName("calf_l"));
+	HitCollisionBoxes.Add(FName("calf_l"), calf_l);
+
+	Foot_L = CreateDefaultSubobject<UBoxComponent>(TEXT("Foot_L"));
+	Foot_L->SetupAttachment(GetMesh(), FName("Foot_L"));
+	HitCollisionBoxes.Add(FName("Foot_L"), Foot_L);
+
+	Thigh_R = CreateDefaultSubobject<UBoxComponent>(TEXT("Thigh_R"));
+	Thigh_R->SetupAttachment(GetMesh(), FName("Thigh_R"));
+	HitCollisionBoxes.Add(FName("Thigh_R"), Thigh_R);
+
+	calf_r = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_r"));
+	calf_r->SetupAttachment(GetMesh(), FName("calf_r"));
+	HitCollisionBoxes.Add(FName("calf_r"), calf_r);
+
+	Foot_R = CreateDefaultSubobject<UBoxComponent>(TEXT("Foot_R"));
+	Foot_R->SetupAttachment(GetMesh(), FName("Foot_R"));
+	HitCollisionBoxes.Add(FName("Foot_R"), Foot_R);
+
+	for (auto Box : HitCollisionBoxes)
+	{
+		if (Box.Value)
+		{
+			Box.Value->SetCollisionObjectType(LagCompensation_TraceChannel_HitBox);
+			Box.Value->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+			Box.Value->SetCollisionResponseToChannel(LagCompensation_TraceChannel_HitBox, ECollisionResponse::ECR_Block);
+			Box.Value->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	}
 }
 
 void ALyraCharacter::PreInitializeComponents()
@@ -194,6 +287,11 @@ UAbilitySystemComponent* ALyraCharacter::GetAbilitySystemComponent() const
 	return PawnExtComponent->GetLyraAbilitySystemComponent();
 }
 
+const TMap<FName, TObjectPtr<UBoxComponent>>& ALyraCharacter::GetHitCollisionBoxes() const
+{
+	return HitCollisionBoxes;
+}
+
 void ALyraCharacter::OnAbilitySystemInitialized()
 {
 	ULyraAbilitySystemComponent* LyraASC = GetLyraAbilitySystemComponent();
@@ -224,6 +322,22 @@ void ALyraCharacter::PossessedBy(AController* NewController)
 		ControllerAsTeamProvider->GetTeamChangedDelegateChecked().AddDynamic(this, &ThisClass::OnControllerChangedTeam);
 	}
 	ConditionalBroadcastTeamChanged(this, OldTeamID, MyTeamID);
+
+	if (Controller)
+	{
+		Controller->SetIgnoreMoveInput(false);
+	}
+	
+	UCapsuleComponent* CapsuleComp = GetCapsuleComponent();
+	check(CapsuleComp);
+	// 캡슐의 콜리전을 'Pawn' 기본값으로 되돌립니다.
+	CapsuleComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	CapsuleComp->SetCollisionResponseToAllChannels(ECR_Block);
+	CapsuleComp->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore); // Lyra 기본 설정
+
+	ULyraCharacterMovementComponent* LyraMoveComp = CastChecked<ULyraCharacterMovementComponent>(GetCharacterMovement());
+	// 이동 모드를 기본값(Walking)으로 되돌립니다.
+	LyraMoveComp->SetMovementMode(MOVE_Walking);
 }
 
 void ALyraCharacter::UnPossessed()

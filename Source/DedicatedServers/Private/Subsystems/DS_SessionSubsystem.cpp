@@ -203,7 +203,7 @@ void UDS_SessionSubsystem::TryCreatePlayerSession(const FString& PlayerId, const
     const FString APIUrl = APIData->GetAPIEndpoint(DedicatedServersTags::GameSessionsAPI::CreatePlayerSession);
     Request->SetURL(APIUrl);
     Request->SetVerb(TEXT("POST"));
-    Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+    Request->SetHeader(TEXT("Content-Type"), TEXT("application/json")); 
 
     TMap<FString, FString> Params = {
         { TEXT("playerId"), PlayerId },

@@ -6,6 +6,7 @@
 #include "GameplayCueInterface.h"
 #include "GameplayTagAssetInterface.h"
 #include "ModularCharacter.h"
+#include "LagCompensation/ILagCompensationTarget.h"
 #include "Teams/LyraTeamAgentInterface.h"
 
 #include "LyraCharacter.generated.h"
@@ -23,10 +24,12 @@ class ULyraCameraComponent;
 class ULyraHealthComponent;
 class ULyraPawnExtensionComponent;
 class UObject;
+class USkeletalMeshComponent;
 struct FFrame;
 struct FGameplayTag;
 struct FGameplayTagContainer;
-
+class UBoxComponent;
+class ULyraLagCompensationComponent;
 
 /**
  * FLyraReplicatedAcceleration: Compressed representation of acceleration
@@ -93,7 +96,7 @@ struct TStructOpsTypeTraits<FSharedRepMovement> : public TStructOpsTypeTraitsBas
  *	New behavior should be added via pawn components when possible.
  */
 UCLASS(Config = Game, Meta = (ShortTooltip = "The base character pawn class used by this project."))
-class LYRAGAME_API ALyraCharacter : public AModularCharacter, public IAbilitySystemInterface, public IGameplayCueInterface, public IGameplayTagAssetInterface, public ILyraTeamAgentInterface
+class LYRAGAME_API ALyraCharacter : public AModularCharacter, public IAbilitySystemInterface, public IGameplayCueInterface, public IGameplayTagAssetInterface, public ILyraTeamAgentInterface, public ILagCompensationTarget 
 {
 	GENERATED_BODY()
 
@@ -146,6 +149,15 @@ public:
 
 	virtual bool UpdateSharedReplication();
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE USkeletalMeshComponent* GetFirstPersonMesh() const {return FirstPersonMesh.Get();}
+	
+	FORCEINLINE ULyraCameraComponent* GetLyraCameraComponent() const {return CameraComponent.Get();}
+
+	//~ ILagCompensationTarget interface
+	virtual const TMap<FName, TObjectPtr<UBoxComponent>>& GetHitCollisionBoxes() const override;
+	//~ End ILagCompensationTarget interface
+	
 protected:
 
 	virtual void OnAbilitySystemInitialized();
@@ -190,6 +202,9 @@ protected:
 private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lyra|Character", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USkeletalMeshComponent> FirstPersonMesh;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lyra|Character", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<ULyraPawnExtensionComponent> PawnExtComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lyra|Character", Meta = (AllowPrivateAccess = "true"))
@@ -224,4 +239,64 @@ private:
 
 	UFUNCTION()
 	void OnRep_MyTeamID(FGenericTeamId OldTeamID);
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<ULyraLagCompensationComponent> LagCompensation;
+
+	UPROPERTY()
+	TMap<FName, TObjectPtr<UBoxComponent>> HitCollisionBoxes;
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> head;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Pelvis;
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> spine_02;
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> spine_03;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> UpperArm_L;
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> lowerarm_l;
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Hand_L;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> UpperArm_R;
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> lowerarm_r;
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Hand_R;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> backpack;
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> blanket;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Thigh_L;
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> calf_l;
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Foot_L;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Thigh_R;
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> calf_r;
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Foot_R;
 };

@@ -14,3 +14,4 @@ LYRAGAME_API DECLARE_LOG_CATEGORY_EXTERN(LogLyraDedicatedServer, Log, All);
 LYRAGAME_API DECLARE_LOG_CATEGORY_EXTERN(LogLyraGameLift, Log, All);
 
 LYRAGAME_API FString GetClientServerContextString(UObject* ContextObject = nullptr);
+
