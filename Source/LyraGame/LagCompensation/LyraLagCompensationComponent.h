@@ -6,6 +6,8 @@
 #include "Components/ActorComponent.h"
 #include "LyraLagCompensationComponent.generated.h"
 
+LYRAGAME_API DECLARE_LOG_CATEGORY_EXTERN(LogLagCompensation, Log, All);
+
 class ALyraCharacter;
 class ALyraPlayerController;
 
@@ -97,7 +99,7 @@ private:
 	void SaveFramePackage(FFramePackage& Package);
 	
 	// HitTime을 기준으로 Hit 판정에 사용할 프레임 반환
-	FFramePackage GetFrameToCheck(AActor* HitActor, float HitTime);
+	FFramePackage GetHitTimeFrame(AActor* HitActor, float HitTime);
 	/**
 	 * 되감기가 완료된 상태에서 실제 Hit 판정을 위한 Trace를 수행
 	 * @param FrameToCheck 되감기 목표 시점의 프레임
@@ -112,16 +114,22 @@ private:
 
 	
 	//두 프레임 사이 특정 시간(HitTime)에 위치 할 프레임을 선형 보간하여 계산
-	FFramePackage InterpBetweenTwoFrames(
+	FFramePackage InterpolateBetweenTwoFrames(
 		const FFramePackage& OlderFrame,
 		const FFramePackage& YoungerFrame,
 		float HitTime
 		);
+
+	FFramePackage ExtrapolateByTwoFrames(
+		const FFramePackage& SecondNewestFrame,
+		const FFramePackage& FirstNewestFrame,
+		float HitTime
+	);
 	
 	// 현재 Actor의 모든 히트박스 정보를 OutFramePackage에 저장
-	void CacheBoxPositions(AActor* HitActor, FFramePackage& OutFramePackage);
+	void CacheCurrentFrame(AActor* HitActor, FFramePackage& OutFramePackage);
 	// Actor의 히트박스들을 특정 FramePackage의 위치로 되감음
-	void MoveBoxes(AActor* HitActor, const FFramePackage& Package);
+	void RewindFrame(AActor* HitActor, const FFramePackage& Package);
 	// Actor의 히트박스들을 저장된 현재 위치로 복원
 	void ResetHitBoxes(AActor* HitActor, const FFramePackage& Package);
 
@@ -136,7 +144,10 @@ private:
 	TDoubleLinkedList<FFramePackage> FrameHistory;
 
 	UPROPERTY(EditAnywhere)
-	bool bDrawDebug = true;
+	bool bDrawFrameHistory = false;
+
+	UPROPERTY(EditAnywhere)
+	bool bDrawHitResult = true;
 
 	// 서버가 프레임 데이터를 얼마나 오랫동안 보관하는지 (초 단위)
 	UPROPERTY(EditAnywhere)
