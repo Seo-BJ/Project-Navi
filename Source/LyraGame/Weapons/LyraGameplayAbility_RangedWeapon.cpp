@@ -141,9 +141,9 @@ void ULyraGameplayAbility_RangedWeapon::AddAdditionalTraceIgnoreActors(FCollisio
 	}
 }
 
-ECollisionChannel ULyraGameplayAbility_RangedWeapon::DetermineTraceChannel(FCollisionQueryParams& TraceParams, bool bIsSimulated) const
+ECollisionChannel ULyraGameplayAbility_RangedWeapon::DetermineTraceChannel(FCollisionQueryParams& TraceParams, bool bIsSimulated, bool bTraceForServerSideRewind) const
 {
-	if (bUseServerSideRewind)
+	if (bTraceForServerSideRewind)
 	{
 		return LagCompensation_TraceChannel_HitBox;
 	}
@@ -162,7 +162,7 @@ FHitResult ULyraGameplayAbility_RangedWeapon::WeaponTrace(const FVector& StartTr
 	AddAdditionalTraceIgnoreActors(TraceParams);
 	//TraceParams.bDebugQuery = true;
 
-	const ECollisionChannel TraceChannel = DetermineTraceChannel(TraceParams, bIsSimulated);
+	const ECollisionChannel TraceChannel = DetermineTraceChannel(TraceParams, bIsSimulated, false);
 
 	if (SweepRadius > 0.0f)
 	{

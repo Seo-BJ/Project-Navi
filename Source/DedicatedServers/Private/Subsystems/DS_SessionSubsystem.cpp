@@ -28,25 +28,14 @@ void UDS_SessionSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
 
-    // 로드할 에셋의 경로를 지정합니다.
     const FString AssetPath = TEXT("/Game/DedicatedServers/Data/DA_GameSessionsAPIData");
-
-    // LoadObject<T>를 사용하여 에셋을 로드합니다.
-    // 첫 번째 인자는 Outer 객체이며, 보통 에셋 자체에는 nullptr을 사용합니다.
-    // 두 번째 인자는 로드할 에셋의 경로입니다. FString을 TCHAR*로 변환하기 위해 * 연산자를 사용합니다.
+    
     APIData = LoadObject<UAPIData>(nullptr, *AssetPath);
 
-    // 로드가 성공했는지 확인하는 것이 중요합니다.
     if (!APIData)
     {
-        // 로드 실패 시 에러 로그를 남깁니다. LogDSSessionSubsystem은 예시이며 실제 사용하는 로그 카테고리로 변경해야 합니다.
+        // @TODO: Log Category 변경 
         UE_LOG(LogTemp, Error, TEXT("Failed to load APIData asset at path: %s"), *AssetPath);
-        // 필요하다면 로드 실패 시 추가적인 에러 처리 로직을 구현할 수 있습니다.
-    }
-    else
-    {
-        // (선택 사항) 로드 성공 로그
-        UE_LOG(LogTemp, Log, TEXT("Successfully loaded APIData asset: %s"), *APIData->GetName());
     }
 }
 
@@ -58,13 +47,12 @@ void UDS_SessionSubsystem::Deinitialize()
     {
         World->GetTimerManager().ClearTimer(CreateSessionTimer);
     }
-    else // 월드가 이미 없을 수도 있음 (종료 시점)
+    else // @TODO: 월드가 없으면 예외 처리?
     {
-         // GetWorldTimerManager()는 World가 필요하므로 여기선 추가 작업 어려움
+        
     }
 
-    // TODO: 진행 중인 HTTP 요청 취소 등 추가 정리 작업 필요시 구현
-
+    // @TODO: 진행 중인 HTTP 요청 취소 등 추가 정리 작업 필요시 구현
     UE_LOG(LogTemp, Log, TEXT("UGameSessionsSubsystem Deinitialized."));
     Super::Deinitialize();
 }
@@ -194,7 +182,6 @@ void UDS_SessionSubsystem::HandleGameSessionStatus(const FString& Status, const 
     }
 }
 
-// --- TryCreatePlayerSession: 플레이어 세션 생성 요청 ---
 void UDS_SessionSubsystem::TryCreatePlayerSession(const FString& PlayerId, const FString& GameSessionId)
 {
     check(APIData);

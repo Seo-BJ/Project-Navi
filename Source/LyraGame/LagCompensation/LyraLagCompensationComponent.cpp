@@ -8,6 +8,7 @@
 
 #include "Physics/LyraCollisionChannels.h"
 #include "Character/LyraCharacter.h"
+#include "Components/CapsuleComponent.h"
 #include "Player/LyraPlayerController.h"
 
 DEFINE_LOG_CATEGORY(LogLagCompensation);
@@ -177,6 +178,7 @@ FServerSideRewindResult ULyraLagCompensationComponent::ConfirmHit(const FFramePa
 
 FFramePackage ULyraLagCompensationComponent::GetHitTimeFrame(AActor* HitActor, float HitTime)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(TEXT("LagCompensation::HistorySearch"));
 	// 1. 유효성 검사
 	if (!IsValid(HitActor)) return FFramePackage();
 	ULyraLagCompensationComponent* HitLagCompensation = HitActor->GetComponentByClass<ULyraLagCompensationComponent>();
@@ -376,6 +378,7 @@ void ULyraLagCompensationComponent::SetMeshCollisionEnabledType(AActor* HitActor
 	if (ACharacter* HitCharacter = Cast<ACharacter>(HitActor))
 	{
 		HitCharacter->GetMesh()->SetCollisionEnabled(CollsionEnabled);
+		HitCharacter->GetCapsuleComponent()->SetCollisionEnabled(CollsionEnabled);
 	}
 	else
 	{

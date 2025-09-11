@@ -20,6 +20,7 @@ public:
 	FAPIStatusMessage BroadcastJoinGameSessionMessage;
 
 	void JoinGameSession();
+	
 private:
 
 	

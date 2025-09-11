@@ -129,10 +129,6 @@ ALyraCharacter::ALyraCharacter(const FObjectInitializer& ObjectInitializer)
 	Hand_R->SetupAttachment(GetMesh(), FName("Hand_R"));
 	HitCollisionBoxes.Add(FName("Hand_R"), Hand_R);
 
-	backpack = CreateDefaultSubobject<UBoxComponent>(TEXT("backpack"));
-	backpack->SetupAttachment(GetMesh(), FName("backpack"));
-	HitCollisionBoxes.Add(FName("backpack"), backpack);
-
 	blanket = CreateDefaultSubobject<UBoxComponent>(TEXT("blanket"));
 	blanket->SetupAttachment(GetMesh(), FName("blanket_l"));
 	HitCollisionBoxes.Add(FName("blanket_l"), blanket);

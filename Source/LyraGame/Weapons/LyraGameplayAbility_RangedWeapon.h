@@ -105,7 +105,7 @@ protected:
 	virtual void AddAdditionalTraceIgnoreActors(FCollisionQueryParams& TraceParams) const;
 
 	// Determine the trace channel to use for the weapon trace(s)
-	virtual ECollisionChannel DetermineTraceChannel(FCollisionQueryParams& TraceParams, bool bIsSimulated) const;
+	virtual ECollisionChannel DetermineTraceChannel(FCollisionQueryParams& TraceParams, bool bIsSimulated, bool bTraceForServerSideRewind = false ) const;
 
 	void PerformLocalTargeting(OUT TArray<FHitResult>& OutHits);
 
