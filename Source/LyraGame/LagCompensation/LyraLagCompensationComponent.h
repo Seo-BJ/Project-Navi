@@ -110,8 +110,6 @@ private:
 		const FVector_NetQuantize& TraceStart,
 		const FVector_NetQuantize& HitLocation
 		);
-
-
 	
 	//두 프레임 사이 특정 시간(HitTime)에 위치 할 프레임을 선형 보간하여 계산
 	FFramePackage InterpolateBetweenTwoFrames(

@@ -1,4 +1,4 @@
-#include "GameplayTags/DedicatedServersTags.h"
+#include "DedicatedServersTags.h"
 
 namespace DedicatedServersTags
 {

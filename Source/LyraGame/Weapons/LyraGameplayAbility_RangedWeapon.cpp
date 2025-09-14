@@ -530,13 +530,15 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 						{
 							for (uint8 i = 0; i < LocalTargetDataHandle.Num(); ++i)
 							{
-								if (FLyraGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<FLyraGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
+								if (FLyraGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit =
+									static_cast<FLyraGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
 								{
 									const float HitTime = SingleTargetHit->HitTime;
 									const FHitResult& ClientHitResult = SingleTargetHit->HitResult;
 									
 									// 서버 사이드 리와인드 실행
-									FServerSideRewindResult RewindResult = LagComp->ServerSideRewind(ClientHitResult.GetActor(), ClientHitResult.TraceStart, ClientHitResult.ImpactPoint, HitTime);
+									FServerSideRewindResult RewindResult =
+										LagComp->ServerSideRewind(ClientHitResult.GetActor(), ClientHitResult.TraceStart, ClientHitResult.ImpactPoint, HitTime);
 
 									if (RewindResult.bHitConfirmed)
 									{

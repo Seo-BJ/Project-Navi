@@ -275,10 +275,7 @@ private:
 	
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UBoxComponent> Hand_R;
-
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UBoxComponent> blanket;
-
+	
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UBoxComponent> Thigh_L;
 	

@@ -188,35 +188,35 @@ FFramePackage ULyraLagCompensationComponent::GetHitTimeFrame(AActor* HitActor, f
 		return FFramePackage();
 	}
 
-	FFramePackage FrameToCheck;
+
 	// 피격된 캐릭터의 프레임 기록을 가져옴
-	const TDoubleLinkedList<FFramePackage>& History = HitLagCompensation->FrameHistory;
-	const float OldestHistoryTime = History.GetTail()->GetValue().Time;
-	const float NewestHistoryTime = History.GetHead()->GetValue().Time;
+	const float OldestHistoryTime = HitLagCompensation->FrameHistory.GetTail()->GetValue().Time;
+	const float NewestHistoryTime = HitLagCompensation->FrameHistory.GetHead()->GetValue().Time;
 	
 	if (OldestHistoryTime > HitTime) // Case 1: 요청된 시간이 기록 범위를 벗어남 (너무 과거의 요청)
 	{
-		// UE_LOG(LogTemp, Warning, TEXT("Case 1: HitTime: %f, OldestHistoryTime: %f"), HitTime, OldestHistoryTime);
 		return FFramePackage(); 
 	}
 	if (FMath::IsNearlyEqual(OldestHistoryTime, HitTime)) // Case2: 요청된 시간이 가장 오래된 기록과 같음
 	{
-		// UE_LOG(LogTemp, Warning, TEXT("Case 2: HitTime: %f, OldestHistoryTime: %f"), HitTime, OldestHistoryTime);
-		return History.GetTail()->GetValue(); 
+		return HitLagCompensation->FrameHistory.GetTail()->GetValue(); 
 	} 
 	if (FMath::IsNearlyEqual(NewestHistoryTime, HitTime)) // Case 3: 요청 시간이 가장 최신 기록과 같음
 	{
-		// UE_LOG(LogTemp, Warning, TEXT("Case 3: HitTime: %f, NewestHistoryTime: %f"), HitTime, NewestHistoryTime);
-		return History.GetHead()->GetValue(); 
+		return HitLagCompensation->FrameHistory.GetHead()->GetValue(); 
 	}
 	
+	FFramePackage FrameToCheck;
 	if (NewestHistoryTime < HitTime) // Case 4: HitTime이 근소하게 최신 기록보다 큼
 	{
-		FrameToCheck = ExtrapolateByTwoFrames(History.GetHead()->GetNextNode()->GetValue(), History.GetHead()->GetValue(), HitTime);
+		FrameToCheck = ExtrapolateByTwoFrames(
+			HitLagCompensation->FrameHistory.GetHead()->GetNextNode()->GetValue(),
+			HitLagCompensation->FrameHistory.GetHead()->GetValue(), HitTime
+		);
 	}
-	else // Case 5: HitTime이 기록 안에 들어감
+	else // Case 5: HitTime이 기록 사이에 존재
 	{
-		TDoubleLinkedList<FFramePackage>::TDoubleLinkedListNode* Younger = History.GetHead();
+		TDoubleLinkedList<FFramePackage>::TDoubleLinkedListNode* Younger = HitLagCompensation->FrameHistory.GetHead();
 		TDoubleLinkedList<FFramePackage>::TDoubleLinkedListNode* Older = Younger;
 		while (Older->GetValue().Time > HitTime)
 		{

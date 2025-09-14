@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "NaviInventoryFragment_SetStatsFromDataTable.h"
+#include "Weapons/NaviInventoryFragment_SetStatsFromDataTable.h"
 
 #include "Inventory/LyraInventoryItemInstance.h"
 #include "Weapons/LyraRangedWeaponInstance.h"
