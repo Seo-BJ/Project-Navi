@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "GameplayTags/DedicatedServersTags.h"
+#include "GameplayTags.h"
 #include "APIData.generated.h"
 
 /**

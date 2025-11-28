@@ -6,7 +6,7 @@
 #include "HttpModule.h"
 #include "JsonObjectConverter.h"
 #include "Data/API/APIData.h"
-#include "GameplayTags/DedicatedServersTags.h"
+#include "DedicatedServers/DedicatedServersTags.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/DSLocalPlayerSubsystem.h"

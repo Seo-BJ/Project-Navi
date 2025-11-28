@@ -510,6 +510,7 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 		}
 
 		const bool bIsTargetDataValid = true;
+		
 		bool bProjectileWeapon = false;
 
 #if WITH_SERVER_CODE
@@ -520,7 +521,7 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 				if (Controller->GetLocalRole() == ROLE_Authority)
 				{
 					bool bOverallHitSuccess = false; // 이번 발사가 최소 1회 유효한 Hit가 발생했는지
-					TArray<uint8> ConfirmedHitIndices;	// 서버에서 확인된 Hit들의 인덱스
+					TArray<uint8> HitReplaces; // 대체된 Hit 배열
 
 					if (bUseServerSideRewind)
 					{
@@ -528,10 +529,9 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 						ULyraLagCompensationComponent* LagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraLagCompensationComponent>() : nullptr;
 						if (IsValid(LagComp))
 						{
-							for (uint8 i = 0; i < LocalTargetDataHandle.Num(); ++i)
+						for (uint8 i = 0; (i < LocalTargetDataHandle.Num()) && (i < 255); ++i)
 							{
-								if (FLyraGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit =
-									static_cast<FLyraGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
+								if (FLyraGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<FLyraGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
 								{
 									const float HitTime = SingleTargetHit->HitTime;
 									const FHitResult& ClientHitResult = SingleTargetHit->HitResult;
@@ -540,10 +540,22 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 									FServerSideRewindResult RewindResult =
 										LagComp->ServerSideRewind(ClientHitResult.GetActor(), ClientHitResult.TraceStart, ClientHitResult.ImpactPoint, HitTime);
 
+									UE_LOG(LogTemp, Warning, TEXT("  Hit[%d]: Actor=%s, bConfirmed=%d, bHeadshot=%d"),
+									       i,
+									       ClientHitResult.GetActor() ? *ClientHitResult.GetActor()->GetName() : TEXT("NULL"),
+									       RewindResult.bHitConfirmed,
+									       RewindResult.bHeadShot);
+
+									// @Todo: 서버 권위적인 로직을 통해 Hit Replaced 시스템을 사용
+									if (SingleTargetHit->bHitReplaced)
+									{
+										HitReplaces.Add(i);
+									}
+
 									if (RewindResult.bHitConfirmed)
 									{
+										// 동일하다면, 이 피격은 유효하다고 간주
 										bOverallHitSuccess = true;
-										ConfirmedHitIndices.Add(i);
 									}
 								}
 							}
@@ -573,7 +585,12 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 									{
 										// 동일하다면, 이 피격은 유효하다고 간주
 										bOverallHitSuccess = true;
-										ConfirmedHitIndices.Add(i);
+									}
+
+									// @Todo: 서버 권위적인 로직을 통해 Hit Replaced 시스템을 사용
+									if (SingleTargetHit->bHitReplaced)
+									{
+										HitReplaces.Add(i);
 									}
 								}
 							}
@@ -581,9 +598,10 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 					}
 
 					// 검증 결과를 바탕으로 클라이언트에 통보
+
 					if (ULyraWeaponStateComponent* WeaponStateComponent = Controller->FindComponentByClass<ULyraWeaponStateComponent>())
 					{
-						WeaponStateComponent->ClientConfirmTargetData(LocalTargetDataHandle.UniqueId, bOverallHitSuccess, ConfirmedHitIndices);
+						WeaponStateComponent->ClientConfirmTargetData(LocalTargetDataHandle.UniqueId, bOverallHitSuccess, HitReplaces);
 					}
 					
 					// 서버 사이드 리와인드 Hit 결과 확인. Ammo 확인. 
@@ -644,10 +662,22 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 	check(Controller);
 	ULyraWeaponStateComponent* WeaponStateComponent = Controller->FindComponentByClass<ULyraWeaponStateComponent>();
 
+	UE_LOG(LogTemp, Warning, TEXT("[HitMarker Step 1] StartRangedWeaponTargeting - WeaponStateComponent=%s"),
+	       WeaponStateComponent ? TEXT("VALID") : TEXT("NULL"));
+
 	FScopedPredictionWindow ScopedPrediction(MyAbilityComponent, CurrentActivationInfo.GetActivationPredictionKey());
 
 	TArray<FHitResult> FoundHits;
 	PerformLocalTargeting(/*out*/ FoundHits);
+
+	UE_LOG(LogTemp, Warning, TEXT("[HitMarker Step 2] PerformLocalTargeting - FoundHits.Num()=%d"), FoundHits.Num());
+	for (int i = 0; i < FoundHits.Num(); i++)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("  Hit[%d]: Actor=%s, Location=%s"),
+		       i,
+		       FoundHits[i].GetActor() ? *FoundHits[i].GetActor()->GetName() : TEXT("NULL"),
+		       *FoundHits[i].Location.ToString());
+	}
 
 	// Fill out the target data from the hit results
 	FGameplayAbilityTargetDataHandle TargetData;
@@ -682,9 +712,16 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 	const bool bProjectileWeapon = false;
 	if (!bProjectileWeapon && (WeaponStateComponent != nullptr))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("[HitMarker Step 3] AddUnconfirmedServerSideHitMarkers - UniqueId=%d"), TargetData.UniqueId);
 		WeaponStateComponent->AddUnconfirmedServerSideHitMarkers(TargetData, FoundHits);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[HitMarker Step 3 FAILED] bProjectileWeapon=%d, WeaponStateComponent=%s"),
+		       bProjectileWeapon, WeaponStateComponent ? TEXT("VALID") : TEXT("NULL"));
 	}
 
 	// Process the target data immediately
+	UE_LOG(LogTemp, Warning, TEXT("[HitMarker Step 4] OnTargetDataReadyCallback (Client Prediction)"));
 	OnTargetDataReadyCallback(TargetData, FGameplayTag());
 }

@@ -91,32 +91,49 @@ protected:
 	bool bUseServerSideRewind = true;
 	
 protected:
-	static int32 FindFirstPawnHitResult(const TArray<FHitResult>& HitResults);
 
-	// Does a single weapon trace, either sweeping or ray depending on if SweepRadius is above zero
-	FHitResult WeaponTrace(const FVector& StartTrace, const FVector& EndTrace, float SweepRadius, bool bIsSimulated, OUT TArray<FHitResult>& OutHitResults) const;
-
-	// Wrapper around WeaponTrace to handle trying to do a ray trace before falling back to a sweep trace if there were no hits and SweepRadius is above zero 
-	FHitResult DoSingleBulletTrace(const FVector& StartTrace, const FVector& EndTrace, float SweepRadius, bool bIsSimulated, OUT TArray<FHitResult>& OutHits) const;
-
-	// Traces all of the bullets in a single cartridge
-	void TraceBulletsInCartridge(const FRangedWeaponFiringInput& InputData, OUT TArray<FHitResult>& OutHits);
 
 	virtual void AddAdditionalTraceIgnoreActors(FCollisionQueryParams& TraceParams) const;
 
 	// Determine the trace channel to use for the weapon trace(s)
 	virtual ECollisionChannel DetermineTraceChannel(FCollisionQueryParams& TraceParams, bool bIsSimulated, bool bTraceForServerSideRewind = false ) const;
-
-	void PerformLocalTargeting(OUT TArray<FHitResult>& OutHits);
+	
 
 	FVector GetWeaponTargetingSourceLocation() const;
 	FTransform GetTargetingTransform(APawn* SourcePawn, ELyraAbilityTargetingSource Source) const;
 
 	void OnTargetDataReadyCallback(const FGameplayAbilityTargetDataHandle& InData, FGameplayTag ApplicationTag);
 
+	/**
+	 * StartRangedWeaponTargeting는 원거리 무기 조준 절차를 시작하며,
+	 * 다양한 컴포넌트가 존재하고 유효한지 확인합니다. 그 후 로컬 조준(local targeting)을 수행하고,
+	 * 그 결과로 나온 히트(hit) 정보를 바탕으로 타겟 데이터를 생성합니다.
+	 * 마지막으로 히트 마커 정보를 서버로 전송하고 타겟 데이터를 처리합니다.
+	 */
 	UFUNCTION(BlueprintCallable)
 	void StartRangedWeaponTargeting();
+	
+	/**
+	 * PerformLocalTargeting() 함수는
+	 * RangedWeaponFiringInput 데이터(조준 방향, 트레이스 벡터 등)를 결정하고,
+	 * 해당 데이터를 TraceBulletsInCartridge() 함수로 전달합니다. 결과는 OutHits 배열에 저장됩니다.
+	 * 
+	 * @param OutHits Hit 결과
+	 */
+	void PerformLocalTargeting(OUT TArray<FHitResult>& OutHits);
 
+	// Traces all of the bullets in a single cartridge
+	void TraceBulletsInCartridge(const FRangedWeaponFiringInput& InputData, OUT TArray<FHitResult>& OutHits);
+
+	// Wrapper around WeaponTrace to handle trying to do a ray trace before falling back to a sweep trace if there were no hits and SweepRadius is above zero 
+	FHitResult DoSingleBulletTrace(const FVector& StartTrace, const FVector& EndTrace, float SweepRadius, bool bIsSimulated, OUT TArray<FHitResult>& OutHits) const;
+	
+	static int32 FindFirstPawnHitResult(const TArray<FHitResult>& HitResults);
+
+	// Does a single weapon trace, either sweeping or ray depending on if SweepRadius is above zero
+	FHitResult WeaponTrace(const FVector& StartTrace, const FVector& EndTrace, float SweepRadius, bool bIsSimulated, OUT TArray<FHitResult>& OutHitResults) const;
+
+	
 	// Called when target data is ready
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnRangedWeaponTargetDataReady(const FGameplayAbilityTargetDataHandle& TargetData);

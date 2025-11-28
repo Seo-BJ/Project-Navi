@@ -7,7 +7,7 @@
 #include "JsonObjectConverter.h"
 #include "Data/API/APIData.h"
 #include "GameFramework/PlayerState.h"
-#include "GameplayTags/DedicatedServersTags.h"
+#include "DedicatedServers/DedicatedServersTags.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Kismet/GameplayStatics.h"

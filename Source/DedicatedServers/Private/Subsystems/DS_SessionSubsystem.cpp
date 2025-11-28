@@ -14,7 +14,7 @@
 #include "Interfaces/IHttpResponse.h"
 // 프로젝트 특정 헤더들
 #include "Data/API/APIData.h" // APIData 클래스 정의 필요
-#include "GameplayTags/DedicatedServersTags.h" // 태그 정의 필요
+#include "DedicatedServers/DedicatedServersTags.h" // 태그 정의 필요
 #include "Player/DSLocalPlayerSubsystem.h" // 로컬 플레이어 서브시스템 정의 필요
 // #include "UI/HTTP/HTTPRequestTypes.h" // 헤더에 이미 포함
 

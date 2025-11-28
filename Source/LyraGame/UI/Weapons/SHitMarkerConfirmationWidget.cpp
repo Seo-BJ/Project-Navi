@@ -38,11 +38,16 @@ int32 SHitMarkerConfirmationWidget::OnPaint(const FPaintArgs& Args, const FGeome
 			if (ULyraWeaponStateComponent* WeaponStateComponent = PC->FindComponentByClass<ULyraWeaponStateComponent>())
 			{
 				WeaponStateComponent->GetLastWeaponDamageScreenLocations(/*out*/ LastWeaponDamageScreenLocations);
+
+				UE_LOG(LogTemp, Warning, TEXT("[HitMarker Step 8] Widget OnPaint - ScreenLocations.Num()=%d, Opacity=%f"),
+				       LastWeaponDamageScreenLocations.Num(), HitNotifyOpacity);
 			}
 		}
 
 		if ((LastWeaponDamageScreenLocations.Num() > 0) && (PerHitMarkerImage != nullptr))
 		{
+			UE_LOG(LogTemp, Warning, TEXT("[HitMarker Step 8.1] DRAWING %d markers"), LastWeaponDamageScreenLocations.Num());
+
 			const FVector2D HalfAbsoluteSize = AllottedGeometry.GetAbsoluteSize() * 0.5f;
 
 			for (const FLyraScreenSpaceHitLocation& Hit : LastWeaponDamageScreenLocations)
@@ -99,6 +104,18 @@ void SHitMarkerConfirmationWidget::Tick(const FGeometry& AllottedGeometry, const
 			if (TimeSinceLastHitNotification < HitNotifyDuration)
 			{
 				HitNotifyOpacity = FMath::Clamp(1.0f - (float)(TimeSinceLastHitNotification / HitNotifyDuration), 0.0f, 1.0f);
+
+				UE_LOG(LogTemp, VeryVerbose, TEXT("[HitMarker Step 7] Widget Tick - TimeSince=%f, Opacity=%f"),
+				       TimeSinceLastHitNotification, HitNotifyOpacity);
+			}
+		}
+		else
+		{
+			static bool bLoggedOnce = false;
+			if (!bLoggedOnce)
+			{
+				UE_LOG(LogTemp, Error, TEXT("[HitMarker Step 7 ERROR] Widget Tick - WeaponStateComponent NOT FOUND!"));
+				bLoggedOnce = true;
 			}
 		}
 	}
