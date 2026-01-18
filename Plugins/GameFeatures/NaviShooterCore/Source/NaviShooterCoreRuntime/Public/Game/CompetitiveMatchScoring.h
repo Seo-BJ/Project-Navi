@@ -37,13 +37,8 @@ enum class ECompetitiveMatchRoundPhase : uint8
 class ULyraGamePhaseAbility;
 class ULyraExperienceDefinition;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRemainingSpikeTimeChangedDelegate, ECompetitiveMatchRoundPhase, Phase, float, NewSpikeTime);
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayingPhaseStartedDelegate);
-
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnTeamScoreAddedDelegate, int32, TeamId, int32, OldScore, int32, NewScore);
-
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FLyraGamePhaseDynamicMulticastDelegate, const ULyraGamePhaseAbility*, Phase);
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class NAVISHOOTERCORERUNTIME_API UCompetitiveMatchScoring : public UShooterGameScoringBase
@@ -53,17 +48,20 @@ class NAVISHOOTERCORERUNTIME_API UCompetitiveMatchScoring : public UShooterGameS
 public:
 	UCompetitiveMatchScoring(const FObjectInitializer& ObjectInitializer);
 	
-	UPROPERTY(BlueprintAssignable, Category = "Events")
-	FOnRemainingSpikeTimeChangedDelegate OnPhaseTimeChanged;
-
-	UFUNCTION(BlueprintCallable, Category = "Scoring")
+	UFUNCTION(BlueprintCallable)
 	void HandleSpikePlanted(APawn* SpikePlanter);
+	
+	UFUNCTION(BlueprintCallable)
+	virtual void HandleSpikeDefused(FGameplayTag Tag, const FSpikeDefusedMessage& Message);
 
-	UPROPERTY(BlueprintAssignable)
-	FOnPlayingPhaseStartedDelegate PlayingPhaseStartDelegate;
+	UPROPERTY(BlueprintCallable)
+	FLyraGamePhaseDynamicMulticastDelegate BuyingPhaseEndDynamicMulticastDelegate;
 
-	UPROPERTY(BlueprintAssignable)
-	FOnTeamScoreAddedDelegate OnTeamScoreAddedDelegate;
+	UPROPERTY(BlueprintCallable)
+	FLyraGamePhaseDynamicMulticastDelegate PlayingPhaseEndDynamicMulticastDelegate;
+
+	UPROPERTY(BlueprintCallable)
+	FLyraGamePhaseDynamicMulticastDelegate SpikePantedPhaseDynamicMulticastDelegate;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -75,88 +73,50 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Replicated, Category = "Score")
 	int32 VictoryScore = 13;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "GamePhase|Time")
-	float BuyingTime = 30.0f;
-
-	UPROPERTY(ReplicatedUsing = OnRep_RemainingBuyingTime)
-	float RemainingBuyingTime;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "GamePhase|Time")
-	float RoundTime = 45.0f;
-
-	UPROPERTY(ReplicatedUsing = OnRep_RemainingRoundTime)
-	float RemainingRoundTime;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "GamePhase|Time")
-	float SpikeDetonationTime = 45.0f;
-
-	UPROPERTY(ReplicatedUsing = OnRep_RemainingSpikeTime)
-	float RemainingSpikeTime;
-
-	UPROPERTY(EditDefaultsOnly, Category = "GamePhase|Time")
-	float PostGameTime = 7.0f;
-
-	UPROPERTY(ReplicatedUsing = OnRep_RemainingPostRound)
-	float RemainingPostRoundTime;
-
-	UPROPERTY(EditDefaultsOnly, Category = "GamePhase")	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GamePhase")	
 	TSubclassOf<ULyraGamePhaseAbility> BuyingPhaseAbilityClass;
 
-	UPROPERTY(EditDefaultsOnly, Category = "GamePhase")
-	TSubclassOf<ULyraGamePhaseAbility> RoundPhaseAbilityClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GamePhase")
+	TSubclassOf<ULyraGamePhaseAbility> PlayingPhaseAbilityClass;
 
-	UPROPERTY(EditDefaultsOnly, Category = "GamePhase")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GamePhase")
 	TSubclassOf<ULyraGamePhaseAbility> SpikePlantedPhaseAbilityClass;
 
-	UPROPERTY(EditDefaultsOnly, Category = "GamePhase")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GamePhase")
 	TSubclassOf<ULyraGamePhaseAbility> PostRoundPhaseAbilityClass;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GamePhase")
+	float BuyingPhaseTime = 45.0f;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GamePhase")
+	float PlayingPhaseTime = 100.0f;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GamePhase")
+	float SpikePlantedPhaseTime = 45.0f;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GamePhase")	
+	float PostRoundPhaseTime = 7.0f;
+	
+	FLyraGamePhaseDelegate BuyingPhaseEndDelegate;
+	FLyraGamePhaseDelegate PlayingPhaseEndDelegate;
+	FLyraGamePhaseDelegate SpikePlantedPhaseEndDelegate;
+	
 	UFUNCTION(BlueprintNativeEvent)
 	void StartRound();
 	
-
-
 private:
-	
-	UFUNCTION()
-	void OnRep_RemainingBuyingTime();
 
-	UFUNCTION()
-	void OnRep_RemainingRoundTime();
+	void OnBuyingPhaseEnded(const ULyraGamePhaseAbility* Phase);
+	void OnPlayingPhaseEnded(const ULyraGamePhaseAbility* Phase);
+	void OnSpikePhaseEnded(const ULyraGamePhaseAbility* Phase);
+	void OnPostRoundPhaseEnded(const ULyraGamePhaseAbility* Phase);
 	
-	UFUNCTION()
-	void OnRep_RemainingSpikeTime();
-	
-	UFUNCTION()
-	void OnRep_RemainingPostRound();
+	bool bSpikePlanted = false;
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_BroadcastSpikePlantedMessage(APawn* SpikePlanter);
 	
 	void HandlePostRound();
-
-
-	// Buying Phase
-	void BuyingTimeCountDown();
-	void EndBuyingPhase();
-	
-	FTimerHandle BuyingPhaseTimerHandle;
-	
-	// Playing Phase
-	void RoundTimeCountDown();
-	FTimerHandle RoundTimerHandle;
-	
-	// --- Spike Planted Phase ---
-
-	void SpikeTimeCountDown();
-	FTimerHandle SpikePhaseTimerHandle;
-	
-	// Post Game Phase
-	void PostRoundTimeCountDown();
-	FTimerHandle PostRoundPhaseTimerHandle;
-	
-	UFUNCTION()
-	void OnPostGamePhaseStarted(const ULyraGamePhaseAbility* PhaseAbility);
 
 
 	//~Competitive Match Scoring
@@ -202,9 +162,6 @@ protected:
 	/** 모든 플레이어의 생존 상태를 확인하여 라운드 승패를 결정합니다. */
 	void CheckTeamElimination();
 
-	/** 스파이크 해체 메시지를 처리합니다. */
-	virtual void OnSpikeDefusedMessageReceived(FGameplayTag Tag, const FSpikeDefusedMessage& Message);
-	
 
 	// ShooterGameScoringBase의 함수를 오버라이드합니다.
 	virtual void OnEliminationMessageReceived(FGameplayTag Tag, const FLyraVerbMessage& Message) override;

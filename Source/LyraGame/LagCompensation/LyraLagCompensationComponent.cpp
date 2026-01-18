@@ -399,6 +399,7 @@ void ULyraLagCompensationComponent::DrawDebugConfirmHitResult(FHitResult Confirm
 	if (ConfirmHitResult.Component.IsValid())
 	{
 		UBoxComponent* Box = Cast<UBoxComponent>(ConfirmHitResult.Component);
+		if (Box)
 		{
 			DrawDebugBox(GetWorld(), Box->GetComponentLocation(), Box->GetScaledBoxExtent(), FQuat(Box->GetComponentRotation()), FColor::Blue, false, DrawDebugHitBoxTime);
 		}

@@ -35,7 +35,7 @@ protected:
 private:
 
 	UFUNCTION()
-	void OnPlayingPhaseStarted();
+	void OnPlayingPhaseStarted(const ULyraGamePhaseAbility* Phase);
 	
 	FDelegateHandle GamePhaseStartHandle;
 };

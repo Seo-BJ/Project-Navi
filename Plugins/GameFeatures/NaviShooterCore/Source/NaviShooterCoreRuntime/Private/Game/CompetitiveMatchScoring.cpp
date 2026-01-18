@@ -15,7 +15,6 @@
 
 UCompetitiveMatchScoring::UCompetitiveMatchScoring(const FObjectInitializer& ObjectInitializer): Super(ObjectInitializer)
 {
-	
 	PrimaryComponentTick.bCanEverTick = false;
 	SetIsReplicatedByDefault(true);
 	
@@ -27,10 +26,6 @@ void UCompetitiveMatchScoring::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UCompetitiveMatchScoring, VictoryScore);
-	DOREPLIFETIME(UCompetitiveMatchScoring, RemainingBuyingTime);
-	DOREPLIFETIME(UCompetitiveMatchScoring, RemainingRoundTime);
-	DOREPLIFETIME(UCompetitiveMatchScoring, RemainingSpikeTime);
-	DOREPLIFETIME(UCompetitiveMatchScoring, RemainingPostRoundTime);
 	DOREPLIFETIME(UCompetitiveMatchScoring, bIsInOvertime); 
 }
 
@@ -50,58 +45,54 @@ void UCompetitiveMatchScoring::BeginPlay()
 
 void UCompetitiveMatchScoring::OnExperienceLoaded(const ULyraExperienceDefinition* Experience)
 {
-	if (!HasAuthority()) 	return;
+	if (!HasAuthority()) return;
 
+	/*
 	// @Todo: 모든 플레이어가 준비됐는지 확인
 	
 	ULyraGamePhaseSubsystem* PhaseSubsystem = GetWorld()->GetSubsystem<ULyraGamePhaseSubsystem>();
 	if (ensure(PhaseSubsystem) && ensure(BuyingPhaseAbilityClass))
 	{
-		FLyraGamePhaseDelegate BuyingPhaseEndDelegate;
-		// BuyingPhaseEndDelegate.BindUObject(this, &UCompetitiveMatchScoring::OnPlayingPhaseStarted);
-		
+		BuyingPhaseEndDelegate.BindUObject(this, &ThisClass::OnBuyingPhaseEnded);
 		PhaseSubsystem->StartPhase(BuyingPhaseAbilityClass, BuyingPhaseEndDelegate);
-
-		RemainingBuyingTime = BuyingTime;
-		GetWorld()->GetTimerManager().SetTimer(
-			BuyingPhaseTimerHandle,
-			this,
-			&UCompetitiveMatchScoring::BuyingTimeCountDown,
-			1.0f,
-			true);
 	}
+	*/
 }
 
-void UCompetitiveMatchScoring::BuyingTimeCountDown()
-{
-	RemainingBuyingTime -= 1.0f;
-	if (RemainingBuyingTime <= 0.0f)
-	{
-		GetWorld()->GetTimerManager().ClearTimer(BuyingPhaseTimerHandle);
-		EndBuyingPhase();
-	}
-}
-
-void UCompetitiveMatchScoring::EndBuyingPhase()
+void UCompetitiveMatchScoring::OnBuyingPhaseEnded(const ULyraGamePhaseAbility* Phase)
 {
 	ULyraGamePhaseSubsystem* PhaseSubsystem = GetWorld()->GetSubsystem<ULyraGamePhaseSubsystem>();
-	if (ensure(PhaseSubsystem) && ensure(RoundPhaseAbilityClass))
+	if (ensure(PhaseSubsystem) && ensure(PlayingPhaseAbilityClass))
 	{
-		FLyraGamePhaseDelegate PlayingPhaseEndDelegate;
-		// PlayingPhaseEndDelegate.BindUObject(this, &UCompetitiveMatchScoring::OnPostGamePhaseStarted);
-		PhaseSubsystem->StartPhase(RoundPhaseAbilityClass, PlayingPhaseEndDelegate);
-		
-		PlayingPhaseStartDelegate.Broadcast();
-
-		RemainingRoundTime = RoundTime;
-		GetWorld()->GetTimerManager().SetTimer(
-			RoundTimerHandle,
-			this,
-			&UCompetitiveMatchScoring::RoundTimeCountDown,
-			1.0f,
-			true);
+		PlayingPhaseEndDelegate.BindUObject(this, &ThisClass::OnPlayingPhaseEnded);
+		PhaseSubsystem->StartPhase(PlayingPhaseAbilityClass, PlayingPhaseEndDelegate);
 	}
+	BuyingPhaseEndDynamicMulticastDelegate.Broadcast(Phase);
 }
+
+void UCompetitiveMatchScoring::OnPlayingPhaseEnded(const ULyraGamePhaseAbility* Phase)
+{
+	// 스파이크가 설치되어서 페이즈가 끝난 경우, 승리 판정을 하지 않음 (이미 스파이크 페이즈로 넘어감)
+	if (bSpikePlanted)
+	{
+		return;
+	}
+
+	// 시간 초과 시 수비팀 승리
+	const int32 DefenderTeamId = GetTeamIdWithRole(NaviGameplayTags::TAG_Navi_Team_Role_Defender);
+	if (DefenderTeamId != INDEX_NONE)
+	{
+		AwardRoundWin(DefenderTeamId, TEXT("Timeout"));
+	}
+	else
+	{
+		HandlePostRound(); // 예외 처리
+	}
+	PlayingPhaseEndDynamicMulticastDelegate.Broadcast(Phase);
+}
+
+// Spike Plant and Defuse //////////////////////////////////////////////////////////////////////////////////////////////
+
 void UCompetitiveMatchScoring::HandleSpikePlanted(APawn* SpikePlanter)
 {
 	if (!HasAuthority())
@@ -109,26 +100,17 @@ void UCompetitiveMatchScoring::HandleSpikePlanted(APawn* SpikePlanter)
 		return;
 	}
 
-	GetWorld()->GetTimerManager().ClearTimer(RoundTimerHandle);
+	bSpikePlanted = true;
 	Multicast_BroadcastSpikePlantedMessage(SpikePlanter);
-
-	RemainingSpikeTime = SpikeDetonationTime;
-	GetWorld()->GetTimerManager().SetTimer(
-		SpikePhaseTimerHandle,
-		this,
-		&UCompetitiveMatchScoring::SpikeTimeCountDown,
-		1.0f,
-		true);
 
 	ULyraGamePhaseSubsystem* PhaseSubsystem = GetWorld()->GetSubsystem<ULyraGamePhaseSubsystem>();
 	if (ensure(PhaseSubsystem) && ensure(SpikePlantedPhaseAbilityClass))
 	{
-		FLyraGamePhaseDelegate SpikePhaseEndDelegate;
-		// 스파이크 페이즈가 끝나면 PostGame 페이즈로 이동.
-		// SpikePhaseEndDelegate.BindUObject(this, &UCompetitiveMatchScoring::OnPostGamePhaseStarted);
-		PhaseSubsystem->StartPhase(SpikePlantedPhaseAbilityClass, SpikePhaseEndDelegate);
+		SpikePlantedPhaseEndDelegate.BindUObject(this, &ThisClass::OnSpikePhaseEnded);
+		PhaseSubsystem->StartPhase(SpikePlantedPhaseAbilityClass, SpikePlantedPhaseEndDelegate);
 	}
 }
+
 void UCompetitiveMatchScoring::Multicast_BroadcastSpikePlantedMessage_Implementation(APawn* SpikePlanter)
 {
 	UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
@@ -138,104 +120,86 @@ void UCompetitiveMatchScoring::Multicast_BroadcastSpikePlantedMessage_Implementa
 	MessageSubsystem.BroadcastMessage(NaviGameplayTags::Navi_Spike_Plant_Finish, Message);
 }
 
-
-
-/*
- *
- *
-*void UCompetitiveMatchScoring::RoundTimeCountDown()
+void UCompetitiveMatchScoring::OnSpikePhaseEnded(const ULyraGamePhaseAbility* Phase)
 {
-	RemainingTime -= 1.0f;
-
-	if (RemainingTime <= 0.0f)
+	// 스파이크 폭발 시 공격팀 승리
+	// 해체되었을 경우는 OnSpikeDefusedMessageReceived에서 처리됨 (RoundDecided가 true가 됨)
+	if (bIsRoundDecided)
 	{
-		GetWorld()->GetTimerManager().ClearTimer(RoundTimerHandle);
+		// 이미 승패가 결정됨 (해체 등)
 		HandlePostRound();
+		return;
+	}
+
+	const int32 AttackerTeamId = GetTeamIdWithRole(NaviGameplayTags::TAG_Navi_Team_Role_Attacker);
+	if (AttackerTeamId != INDEX_NONE)
+	{
+		AwardRoundWin(AttackerTeamId, TEXT("Spike Detonated"));
+	}
+	else
+	{
+		HandlePostRound(); // 예외 처리
 	}
 }
 
- **/
-void UCompetitiveMatchScoring::RoundTimeCountDown()
+void UCompetitiveMatchScoring::HandleSpikeDefused(FGameplayTag Tag, const FSpikeDefusedMessage& Message)
 {
-	RemainingRoundTime -= 1.0f;
-
-	if (RemainingRoundTime <= 0.0f)
+	if (!HasAuthority())
 	{
-		GetWorld()->GetTimerManager().ClearTimer(RoundTimerHandle);
-		// 시간 초과 시 수비팀 승리
-		const int32 DefenderTeamId = GetTeamIdWithRole(NaviGameplayTags::TAG_Navi_Team_Role_Defender);
+		return;
+	}
+	
+	ULyraGamePhaseSubsystem* PhaseSubsystem = GetWorld()->GetSubsystem<ULyraGamePhaseSubsystem>();
+	if (ensure(PhaseSubsystem) && ensure(SpikePlantedPhaseAbilityClass))
+	{
+		SpikePlantedPhaseEndDelegate.BindUObject(this, &ThisClass::OnSpikePhaseEnded);
+		PhaseSubsystem->StartPhase(SpikePlantedPhaseAbilityClass, SpikePlantedPhaseEndDelegate);
+	}
+	
+	if (HasAuthority())
+	{
+		// 스파이크 해체 시 수비팀 승리
+		const int32 DefenderTeamId = GetTeamIdWithRole(FGameplayTag::RequestGameplayTag(TEXT("Navi.Team.Role.Defender")));
 		if (DefenderTeamId != INDEX_NONE)
 		{
-			AwardRoundWin(DefenderTeamId, TEXT("Timeout"));
-		}
-		else
-		{
-			HandlePostRound(); // 예외 처리
+			AwardRoundWin(DefenderTeamId, TEXT("Spike Defused"));
 		}
 	}
 }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void UCompetitiveMatchScoring::SpikeTimeCountDown()
+
+
+void UCompetitiveMatchScoring::HandlePostRound()
 {
-	RemainingSpikeTime -= 1.0f;
-	if (RemainingSpikeTime <= 0.0f)
+	bIsRoundDecided = false;
+	// 타이머 제거됨
+
+	ULyraGamePhaseSubsystem* PhaseSubsystem = GetWorld()->GetSubsystem<ULyraGamePhaseSubsystem>();
+	if (ensure(PhaseSubsystem) && ensure(PostRoundPhaseAbilityClass))
 	{
-		GetWorld()->GetTimerManager().ClearTimer(SpikePhaseTimerHandle);
-		// 스파이크 폭발 시 공격팀 승리
-		const int32 AttackerTeamId = GetTeamIdWithRole(NaviGameplayTags::TAG_Navi_Team_Role_Attacker);
-		if (AttackerTeamId != INDEX_NONE)
-		{
-			AwardRoundWin(AttackerTeamId, TEXT("Spike Detonated"));
-		}
-		else
-		{
-			HandlePostRound(); // 예외 처리
-		}
+		FLyraGamePhaseDelegate PostRoundEndDelegate;
+		PostRoundEndDelegate.BindUObject(this, &ThisClass::OnPostRoundPhaseEnded);
+		PhaseSubsystem->StartPhase(PostRoundPhaseAbilityClass, PostRoundEndDelegate);
 	}
 }
 
-
-/*
-*void UCompetitiveMatchScoring::SpikeTimeCountDown()
+void UCompetitiveMatchScoring::OnPostRoundPhaseEnded(const ULyraGamePhaseAbility* Phase)
 {
-	RemainingSpikeTime -= 1.0f;
-	if (RemainingSpikeTime <= 0.0f)
+	bSpikePlanted = false;
+	
+	// 다음 라운드 시작 (Buying Phase)
+	/*
+	ULyraGamePhaseSubsystem* PhaseSubsystem = GetWorld()->GetSubsystem<ULyraGamePhaseSubsystem>();
+	if (ensure(PhaseSubsystem) && ensure(BuyingPhaseAbilityClass))
 	{
-		GetWorld()->GetTimerManager().ClearTimer(SpikePhaseTimerHandle);
-		HandlePostRound();
+		FLyraGamePhaseDelegate BuyingPhaseEndDelegate;
+		BuyingPhaseEndDelegate.BindUObject(this, &ThisClass::OnBuyingPhaseEnded);
+		
+		PhaseSubsystem->StartPhase(BuyingPhaseAbilityClass, BuyingPhaseEndDelegate);
 	}
+	*/
 }
-
- *
- * 
- */
-
-void UCompetitiveMatchScoring::OnPostGamePhaseStarted(const ULyraGamePhaseAbility* PhaseAbility)
-{
-}
-
-
-void UCompetitiveMatchScoring::OnRep_RemainingBuyingTime()
-{
-	OnPhaseTimeChanged.Broadcast(ECompetitiveMatchRoundPhase::CRP_Buying, RemainingBuyingTime);
-}
-
-void UCompetitiveMatchScoring::OnRep_RemainingRoundTime()
-{
-	OnPhaseTimeChanged.Broadcast(ECompetitiveMatchRoundPhase::CRP_Round, RemainingRoundTime);
-}
-
-void UCompetitiveMatchScoring::OnRep_RemainingSpikeTime()
-{
-	OnPhaseTimeChanged.Broadcast(ECompetitiveMatchRoundPhase::CRP_Spike, RemainingSpikeTime);
-}
-
-void UCompetitiveMatchScoring::OnRep_RemainingPostRound()
-{
-	OnPhaseTimeChanged.Broadcast(ECompetitiveMatchRoundPhase::CRP_PostRound, RemainingPostRoundTime);
-}
-
-// Competitive Match Scoring ///////////////////////////////////////////////////////////////////////////////////////////
 
 int32 UCompetitiveMatchScoring::GetTeamScore(int32 TeamId) const
 {
@@ -402,18 +366,7 @@ void UCompetitiveMatchScoring::CheckTeamElimination()
 }
 
 
-void UCompetitiveMatchScoring::OnSpikeDefusedMessageReceived(FGameplayTag Tag, const FSpikeDefusedMessage& Message)
-{
-    if (HasAuthority())
-    {
-        // 스파이크 해체 시 수비팀 승리
-        const int32 DefenderTeamId = GetTeamIdWithRole(FGameplayTag::RequestGameplayTag(TEXT("Navi.Team.Role.Defender")));
-        if (DefenderTeamId != INDEX_NONE)
-        {
-            AwardRoundWin(DefenderTeamId, TEXT("Spike Defused"));
-        }
-    }
-}
+
 
 void UCompetitiveMatchScoring::AwardRoundWin(int32 WinningTeamId, const FString& RoundWinReason)
 {
@@ -451,41 +404,6 @@ int32 UCompetitiveMatchScoring::GetTeamIdWithRole(const FGameplayTag& RoleTag) c
 }
 
 // ~Post Match /////////////////////////////////////////////////////////////////////////////////////////////////////////
-void UCompetitiveMatchScoring::HandlePostRound()
-{
-	bIsRoundDecided = false;
-	GetWorld()->GetTimerManager().ClearTimer(BuyingPhaseTimerHandle);
-    GetWorld()->GetTimerManager().ClearTimer(RoundTimerHandle);
-    GetWorld()->GetTimerManager().ClearTimer(SpikePhaseTimerHandle);
-	
-	RemainingPostRoundTime = PostGameTime;
-	GetWorld()->GetTimerManager().SetTimer(
-		PostRoundPhaseTimerHandle,
-		this,
-		&UCompetitiveMatchScoring::PostRoundTimeCountDown,
-		1.0f,
-		true);
-	
-    
-    // @TODO: 라운드 종료 후 다음 라운드 준비(Buying Phase)로 넘어가는 GamePhase 전환 
-}
-
-void UCompetitiveMatchScoring::PostRoundTimeCountDown()
-{
-	RemainingPostRoundTime -= 1.0f;
-	
-	if (RemainingPostRoundTime <= 0.0f)
-	{
-		GetWorld()->GetTimerManager().ClearTimer(PostRoundPhaseTimerHandle);
-		ULyraGamePhaseSubsystem* PhaseSubsystem = GetWorld()->GetSubsystem<ULyraGamePhaseSubsystem>();
-		if (ensure(PhaseSubsystem) && ensure(RoundPhaseAbilityClass))
-		{
-			FLyraGamePhaseDelegate PostRoundEndDelegate;
-			// PlayingPhaseEndDelegate.BindUObject(this, &UCompetitiveMatchScoring::OnPostGamePhaseStarted);
-			PhaseSubsystem->StartPhase(PostRoundPhaseAbilityClass, PostRoundEndDelegate);
-		}
-	}
-}
 
 void UCompetitiveMatchScoring::StartRound_Implementation()
 {

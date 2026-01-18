@@ -11,6 +11,8 @@
 #include "Engine/World.h"
 #include "Game/CompetitiveMatchScoring.h"
 #include "GameModes/LyraExperienceManagerComponent.h"
+#include "AbilitySystem/Phases/LyraGamePhaseAbility.h"
+
 
 ANaviPlayerBlockWall::ANaviPlayerBlockWall()
 {
@@ -38,8 +40,6 @@ void ANaviPlayerBlockWall::BeginPlay()
         check(ExperienceComponent);
         ExperienceComponent->CallOrRegister_OnExperienceLoaded(FOnLyraExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
     }
-
-
 }
 
 void ANaviPlayerBlockWall::OnExperienceLoaded(const ULyraExperienceDefinition* Experience)
@@ -55,7 +55,7 @@ void ANaviPlayerBlockWall::OnExperienceLoaded(const ULyraExperienceDefinition* E
         UCompetitiveMatchScoring* MatchScoring = GameState->GetComponentByClass<UCompetitiveMatchScoring>();
         if (IsValid(MatchScoring))
         {
-            MatchScoring->PlayingPhaseStartDelegate.AddDynamic(this, &ANaviPlayerBlockWall::OnPlayingPhaseStarted);
+            MatchScoring->BuyingPhaseEndDynamicMulticastDelegate.AddDynamic(this, &ANaviPlayerBlockWall::OnPlayingPhaseStarted);
         }
     }
 }
@@ -74,13 +74,13 @@ void ANaviPlayerBlockWall::EndPlay(const EEndPlayReason::Type EndPlayReason)
         UCompetitiveMatchScoring* MatchScoring = GameState->GetComponentByClass<UCompetitiveMatchScoring>();
         if (IsValid(MatchScoring))
         {
-            MatchScoring->PlayingPhaseStartDelegate.RemoveDynamic(this, &ANaviPlayerBlockWall::OnPlayingPhaseStarted);
+            MatchScoring->BuyingPhaseEndDynamicMulticastDelegate.RemoveDynamic(this, &ANaviPlayerBlockWall::OnPlayingPhaseStarted);
         }
     }
 }
 
 
-void ANaviPlayerBlockWall::OnPlayingPhaseStarted()
+void ANaviPlayerBlockWall::OnPlayingPhaseStarted(const ULyraGamePhaseAbility* Phase)
 {
     if (HasAuthority())
     {

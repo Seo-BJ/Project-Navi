@@ -317,6 +317,7 @@ void ALyraCharacter::PossessedBy(AController* NewController)
 	}
 	ConditionalBroadcastTeamChanged(this, OldTeamID, MyTeamID);
 
+	/*
 	if (Controller)
 	{
 		Controller->SetIgnoreMoveInput(false);
@@ -332,6 +333,7 @@ void ALyraCharacter::PossessedBy(AController* NewController)
 	ULyraCharacterMovementComponent* LyraMoveComp = CastChecked<ULyraCharacterMovementComponent>(GetCharacterMovement());
 	// 이동 모드를 기본값(Walking)으로 되돌립니다.
 	LyraMoveComp->SetMovementMode(MOVE_Walking);
+	*/
 }
 
 void ALyraCharacter::UnPossessed()
