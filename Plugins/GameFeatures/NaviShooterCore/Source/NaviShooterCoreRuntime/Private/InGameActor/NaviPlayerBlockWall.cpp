@@ -47,40 +47,21 @@ void ANaviPlayerBlockWall::OnExperienceLoaded(const ULyraExperienceDefinition* E
     if (HasAuthority())
     {
         UWorld* World = GetWorld();
-        if (!IsValid(World)) return;
-        
-        AGameStateBase* GameState = World->GetGameState();
-        if (!IsValid(GameState)) return;
-        
-        UCompetitiveMatchScoring* MatchScoring = GameState->GetComponentByClass<UCompetitiveMatchScoring>();
-        if (IsValid(MatchScoring))
+        if (ULyraGamePhaseSubsystem* PhaseSubsystem = World->GetSubsystem<ULyraGamePhaseSubsystem>())
         {
-            MatchScoring->BuyingPhaseEndDynamicMulticastDelegate.AddDynamic(this, &ANaviPlayerBlockWall::OnPlayingPhaseStarted);
+            if (TargetPhaseTag.IsValid())
+            {
+                // 1. 델리게이트 생성
+                FLyraGamePhaseTagDelegate PhaseDelegate = FLyraGamePhaseTagDelegate::CreateUObject(this, &ThisClass::OnGamePhaseChanged);
+
+                // 2. 서브시스템에 등록 (시작되었거나 이미 진행 중이면 호출)
+                PhaseSubsystem->WhenPhaseStartsOrIsActive(TargetPhaseTag, EPhaseTagMatchType::ExactMatch, PhaseDelegate);
+            }
         }
     }
 }
 
-void ANaviPlayerBlockWall::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-    Super::EndPlay(EndPlayReason);
-    if (HasAuthority())
-    {
-        UWorld* World = GetWorld();
-        if (!IsValid(World)) return;
-    
-        AGameStateBase* GameState = World->GetGameState();
-        if (!IsValid(GameState)) return;
-    
-        UCompetitiveMatchScoring* MatchScoring = GameState->GetComponentByClass<UCompetitiveMatchScoring>();
-        if (IsValid(MatchScoring))
-        {
-            MatchScoring->BuyingPhaseEndDynamicMulticastDelegate.RemoveDynamic(this, &ANaviPlayerBlockWall::OnPlayingPhaseStarted);
-        }
-    }
-}
-
-
-void ANaviPlayerBlockWall::OnPlayingPhaseStarted(const ULyraGamePhaseAbility* Phase)
+void ANaviPlayerBlockWall::OnGamePhaseChanged(const FGameplayTag& PhaseTag)
 {
     if (HasAuthority())
     {

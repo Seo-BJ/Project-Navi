@@ -87,10 +87,10 @@ void ULyraGamePhaseSubsystem::K2_WhenPhaseStartsOrIsActive(FGameplayTag PhaseTag
 	WhenPhaseStartsOrIsActive(PhaseTag, MatchType, ActiveDelegate);
 }
 
-void ULyraGamePhaseSubsystem::K2_WhenPhaseEnds(FGameplayTag PhaseTag, EPhaseTagMatchType MatchType, FLyraGamePhaseTagDynamicDelegate WhenPhaseEnd)
+void ULyraGamePhaseSubsystem::K2_WhenPhaseEnds(FGameplayTag PhaseTag, EPhaseTagMatchType MatchType, FLyraGamePhaseEndedDynamicDelegate WhenPhaseEnd)
 {
-	const FLyraGamePhaseTagDelegate EndedDelegate = FLyraGamePhaseTagDelegate::CreateWeakLambda(WhenPhaseEnd.GetUObject(), [WhenPhaseEnd](const FGameplayTag& PhaseTag) {
-		WhenPhaseEnd.ExecuteIfBound(PhaseTag);
+	const FLyraGamePhaseEndedDelegate EndedDelegate = FLyraGamePhaseEndedDelegate::CreateWeakLambda(WhenPhaseEnd.GetUObject(), [WhenPhaseEnd](const FGameplayTag& PhaseTag, bool bWasCancelled) {
+		WhenPhaseEnd.ExecuteIfBound(PhaseTag, bWasCancelled);
 	});
 
 	WhenPhaseEnds(PhaseTag, MatchType, EndedDelegate);
@@ -110,9 +110,9 @@ void ULyraGamePhaseSubsystem::WhenPhaseStartsOrIsActive(FGameplayTag PhaseTag, E
 	}
 }
 
-void ULyraGamePhaseSubsystem::WhenPhaseEnds(FGameplayTag PhaseTag, EPhaseTagMatchType MatchType, const FLyraGamePhaseTagDelegate& WhenPhaseEnd)
+void ULyraGamePhaseSubsystem::WhenPhaseEnds(FGameplayTag PhaseTag, EPhaseTagMatchType MatchType, const FLyraGamePhaseEndedDelegate& WhenPhaseEnd)
 {
-	FPhaseObserver Observer;
+	FPhaseEndObserver Observer;
 	Observer.PhaseTag = PhaseTag;
 	Observer.MatchType = MatchType;
 	Observer.PhaseCallback = WhenPhaseEnd;
@@ -190,7 +190,7 @@ void ULyraGamePhaseSubsystem::OnBeginPhase(const ULyraGamePhaseAbility* PhaseAbi
 	}
 }
 
-void ULyraGamePhaseSubsystem::OnEndPhase(const ULyraGamePhaseAbility* PhaseAbility, const FGameplayAbilitySpecHandle PhaseAbilityHandle)
+void ULyraGamePhaseSubsystem::OnEndPhase(const ULyraGamePhaseAbility* PhaseAbility, const FGameplayAbilitySpecHandle PhaseAbilityHandle, bool bWasCancelled)
 {
 	const FGameplayTag EndedPhaseTag = PhaseAbility->GetGamePhaseTag();
 	UE_LOG(LogLyraGamePhase, Log, TEXT("Ended Phase '%s' (%s)"), *EndedPhaseTag.ToString(), *GetNameSafe(PhaseAbility));
@@ -201,16 +201,29 @@ void ULyraGamePhaseSubsystem::OnEndPhase(const ULyraGamePhaseAbility* PhaseAbili
 	ActivePhaseMap.Remove(PhaseAbilityHandle);
 
 	// Notify all observers of this phase that it has ended.
-	for (const FPhaseObserver& Observer : PhaseEndObservers)
+	for (const FPhaseEndObserver& Observer : PhaseEndObservers)
 	{
 		if (Observer.IsMatch(EndedPhaseTag))
 		{
-			Observer.PhaseCallback.ExecuteIfBound(EndedPhaseTag);
+			Observer.PhaseCallback.ExecuteIfBound(EndedPhaseTag, bWasCancelled);
 		}
 	}
 }
 
 bool ULyraGamePhaseSubsystem::FPhaseObserver::IsMatch(const FGameplayTag& ComparePhaseTag) const
+{
+	switch(MatchType)
+	{
+	case EPhaseTagMatchType::ExactMatch:
+		return ComparePhaseTag == PhaseTag;
+	case EPhaseTagMatchType::PartialMatch:
+		return ComparePhaseTag.MatchesTag(PhaseTag);
+	}
+
+	return false;
+}
+
+bool ULyraGamePhaseSubsystem::FPhaseEndObserver::IsMatch(const FGameplayTag& ComparePhaseTag) const
 {
 	switch(MatchType)
 	{

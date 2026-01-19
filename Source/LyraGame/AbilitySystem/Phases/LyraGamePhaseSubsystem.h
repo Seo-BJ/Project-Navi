@@ -21,6 +21,9 @@ DECLARE_DELEGATE_OneParam(FLyraGamePhaseDelegate, const ULyraGamePhaseAbility* P
 DECLARE_DYNAMIC_DELEGATE_OneParam(FLyraGamePhaseTagDynamicDelegate, const FGameplayTag&, PhaseTag);
 DECLARE_DELEGATE_OneParam(FLyraGamePhaseTagDelegate, const FGameplayTag& PhaseTag);
 
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FLyraGamePhaseEndedDynamicDelegate, const FGameplayTag&, PhaseTag, bool, bWasCancelled);
+DECLARE_DELEGATE_TwoParams(FLyraGamePhaseEndedDelegate, const FGameplayTag& PhaseTag, bool bWasCancelled);
+
 // Match rule for message receivers
 UENUM(BlueprintType)
 enum class EPhaseTagMatchType : uint8
@@ -59,7 +62,7 @@ public:
 	//TODO Return a handle so folks can delete these.  They will just grow until the world resets.
 	//TODO Should we just occasionally clean these observers up?  It's not as if everyone will properly unhook them even if there is a handle.
 	void WhenPhaseStartsOrIsActive(FGameplayTag PhaseTag, EPhaseTagMatchType MatchType, const FLyraGamePhaseTagDelegate& WhenPhaseActive);
-	void WhenPhaseEnds(FGameplayTag PhaseTag, EPhaseTagMatchType MatchType, const FLyraGamePhaseTagDelegate& WhenPhaseEnd);
+	void WhenPhaseEnds(FGameplayTag PhaseTag, EPhaseTagMatchType MatchType, const FLyraGamePhaseEndedDelegate& WhenPhaseEnd);
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, BlueprintPure = false, meta = (AutoCreateRefTerm = "PhaseTag"))
 	bool IsPhaseActive(const FGameplayTag& PhaseTag) const;
@@ -74,10 +77,10 @@ protected:
 	void K2_WhenPhaseStartsOrIsActive(FGameplayTag PhaseTag, EPhaseTagMatchType MatchType, FLyraGamePhaseTagDynamicDelegate WhenPhaseActive);
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Game Phase", meta = (DisplayName = "When Phase Ends", AutoCreateRefTerm = "WhenPhaseEnd"))
-	void K2_WhenPhaseEnds(FGameplayTag PhaseTag, EPhaseTagMatchType MatchType, FLyraGamePhaseTagDynamicDelegate WhenPhaseEnd);
+	void K2_WhenPhaseEnds(FGameplayTag PhaseTag, EPhaseTagMatchType MatchType, FLyraGamePhaseEndedDynamicDelegate WhenPhaseEnd);
 
 	void OnBeginPhase(const ULyraGamePhaseAbility* PhaseAbility, const FGameplayAbilitySpecHandle PhaseAbilityHandle);
-	void OnEndPhase(const ULyraGamePhaseAbility* PhaseAbility, const FGameplayAbilitySpecHandle PhaseAbilityHandle);
+	void OnEndPhase(const ULyraGamePhaseAbility* PhaseAbility, const FGameplayAbilitySpecHandle PhaseAbilityHandle, bool bWasCancelled);
 
 private:
 	struct FLyraGamePhaseEntry
@@ -99,8 +102,18 @@ private:
 		FLyraGamePhaseTagDelegate PhaseCallback;
 	};
 
+	struct FPhaseEndObserver
+	{
+	public:
+		bool IsMatch(const FGameplayTag& ComparePhaseTag) const;
+
+		FGameplayTag PhaseTag;
+		EPhaseTagMatchType MatchType = EPhaseTagMatchType::ExactMatch;
+		FLyraGamePhaseEndedDelegate PhaseCallback;
+	};
+
 	TArray<FPhaseObserver> PhaseStartObservers;
-	TArray<FPhaseObserver> PhaseEndObservers;
+	TArray<FPhaseEndObserver> PhaseEndObservers;
 
 	friend class ULyraGamePhaseAbility;
 };

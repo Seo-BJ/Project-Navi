@@ -40,7 +40,7 @@ void ULyraGamePhaseAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, 
 	{
 		UWorld* World = ActorInfo->AbilitySystemComponent->GetWorld();
 		ULyraGamePhaseSubsystem* PhaseSubsystem = UWorld::GetSubsystem<ULyraGamePhaseSubsystem>(World);
-		PhaseSubsystem->OnEndPhase(this, Handle);
+		PhaseSubsystem->OnEndPhase(this, Handle, bWasCancelled);
 	}
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);

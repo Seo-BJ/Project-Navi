@@ -73,7 +73,7 @@ void UCompetitiveMatchScoring::OnBuyingPhaseEnded(const ULyraGamePhaseAbility* P
 void UCompetitiveMatchScoring::OnPlayingPhaseEnded(const ULyraGamePhaseAbility* Phase)
 {
 	// 스파이크가 설치되어서 페이즈가 끝난 경우, 승리 판정을 하지 않음 (이미 스파이크 페이즈로 넘어감)
-	if (bSpikePlanted)
+	if (bSpikePlanted || bIsRoundDecided)
 	{
 		return;
 	}
@@ -82,11 +82,12 @@ void UCompetitiveMatchScoring::OnPlayingPhaseEnded(const ULyraGamePhaseAbility* 
 	const int32 DefenderTeamId = GetTeamIdWithRole(NaviGameplayTags::TAG_Navi_Team_Role_Defender);
 	if (DefenderTeamId != INDEX_NONE)
 	{
-		AwardRoundWin(DefenderTeamId, TEXT("Timeout"));
+		AwardRoundWin(DefenderTeamId, TEXT("Round Timer Expired"));
 	}
 	else
 	{
-		HandlePostRound(); // 예외 처리
+		// 예외 상황: 팀 ID를 찾을 수 없음
+		StartNextRound(); 
 	}
 	PlayingPhaseEndDynamicMulticastDelegate.Broadcast(Phase);
 }
@@ -122,15 +123,13 @@ void UCompetitiveMatchScoring::Multicast_BroadcastSpikePlantedMessage_Implementa
 
 void UCompetitiveMatchScoring::OnSpikePhaseEnded(const ULyraGamePhaseAbility* Phase)
 {
-	// 스파이크 폭발 시 공격팀 승리
-	// 해체되었을 경우는 OnSpikeDefusedMessageReceived에서 처리됨 (RoundDecided가 true가 됨)
+	// 이미 승패가 결정됨 (해체 등)
 	if (bIsRoundDecided)
 	{
-		// 이미 승패가 결정됨 (해체 등)
-		HandlePostRound();
 		return;
 	}
 
+	// 스파이크 폭발 시 공격팀 승리
 	const int32 AttackerTeamId = GetTeamIdWithRole(NaviGameplayTags::TAG_Navi_Team_Role_Attacker);
 	if (AttackerTeamId != INDEX_NONE)
 	{
@@ -138,43 +137,31 @@ void UCompetitiveMatchScoring::OnSpikePhaseEnded(const ULyraGamePhaseAbility* Ph
 	}
 	else
 	{
-		HandlePostRound(); // 예외 처리
+		StartNextRound();
 	}
 }
 
 void UCompetitiveMatchScoring::HandleSpikeDefused(FGameplayTag Tag, const FSpikeDefusedMessage& Message)
 {
-	if (!HasAuthority())
+	if (!HasAuthority() || bIsRoundDecided)
 	{
 		return;
 	}
 	
-	ULyraGamePhaseSubsystem* PhaseSubsystem = GetWorld()->GetSubsystem<ULyraGamePhaseSubsystem>();
-	if (ensure(PhaseSubsystem) && ensure(SpikePlantedPhaseAbilityClass))
+	// 스파이크 해체 시 수비팀 승리
+	const int32 DefenderTeamId = GetTeamIdWithRole(NaviGameplayTags::TAG_Navi_Team_Role_Defender);
+	if (DefenderTeamId != INDEX_NONE)
 	{
-		SpikePlantedPhaseEndDelegate.BindUObject(this, &ThisClass::OnSpikePhaseEnded);
-		PhaseSubsystem->StartPhase(SpikePlantedPhaseAbilityClass, SpikePlantedPhaseEndDelegate);
-	}
-	
-	if (HasAuthority())
-	{
-		// 스파이크 해체 시 수비팀 승리
-		const int32 DefenderTeamId = GetTeamIdWithRole(FGameplayTag::RequestGameplayTag(TEXT("Navi.Team.Role.Defender")));
-		if (DefenderTeamId != INDEX_NONE)
-		{
-			AwardRoundWin(DefenderTeamId, TEXT("Spike Defused"));
-		}
+		AwardRoundWin(DefenderTeamId, TEXT("Spike Defused"));
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-void UCompetitiveMatchScoring::HandlePostRound()
+void UCompetitiveMatchScoring::StartNextRound()
 {
-	bIsRoundDecided = false;
-	// 타이머 제거됨
-
+	// PostRound 페이즈 시작
 	ULyraGamePhaseSubsystem* PhaseSubsystem = GetWorld()->GetSubsystem<ULyraGamePhaseSubsystem>();
 	if (ensure(PhaseSubsystem) && ensure(PostRoundPhaseAbilityClass))
 	{
@@ -186,10 +173,11 @@ void UCompetitiveMatchScoring::HandlePostRound()
 
 void UCompetitiveMatchScoring::OnPostRoundPhaseEnded(const ULyraGamePhaseAbility* Phase)
 {
+	// 라운드 상태 초기화 (다음 라운드 준비)
 	bSpikePlanted = false;
+	bIsRoundDecided = false;
 	
 	// 다음 라운드 시작 (Buying Phase)
-	/*
 	ULyraGamePhaseSubsystem* PhaseSubsystem = GetWorld()->GetSubsystem<ULyraGamePhaseSubsystem>();
 	if (ensure(PhaseSubsystem) && ensure(BuyingPhaseAbilityClass))
 	{
@@ -198,7 +186,6 @@ void UCompetitiveMatchScoring::OnPostRoundPhaseEnded(const ULyraGamePhaseAbility
 		
 		PhaseSubsystem->StartPhase(BuyingPhaseAbilityClass, BuyingPhaseEndDelegate);
 	}
-	*/
 }
 
 int32 UCompetitiveMatchScoring::GetTeamScore(int32 TeamId) const
@@ -271,7 +258,7 @@ void UCompetitiveMatchScoring::StartOvertime()
 
 void UCompetitiveMatchScoring::HandleVictory_Implementation(int32 WinningTeamId)
 {
-	HandlePostRound();
+	StartNextRound();
 }
 
 void UCompetitiveMatchScoring::OnRep_IsInOvertime()
@@ -379,7 +366,7 @@ void UCompetitiveMatchScoring::AwardRoundWin(int32 WinningTeamId, const FString&
     // UE_LOG(LogTemp, Log, TEXT("Round decided! Winner: Team %d, Reason: %s"), WinningTeamId, *RoundWinReason);
 
     AddScoreToTeam(WinningTeamId);
-    HandlePostRound();
+    StartNextRound();
 }
 
 int32 UCompetitiveMatchScoring::GetTeamIdWithRole(const FGameplayTag& RoleTag) const

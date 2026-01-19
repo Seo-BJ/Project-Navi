@@ -116,7 +116,7 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_BroadcastSpikePlantedMessage(APawn* SpikePlanter);
 	
-	void HandlePostRound();
+	void StartNextRound();
 
 
 	//~Competitive Match Scoring
