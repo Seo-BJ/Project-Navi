@@ -397,17 +397,20 @@ void ULyraAbilitySystemComponent::OnTagUpdated(const FGameplayTag& Tag, bool Tag
 	Super::OnTagUpdated(Tag, TagExists);
 
 	// @TODO: Local Client에서만 실행하도록 변경?
-	if (!GetOwnerActor()->HasAuthority())
+	if (IsValid(GetOwnerActor()))
 	{
-		UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
-		if (&MessageSubsystem != nullptr)
+		if (!GetOwnerActor()->HasAuthority())
 		{
-			FLyraTagChangedMessage Message;
-			Message.OwnerActor = GetOwner();
-			Message.UpdatedTag = Tag;
-			Message.bTagExists = TagExists;
+			UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
+			if (&MessageSubsystem != nullptr)
+			{
+				FLyraTagChangedMessage Message;
+				Message.OwnerActor = GetOwner();
+				Message.UpdatedTag = Tag;
+				Message.bTagExists = TagExists;
 
-			MessageSubsystem.BroadcastMessage(TAG_Lyra_AbilitySystem_Message_TagChanged, Message);
+				MessageSubsystem.BroadcastMessage(TAG_Lyra_AbilitySystem_Message_TagChanged, Message);
+			}
 		}
 	}
 }

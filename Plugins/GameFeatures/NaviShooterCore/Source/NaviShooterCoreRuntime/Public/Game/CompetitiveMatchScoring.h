@@ -34,11 +34,38 @@ enum class ECompetitiveMatchRoundPhase : uint8
 	CRP_PostRound UMETA(DisplayName = "Post Round Phase")
 };
 
+UENUM(BlueprintType)
+enum class ERoundWinReason : uint8
+{
+	AttackerTeamEliminated UMETA(DisplayName = "AttackerTeamEliminated"),
+	DefenderTeamEliminated UMETA(DisplayName = "DefenderTeamEliminated"),
+	Timeout UMETA(DisplayName = "Timeout"),
+	SpikeDetonated UMETA(DisplayName = "Spike Detonated"),
+	SpikeDefused UMETA(DisplayName = "Spike Defused")
+};
+
+
+USTRUCT(BlueprintType)
+struct FRoundWinResultMessage
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadWrite)
+	ERoundWinReason WinReason;
+
+	UPROPERTY(BlueprintReadWrite)
+	FGameplayTag WinTeamTag = FGameplayTag::EmptyTag;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 WinTeamID = -1;
+};
+
 class ULyraGamePhaseAbility;
 class ULyraExperienceDefinition;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnTeamScoreAddedDelegate, int32, TeamId, int32, OldScore, int32, NewScore);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FLyraGamePhaseDynamicMulticastDelegate, const ULyraGamePhaseAbility*, Phase);
+
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class NAVISHOOTERCORERUNTIME_API UCompetitiveMatchScoring : public UShooterGameScoringBase
@@ -48,21 +75,12 @@ class NAVISHOOTERCORERUNTIME_API UCompetitiveMatchScoring : public UShooterGameS
 public:
 	UCompetitiveMatchScoring(const FObjectInitializer& ObjectInitializer);
 	
+	//UFUNCTION(BlueprintCallable)
+	//void HandleSpikePlanted(APawn* SpikePlanter);
 	UFUNCTION(BlueprintCallable)
-	void HandleSpikePlanted(APawn* SpikePlanter);
+	void HandleRoundResult(ERoundWinReason RoundWinReason);
 	
-	UFUNCTION(BlueprintCallable)
-	virtual void HandleSpikeDefused(FGameplayTag Tag, const FSpikeDefusedMessage& Message);
 
-	UPROPERTY(BlueprintCallable)
-	FLyraGamePhaseDynamicMulticastDelegate BuyingPhaseEndDynamicMulticastDelegate;
-
-	UPROPERTY(BlueprintCallable)
-	FLyraGamePhaseDynamicMulticastDelegate PlayingPhaseEndDynamicMulticastDelegate;
-
-	UPROPERTY(BlueprintCallable)
-	FLyraGamePhaseDynamicMulticastDelegate SpikePantedPhaseDynamicMulticastDelegate;
-	
 protected:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -96,31 +114,23 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GamePhase")	
 	float PostRoundPhaseTime = 7.0f;
-	
-	FLyraGamePhaseDelegate BuyingPhaseEndDelegate;
-	FLyraGamePhaseDelegate PlayingPhaseEndDelegate;
-	FLyraGamePhaseDelegate SpikePlantedPhaseEndDelegate;
-	
-	UFUNCTION(BlueprintNativeEvent)
-	void StartRound();
-	
+
 private:
 
-	void OnBuyingPhaseEnded(const ULyraGamePhaseAbility* Phase);
-	void OnPlayingPhaseEnded(const ULyraGamePhaseAbility* Phase);
-	void OnSpikePhaseEnded(const ULyraGamePhaseAbility* Phase);
-	void OnPostRoundPhaseEnded(const ULyraGamePhaseAbility* Phase);
+	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category = "Lyra|GameState")
+	void MulticastRoundWinResultMessageToClients(const FRoundWinResultMessage Message);
+
+	
+	UFUNCTION(BlueprintCallable)
+	void HandlePostRoundPhaseEnd(const ULyraGamePhaseAbility* Phase);
 	
 	bool bSpikePlanted = false;
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_BroadcastSpikePlantedMessage(APawn* SpikePlanter);
-	
-	void StartNextRound();
+	void HandleTeamEliminated(FGameplayTag EliminatedTeamTag);
+	void HandleSpikeDefused();
+	void HandleRoundTimeout();
+	void HandleSpikeDetonated();
 
-
-	//~Competitive Match Scoring
-	
 public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Scoring")
@@ -130,31 +140,21 @@ public:
 	void AddScoreToTeam(int32 TeamId, int32 ScoreToAdd = 1);
 
 protected:
-	/** 승리 조건을 처리합니다. */
-	UFUNCTION(BlueprintNativeEvent)
-	void HandleVictory(int32 WinningTeamId);
-
-	UPROPERTY(EditDefaultsOnly, Category = "Scoring")
-	int32 OvertimeScoreDifference = 2; // 연장전 승리 점수 차이
-
-	UPROPERTY(ReplicatedUsing = OnRep_IsInOvertime)
-	bool bIsInOvertime = false;
 	
-	void StartOvertime();
+	//~Round Reset Management
+	
+	void ResetRound();
+	void CleanupMapActors();
+	void RespawnOrTeleportPlayers();
 
 private:
-	// ... 기존 함수 선언 ...
-	UFUNCTION()
-	void OnRep_IsInOvertime();
 
-	//~End of Competitive Match Scoring
-
-	//~Round Win & Defeat Management
 
 protected:
 	bool bIsRoundDecided = false;
 
-	void AwardRoundWin(int32 WinningTeamId, const FString& RoundWinReason);
+	UFUNCTION(BlueprintCallable)
+	void AwardRoundWin(int32 WinningTeamId, ERoundWinReason WinReason);
 
 	/** 역할 태그를 기반으로 팀 ID를 찾습니다. */
 	int32 GetTeamIdWithRole(const FGameplayTag& RoleTag) const;

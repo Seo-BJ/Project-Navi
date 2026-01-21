@@ -151,9 +151,10 @@ ALyraCharacter::ALyraCharacter(const FObjectInitializer& ObjectInitializer)
 	Foot_R->SetupAttachment(GetMesh(), FName("Foot_R"));
 	//HitCollisionBoxes.Add(FName("Foot_R"), Foot_R);*/
 
-	calf_r = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_r"));
-	calf_r->SetupAttachment(GetMesh(), FName("calf_r"));
-	HitCollisionBoxes.Add(FName("calf_r"), calf_r);
+	//calf_r = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_r"));
+	//calf_r->SetupAttachment(GetMesh(), FName("calf_r"));
+	//HitCollisionBoxes.Add(FName("calf_r"), calf_r);
+
 
 	for (const auto& Box : HitCollisionBoxes)
 	{

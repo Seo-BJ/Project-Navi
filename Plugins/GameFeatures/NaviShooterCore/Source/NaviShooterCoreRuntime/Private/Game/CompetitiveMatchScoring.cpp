@@ -11,6 +11,12 @@
 #include "GameModes/LyraExperienceManagerComponent.h"
 #include "Player/LyraPlayerState.h"
 #include "Teams/LyraTeamSubsystem.h"
+#include "Kismet/GameplayStatics.h"
+#include "Character/LyraCharacter.h"
+#include "Character/LyraHealthComponent.h"
+#include "Player/LyraPlayerStart.h"
+#include "GameModes/LyraGameMode.h"
+#include "GameModes/LyraGameState.h"
 
 
 UCompetitiveMatchScoring::UCompetitiveMatchScoring(const FObjectInitializer& ObjectInitializer): Super(ObjectInitializer)
@@ -20,13 +26,58 @@ UCompetitiveMatchScoring::UCompetitiveMatchScoring(const FObjectInitializer& Obj
 	
 }
 
+void UCompetitiveMatchScoring::HandleRoundResult(ERoundWinReason RoundWinReason)
+{
+	if (!HasAuthority()) return;
+	
+	ALyraGameState* LyraGS = GetOwner<ALyraGameState>();
+	if (IsValid(LyraGS))
+	{
+		FRoundWinResultMessage RoundResultMessage;
+		RoundResultMessage.WinReason = RoundWinReason;
+		
+		switch (RoundWinReason) {
+		case ERoundWinReason::AttackerTeamEliminated:
+			RoundResultMessage.WinTeamTag = NaviGameplayTags::TAG_Navi_Team_Role_Defender;
+			HandleTeamEliminated( NaviGameplayTags::TAG_Navi_Team_Role_Attacker);
+			break;
+		case ERoundWinReason::DefenderTeamEliminated:
+			RoundResultMessage.WinTeamTag = NaviGameplayTags::TAG_Navi_Team_Role_Attacker;
+			HandleTeamEliminated( NaviGameplayTags::TAG_Navi_Team_Role_Defender);
+			break;
+		case ERoundWinReason::Timeout:
+			RoundResultMessage.WinTeamTag = NaviGameplayTags::TAG_Navi_Team_Role_Defender;
+			HandleRoundTimeout();
+			break;
+		case ERoundWinReason::SpikeDetonated:
+			RoundResultMessage.WinTeamTag = NaviGameplayTags::TAG_Navi_Team_Role_Attacker;
+			HandleSpikeDetonated();
+			break;
+		case ERoundWinReason::SpikeDefused:
+			RoundResultMessage.WinTeamTag = NaviGameplayTags::TAG_Navi_Team_Role_Defender;
+			HandleSpikeDefused();
+			break;
+		}
+		
+		RoundResultMessage.WinTeamID = GetTeamIdWithRole(RoundResultMessage.WinTeamTag);
+		MulticastRoundWinResultMessageToClients(RoundResultMessage);
+	}
+	
+}
+void UCompetitiveMatchScoring::MulticastRoundWinResultMessageToClients_Implementation(const FRoundWinResultMessage Message)
+{
+	if (GetNetMode() == NM_Client)
+	{
+		UGameplayMessageSubsystem::Get(this).BroadcastMessage(FGameplayTag::RequestGameplayTag("Navi.Round.Result"), Message);
+	}
+}
+
 
 void UCompetitiveMatchScoring::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UCompetitiveMatchScoring, VictoryScore);
-	DOREPLIFETIME(UCompetitiveMatchScoring, bIsInOvertime); 
 }
 
 void UCompetitiveMatchScoring::BeginPlay()
@@ -46,82 +97,26 @@ void UCompetitiveMatchScoring::BeginPlay()
 void UCompetitiveMatchScoring::OnExperienceLoaded(const ULyraExperienceDefinition* Experience)
 {
 	if (!HasAuthority()) return;
-
-	/*
 	// @Todo: 모든 플레이어가 준비됐는지 확인
-	
-	ULyraGamePhaseSubsystem* PhaseSubsystem = GetWorld()->GetSubsystem<ULyraGamePhaseSubsystem>();
-	if (ensure(PhaseSubsystem) && ensure(BuyingPhaseAbilityClass))
-	{
-		BuyingPhaseEndDelegate.BindUObject(this, &ThisClass::OnBuyingPhaseEnded);
-		PhaseSubsystem->StartPhase(BuyingPhaseAbilityClass, BuyingPhaseEndDelegate);
-	}
-	*/
 }
 
-void UCompetitiveMatchScoring::OnBuyingPhaseEnded(const ULyraGamePhaseAbility* Phase)
+void UCompetitiveMatchScoring::HandleTeamEliminated(FGameplayTag EliminatedTeamTag)
 {
-	ULyraGamePhaseSubsystem* PhaseSubsystem = GetWorld()->GetSubsystem<ULyraGamePhaseSubsystem>();
-	if (ensure(PhaseSubsystem) && ensure(PlayingPhaseAbilityClass))
+	int32 DefenderTeamId = -1;
+	if (EliminatedTeamTag == NaviGameplayTags::TAG_Navi_Team_Role_Attacker)
 	{
-		PlayingPhaseEndDelegate.BindUObject(this, &ThisClass::OnPlayingPhaseEnded);
-		PhaseSubsystem->StartPhase(PlayingPhaseAbilityClass, PlayingPhaseEndDelegate);
+		DefenderTeamId = GetTeamIdWithRole(NaviGameplayTags::TAG_Navi_Team_Role_Defender);
+		AwardRoundWin(DefenderTeamId, ERoundWinReason::AttackerTeamEliminated);
 	}
-	BuyingPhaseEndDynamicMulticastDelegate.Broadcast(Phase);
-}
-
-void UCompetitiveMatchScoring::OnPlayingPhaseEnded(const ULyraGamePhaseAbility* Phase)
-{
-	// 스파이크가 설치되어서 페이즈가 끝난 경우, 승리 판정을 하지 않음 (이미 스파이크 페이즈로 넘어감)
-	if (bSpikePlanted || bIsRoundDecided)
+	else if (EliminatedTeamTag == NaviGameplayTags::TAG_Navi_Team_Role_Defender)
 	{
-		return;
-	}
-
-	// 시간 초과 시 수비팀 승리
-	const int32 DefenderTeamId = GetTeamIdWithRole(NaviGameplayTags::TAG_Navi_Team_Role_Defender);
-	if (DefenderTeamId != INDEX_NONE)
-	{
-		AwardRoundWin(DefenderTeamId, TEXT("Round Timer Expired"));
-	}
-	else
-	{
-		// 예외 상황: 팀 ID를 찾을 수 없음
-		StartNextRound(); 
-	}
-	PlayingPhaseEndDynamicMulticastDelegate.Broadcast(Phase);
-}
-
-// Spike Plant and Defuse //////////////////////////////////////////////////////////////////////////////////////////////
-
-void UCompetitiveMatchScoring::HandleSpikePlanted(APawn* SpikePlanter)
-{
-	if (!HasAuthority())
-	{
-		return;
-	}
-
-	bSpikePlanted = true;
-	Multicast_BroadcastSpikePlantedMessage(SpikePlanter);
-
-	ULyraGamePhaseSubsystem* PhaseSubsystem = GetWorld()->GetSubsystem<ULyraGamePhaseSubsystem>();
-	if (ensure(PhaseSubsystem) && ensure(SpikePlantedPhaseAbilityClass))
-	{
-		SpikePlantedPhaseEndDelegate.BindUObject(this, &ThisClass::OnSpikePhaseEnded);
-		PhaseSubsystem->StartPhase(SpikePlantedPhaseAbilityClass, SpikePlantedPhaseEndDelegate);
+		DefenderTeamId = GetTeamIdWithRole(NaviGameplayTags::TAG_Navi_Team_Role_Attacker);
+		AwardRoundWin(DefenderTeamId, ERoundWinReason::DefenderTeamEliminated);
 	}
 }
 
-void UCompetitiveMatchScoring::Multicast_BroadcastSpikePlantedMessage_Implementation(APawn* SpikePlanter)
-{
-	UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
-	FSpikePlantedMessage Message;
-	Message.SpikePlantInstigator = SpikePlanter;
 
-	MessageSubsystem.BroadcastMessage(NaviGameplayTags::Navi_Spike_Plant_Finish, Message);
-}
-
-void UCompetitiveMatchScoring::OnSpikePhaseEnded(const ULyraGamePhaseAbility* Phase)
+void UCompetitiveMatchScoring::HandleSpikeDetonated()
 {
 	// 이미 승패가 결정됨 (해체 등)
 	if (bIsRoundDecided)
@@ -133,15 +128,16 @@ void UCompetitiveMatchScoring::OnSpikePhaseEnded(const ULyraGamePhaseAbility* Ph
 	const int32 AttackerTeamId = GetTeamIdWithRole(NaviGameplayTags::TAG_Navi_Team_Role_Attacker);
 	if (AttackerTeamId != INDEX_NONE)
 	{
-		AwardRoundWin(AttackerTeamId, TEXT("Spike Detonated"));
+		AwardRoundWin(AttackerTeamId, ERoundWinReason::SpikeDetonated);
 	}
 	else
 	{
-		StartNextRound();
+		HandlePostRoundPhaseEnd(nullptr);
 	}
 }
 
-void UCompetitiveMatchScoring::HandleSpikeDefused(FGameplayTag Tag, const FSpikeDefusedMessage& Message)
+
+void UCompetitiveMatchScoring::HandleSpikeDefused()
 {
 	if (!HasAuthority() || bIsRoundDecided)
 	{
@@ -152,39 +148,255 @@ void UCompetitiveMatchScoring::HandleSpikeDefused(FGameplayTag Tag, const FSpike
 	const int32 DefenderTeamId = GetTeamIdWithRole(NaviGameplayTags::TAG_Navi_Team_Role_Defender);
 	if (DefenderTeamId != INDEX_NONE)
 	{
-		AwardRoundWin(DefenderTeamId, TEXT("Spike Defused"));
+		AwardRoundWin(DefenderTeamId, ERoundWinReason::SpikeDefused);
 	}
 }
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
-void UCompetitiveMatchScoring::StartNextRound()
+void UCompetitiveMatchScoring::HandleRoundTimeout()
 {
-	// PostRound 페이즈 시작
-	ULyraGamePhaseSubsystem* PhaseSubsystem = GetWorld()->GetSubsystem<ULyraGamePhaseSubsystem>();
-	if (ensure(PhaseSubsystem) && ensure(PostRoundPhaseAbilityClass))
+	// 이미 승패가 결정되었거나 스파이크가 설치된 경우 무시
+	if (bSpikePlanted || bIsRoundDecided)
 	{
-		FLyraGamePhaseDelegate PostRoundEndDelegate;
-		PostRoundEndDelegate.BindUObject(this, &ThisClass::OnPostRoundPhaseEnded);
-		PhaseSubsystem->StartPhase(PostRoundPhaseAbilityClass, PostRoundEndDelegate);
+		return;
+	}
+
+	// 시간 초과 시 수비팀 승리
+	const int32 DefenderTeamId = GetTeamIdWithRole(NaviGameplayTags::TAG_Navi_Team_Role_Defender);
+	if (DefenderTeamId != INDEX_NONE)
+	{
+		AwardRoundWin(DefenderTeamId, ERoundWinReason::Timeout);
+	}
+	else
+	{
+		// 예외 상황: 팀 ID를 찾을 수 없음
+		HandlePostRoundPhaseEnd(nullptr); 
 	}
 }
 
-void UCompetitiveMatchScoring::OnPostRoundPhaseEnded(const ULyraGamePhaseAbility* Phase)
+
+
+
+void UCompetitiveMatchScoring::HandlePostRoundPhaseEnd(const ULyraGamePhaseAbility* Phase)
 {
 	// 라운드 상태 초기화 (다음 라운드 준비)
+	ResetRound();
+	
 	bSpikePlanted = false;
 	bIsRoundDecided = false;
-	
-	// 다음 라운드 시작 (Buying Phase)
-	ULyraGamePhaseSubsystem* PhaseSubsystem = GetWorld()->GetSubsystem<ULyraGamePhaseSubsystem>();
-	if (ensure(PhaseSubsystem) && ensure(BuyingPhaseAbilityClass))
+}
+
+void UCompetitiveMatchScoring::ResetRound()
+{
+	if (!HasAuthority())
 	{
-		FLyraGamePhaseDelegate BuyingPhaseEndDelegate;
-		BuyingPhaseEndDelegate.BindUObject(this, &ThisClass::OnBuyingPhaseEnded);
-		
-		PhaseSubsystem->StartPhase(BuyingPhaseAbilityClass, BuyingPhaseEndDelegate);
+		return;
+	}
+
+	CleanupMapActors();
+	RespawnOrTeleportPlayers();
+}
+
+void UCompetitiveMatchScoring::CleanupMapActors()
+{
+	if (!GetWorld()) return;
+
+	// 태그 기반으로 정리할 액터들 찾기 (예: 드랍된 무기, 스파이크 등)
+	// @TODO: 실제 드랍된 무기나 스킬 오브젝트에 해당 태그를 붙여야 함 "Navi.State.RoundCleanup"
+	// 현재는 예시로 작성
+	
+	TArray<AActor*> ActorsToCleanup;
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Navi.State.RoundCleanup"), ActorsToCleanup);
+	
+	for (AActor* Actor : ActorsToCleanup)
+	{
+		if (IsValid(Actor))
+		{
+			Actor->Destroy();
+		}
+	}
+}
+
+void UCompetitiveMatchScoring::RespawnOrTeleportPlayers()
+{
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	AGameStateBase* GameState = World->GetGameState();
+	ALyraGameMode* GameMode = Cast<ALyraGameMode>(World->GetAuthGameMode());
+	if (!GameState || !GameMode) return;
+
+	for (APlayerState* PS : GameState->PlayerArray)
+	{
+		ALyraPlayerState* LyraPS = Cast<ALyraPlayerState>(PS);
+		if (!LyraPS) continue;
+
+		ULyraAbilitySystemComponent* LyraASC = LyraPS->GetLyraAbilitySystemComponent();
+		if (!LyraASC) continue;
+
+		AController* Controller = LyraPS->GetOwningController();
+		if (!Controller) continue;
+
+		APawn* Pawn = Controller->GetPawn();
+		ALyraCharacter* LyraCharacter = Cast<ALyraCharacter>(Pawn);
+
+		// 1. 사망자 처리 (RestartPlayer)
+		if (LyraASC->HasMatchingGameplayTag(LyraGameplayTags::Status_Death_Dead))
+		{
+			GameMode->RestartPlayer(Controller);
+		}
+		else 		// 2. 생존자 처리 (Teleport & Heal)
+		{
+			// 팀에 맞는 PlayerStart 찾기
+			AActor* StartSpot = GameMode->ChoosePlayerStart(Controller);
+			if (StartSpot)
+			{
+				// 텔레포트
+				LyraCharacter->TeleportTo(StartSpot->GetActorLocation(), StartSpot->GetActorRotation());
+
+				/*
+				// 체력 회복
+				if (ULyraHealthComponent* HealthComponent = LyraPS->GetHealthComponent())
+				{
+					// @TODO: 아머는 유지하고 체력만 채우는 로직이 필요할 수 있음.
+					// 일단은 최대 체력으로 설정
+					// HealthComponent->DamageSelf(..., -1000.0f, ...) 식의 치유나, 직접 값 설정 필요.
+					// LyraHealthComponent에는 SetHealth가 protected일 수 있으므로, 
+					// GameplayEffect를 적용하여 치유하는 것이 정석이나, 편의상 함수가 있다면 사용.
+					
+					// LyraHealthComponent 소스 확인 필요. public SetHealth가 없다면 GameplayEffect 사용 권장.
+					// 여기서는 임시로직으로 넘어감. (필요 시 Heal GameplayEffect 적용 로직 추가)
+				}
+				
+				// 속도/상태 초기화
+				Controller->StopMovement(); */
+			}
+		}
+	}
+}
+
+
+void UCompetitiveMatchScoring::OnEliminationMessageReceived(FGameplayTag Tag, const FLyraVerbMessage& Message)
+{
+	Super::OnEliminationMessageReceived(Tag, Message);
+	if (HasAuthority())
+	{
+		// 짧은 딜레이 후 체크 (동시 사망 등 엣지 케이스 처리)
+		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::CheckTeamElimination);
+	}
+	
+}
+
+void UCompetitiveMatchScoring::CheckTeamElimination()
+{
+	if (bIsRoundDecided || !GetWorld())
+	{
+		return;
+	}
+
+	ULyraTeamSubsystem* TeamSubsystem = GetWorld()->GetSubsystem<ULyraTeamSubsystem>();
+	AGameStateBase* GameState = GetWorld()->GetGameState();
+	if (!TeamSubsystem || !GameState)
+	{
+		return;
+	}
+    
+	TArray<int32> TeamIds = TeamSubsystem->GetTeamIDs();
+	if (TeamIds.Num() < 2) return;
+
+	TMap<int32, int32> AlivePlayerCounts;
+	for (int32 TeamId : TeamIds)
+	{
+		AlivePlayerCounts.Add(TeamId, 0);
+	}
+	
+	for (APlayerState* PS : GameState->PlayerArray)
+	{
+		if (ALyraPlayerState* LyraPS = Cast<ALyraPlayerState>(PS))
+		{
+			if (ULyraAbilitySystemComponent* LyraASC = LyraPS->GetLyraAbilitySystemComponent())
+			{
+				// @ Death처리는 HealthComponent 확인
+				if (!LyraASC->HasMatchingGameplayTag(LyraGameplayTags::Status_Death_Dead))
+				{
+					const int32 TeamId = LyraPS->GetTeamId();
+					if (AlivePlayerCounts.Contains(TeamId))
+					{
+						AlivePlayerCounts[TeamId]++;
+					}
+				}
+			}
+		}
+	}
+
+	int32 EliminatedTeamId = INDEX_NONE;
+	int32 WinningTeamId = INDEX_NONE;
+	
+	for (const auto& Pair : AlivePlayerCounts)
+	{ 	// 패배 팀 결정
+		if (Pair.Value == 0)
+		{
+			EliminatedTeamId = Pair.Key;
+			break;
+		}
+	}
+	
+	if(EliminatedTeamId != INDEX_NONE)
+	{ 	// 승리팀 결정
+		for (const int32 TeamId : TeamIds)
+		{
+			if (TeamId != EliminatedTeamId)
+			{
+				WinningTeamId = TeamId;
+				break;
+			}
+		}
+
+		if (TeamSubsystem->TeamHasTag(EliminatedTeamId, NaviGameplayTags::TAG_Navi_Team_Role_Attacker))
+		{
+			HandleRoundResult(ERoundWinReason::AttackerTeamEliminated);
+		}
+		else if (TeamSubsystem->TeamHasTag(EliminatedTeamId, NaviGameplayTags::TAG_Navi_Team_Role_Defender))
+		{
+			HandleRoundResult(ERoundWinReason::DefenderTeamEliminated);
+		}
+	}
+}
+
+void UCompetitiveMatchScoring::AwardRoundWin(int32 WinningTeamId, ERoundWinReason WinReason)
+{
+    if (!HasAuthority() || bIsRoundDecided)
+    {
+        return;
+    }
+    bIsRoundDecided = true;
+    
+    // UE_LOG(LogTemp, Log, TEXT("Round decided! Winner: Team %d, Reason: %d"), WinningTeamId, (int32)WinReason);
+
+    AddScoreToTeam(WinningTeamId);
+}
+
+void UCompetitiveMatchScoring::AddScoreToTeam(int32 TeamId, int32 ScoreToAdd)
+{
+	if (!HasAuthority()) return;
+
+	ULyraTeamSubsystem* TeamSubsystem = GetWorld()->GetSubsystem<ULyraTeamSubsystem>();
+	if (!TeamSubsystem) return;
+	
+	TArray<int32> TeamIds = TeamSubsystem->GetTeamIDs();
+
+	// @ Todo: 2팀 체크를 하드코딩 대신 다른 코드 사용?
+	if (TeamIds.Num() == 2)
+	{
+		TeamSubsystem->AddTeamTagStack(TeamId, NaviGameplayTags::Navi_CompetitiveMatch_TeamScore, ScoreToAdd);
+		const int32 Team1Score = GetTeamScore(TeamIds[0]);
+
+		const int32 Team2Score = GetTeamScore(TeamIds[1]);
+		if (Team1Score >= VictoryScore || Team2Score >= VictoryScore)
+		{
+			const int32 WinningTeamId = (Team1Score > Team2Score) ? TeamIds[0] : TeamIds[1];
+			// HandleVictory(WinningTeamId);
+		}
 	}
 }
 
@@ -200,174 +412,6 @@ int32 UCompetitiveMatchScoring::GetTeamScore(int32 TeamId) const
 	return 0;
 }
 
-void UCompetitiveMatchScoring::AddScoreToTeam(int32 TeamId, int32 ScoreToAdd)
-{
-	if (!HasAuthority()) return;
-
-	ULyraTeamSubsystem* TeamSubsystem = GetWorld()->GetSubsystem<ULyraTeamSubsystem>();
-	if (!TeamSubsystem) return;
-	
-	TArray<int32> TeamIds = TeamSubsystem->GetTeamIDs();
-
-	// @ Todo: 2팀 체크를 하드코딩 대신 다른 코드 사용?
-	if (TeamIds.Num() != 2)
-	{
-		return;
-	}
-
-	TeamSubsystem->AddTeamTagStack(TeamId, NaviGameplayTags::Navi_CompetitiveMatch_TeamScore, ScoreToAdd);
-	
-	const int32 Team1Score = GetTeamScore(TeamIds[0]);
-	const int32 Team2Score = GetTeamScore(TeamIds[1]);
-	
-	if (bIsInOvertime)
-	{
-		// 연장전일 때, OvertimeScoreDifference 만큼 스코어 차이가 나야 매치 종료
-		if (FMath::Abs(Team1Score - Team2Score) >= OvertimeScoreDifference)
-		{
-			const int32 WinningTeamId = (Team1Score > Team2Score) ? TeamIds[0] : TeamIds[1];
-			HandleVictory(WinningTeamId);
-		}
-	}
-	else
-	{
-		if (Team1Score == (VictoryScore - 1) && Team2Score == (VictoryScore - 1))
-		{
-			// 동점인 경우 연장전 시작
-			StartOvertime();
-		}
-		else if (Team1Score >= VictoryScore || Team2Score >= VictoryScore)
-		{
-			const int32 WinningTeamId = (Team1Score > Team2Score) ? TeamIds[0] : TeamIds[1];
-			HandleVictory(WinningTeamId);
-		}
-	}
-}
-
-void UCompetitiveMatchScoring::StartOvertime()
-{
-	if (!HasAuthority())
-	{
-		return;
-	}
-    
-	bIsInOvertime = true;
-	OnRep_IsInOvertime(); 
-}
-
-
-void UCompetitiveMatchScoring::HandleVictory_Implementation(int32 WinningTeamId)
-{
-	StartNextRound();
-}
-
-void UCompetitiveMatchScoring::OnRep_IsInOvertime()
-{
-	if (bIsInOvertime)
-	{
-		// OnOvertimeStarted.Broadcast();
-	}
-}
-
-void UCompetitiveMatchScoring::OnEliminationMessageReceived(FGameplayTag Tag, const FLyraVerbMessage& Message)
-{
-    Super::OnEliminationMessageReceived(Tag, Message);
-
-    if (HasAuthority())
-    {
-        // 짧은 딜레이 후 체크 (동시 사망 등 엣지 케이스 처리)
-        GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::CheckTeamElimination);
-    }
-}
-
-void UCompetitiveMatchScoring::CheckTeamElimination()
-{
-    if (bIsRoundDecided || !GetWorld())
-    {
-        return;
-    }
-
-    ULyraTeamSubsystem* TeamSubsystem = GetWorld()->GetSubsystem<ULyraTeamSubsystem>();
-    AGameStateBase* GameState = GetWorld()->GetGameState();
-    if (!TeamSubsystem || !GameState)
-    {
-        return;
-    }
-    
-    TArray<int32> TeamIds = TeamSubsystem->GetTeamIDs();
-    if (TeamIds.Num() < 2) return;
-
-    TMap<int32, int32> AlivePlayerCounts;
-    for (int32 TeamId : TeamIds)
-    {
-        AlivePlayerCounts.Add(TeamId, 0);
-    }
-	
-    for (APlayerState* PS : GameState->PlayerArray)
-    {
-        if (ALyraPlayerState* LyraPS = Cast<ALyraPlayerState>(PS))
-        {
-        	if (ULyraAbilitySystemComponent* LyraASC = LyraPS->GetLyraAbilitySystemComponent())
-        	{
-        		// @ Death처리는 HealthComponent 확인
-        		if (!LyraASC->HasMatchingGameplayTag(LyraGameplayTags::Status_Death_Dying))
-        		{
-        			const int32 TeamId = LyraPS->GetTeamId();
-        			if (AlivePlayerCounts.Contains(TeamId))
-        			{
-        				AlivePlayerCounts[TeamId]++;
-        			}
-        		}
-        	}
-        }
-    }
-
-    int32 EliminatedTeamId = INDEX_NONE;
-    int32 WinningTeamId = INDEX_NONE;
-	
-    for (const auto& Pair : AlivePlayerCounts)
-    { 	// 패배 팀 결정
-        if (Pair.Value == 0)
-        {
-            EliminatedTeamId = Pair.Key;
-            break;
-        }
-    }
-	
-    if(EliminatedTeamId != INDEX_NONE)
-    { 	// 승리팀 결정
-        for (const int32 TeamId : TeamIds)
-        {
-            if (TeamId != EliminatedTeamId)
-            {
-                WinningTeamId = TeamId;
-                break;
-            }
-        }
-        
-        if (WinningTeamId != INDEX_NONE)
-        {
-            AwardRoundWin(WinningTeamId, TEXT("Team Elimination"));
-        }
-    }
-}
-
-
-
-
-void UCompetitiveMatchScoring::AwardRoundWin(int32 WinningTeamId, const FString& RoundWinReason)
-{
-    if (!HasAuthority() || bIsRoundDecided)
-    {
-        return;
-    }
-    bIsRoundDecided = true;
-    
-    // UE_LOG(LogTemp, Log, TEXT("Round decided! Winner: Team %d, Reason: %s"), WinningTeamId, *RoundWinReason);
-
-    AddScoreToTeam(WinningTeamId);
-    StartNextRound();
-}
 
 int32 UCompetitiveMatchScoring::GetTeamIdWithRole(const FGameplayTag& RoleTag) const
 {
@@ -388,11 +432,4 @@ int32 UCompetitiveMatchScoring::GetTeamIdWithRole(const FGameplayTag& RoleTag) c
     }
 
     return INDEX_NONE;
-}
-
-// ~Post Match /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void UCompetitiveMatchScoring::StartRound_Implementation()
-{
-	
 }
