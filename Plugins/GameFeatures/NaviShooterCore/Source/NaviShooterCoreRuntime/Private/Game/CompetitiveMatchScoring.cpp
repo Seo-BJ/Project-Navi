@@ -17,6 +17,7 @@
 #include "Player/LyraPlayerStart.h"
 #include "GameModes/LyraGameMode.h"
 #include "GameModes/LyraGameState.h"
+#include "Messages/LyraVerbMessage.h"
 
 
 UCompetitiveMatchScoring::UCompetitiveMatchScoring(const FObjectInitializer& ObjectInitializer): Super(ObjectInitializer)
@@ -64,6 +65,8 @@ void UCompetitiveMatchScoring::HandleRoundResult(ERoundWinReason RoundWinReason)
 	}
 	
 }
+
+
 void UCompetitiveMatchScoring::MulticastRoundWinResultMessageToClients_Implementation(const FRoundWinResultMessage Message)
 {
 	if (GetNetMode() == NM_Client)
@@ -275,6 +278,32 @@ void UCompetitiveMatchScoring::RespawnOrTeleportPlayers()
 	}
 }
 
+void UCompetitiveMatchScoring::StartNewRound_Implementation()
+{
+	if (!HasAuthority()) return;
+	
+	ULyraTeamSubsystem* TeamSubsystem = GetWorld()->GetSubsystem<ULyraTeamSubsystem>();
+	AGameStateBase* GameState = GetWorld()->GetGameState();
+	if (!IsValid(TeamSubsystem) || !IsValid(GameState))
+	{
+		return;
+	}
+
+	/*
+	TeamDeathMap.Empty();
+	for (APlayerState* PS : GameState->PlayerArray)
+	{
+		if (ALyraPlayerState* LyraPS = Cast<ALyraPlayerState>(PS))
+		{
+			const int32 TeamId = LyraPS->GetTeamId();
+			if (TeamId != INDEX_NONE)
+			{
+				TeamDeathMap.FindOrAdd(TeamId).Add(LyraPS);
+			}
+		}
+	}*/
+}
+
 
 void UCompetitiveMatchScoring::OnEliminationMessageReceived(FGameplayTag Tag, const FLyraVerbMessage& Message)
 {
@@ -282,76 +311,72 @@ void UCompetitiveMatchScoring::OnEliminationMessageReceived(FGameplayTag Tag, co
 	if (HasAuthority())
 	{
 		// 짧은 딜레이 후 체크 (동시 사망 등 엣지 케이스 처리)
-		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::CheckTeamElimination);
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this, Message]()
+		{
+			CheckTeamElimination(Message);
+		});
 	}
 	
 }
 
-void UCompetitiveMatchScoring::CheckTeamElimination()
+void UCompetitiveMatchScoring::CheckTeamElimination(const FLyraVerbMessage& Message)
 {
 	if (bIsRoundDecided || !GetWorld())
 	{
 		return;
 	}
-
+	
 	ULyraTeamSubsystem* TeamSubsystem = GetWorld()->GetSubsystem<ULyraTeamSubsystem>();
 	AGameStateBase* GameState = GetWorld()->GetGameState();
 	if (!TeamSubsystem || !GameState)
 	{
 		return;
 	}
-    
-	TArray<int32> TeamIds = TeamSubsystem->GetTeamIDs();
-	if (TeamIds.Num() < 2) return;
-
-	TMap<int32, int32> AlivePlayerCounts;
-	for (int32 TeamId : TeamIds)
-	{
-		AlivePlayerCounts.Add(TeamId, 0);
-	}
 	
+	// Message.Target should be the PlayerState of the eliminated player
+	if (ALyraPlayerState* EliminatedPS = Cast<ALyraPlayerState>(Message.Target))
+	{
+		const int32 TeamId = EliminatedPS->GetTeamId();
+		if (TeamId != INDEX_NONE)
+		{
+			TeamDeathMap.FindOrAdd(TeamId).AddUnique(EliminatedPS);
+		}
+	}
+
+	// Calculate total players per team
+
+	TMap<int32, int32> TotalPlayerCounts;
 	for (APlayerState* PS : GameState->PlayerArray)
 	{
 		if (ALyraPlayerState* LyraPS = Cast<ALyraPlayerState>(PS))
 		{
-			if (ULyraAbilitySystemComponent* LyraASC = LyraPS->GetLyraAbilitySystemComponent())
+			const int32 TeamId = LyraPS->GetTeamId();
+			if (TeamId != INDEX_NONE)
 			{
-				// @ Death처리는 HealthComponent 확인
-				if (!LyraASC->HasMatchingGameplayTag(LyraGameplayTags::Status_Death_Dead))
-				{
-					const int32 TeamId = LyraPS->GetTeamId();
-					if (AlivePlayerCounts.Contains(TeamId))
-					{
-						AlivePlayerCounts[TeamId]++;
-					}
-				}
+				TotalPlayerCounts.FindOrAdd(TeamId)++;
 			}
 		}
 	}
 
 	int32 EliminatedTeamId = INDEX_NONE;
-	int32 WinningTeamId = INDEX_NONE;
-	
-	for (const auto& Pair : AlivePlayerCounts)
-	{ 	// 패배 팀 결정
-		if (Pair.Value == 0)
+	// Check if any team is fully eliminated
+	for (const auto& Pair : TotalPlayerCounts)
+	{
+		const int32 TeamId = Pair.Key;
+		const int32 TotalCount = Pair.Value;
+		
+		if (TeamDeathMap.Contains(TeamId))
 		{
-			EliminatedTeamId = Pair.Key;
-			break;
-		}
-	}
-	
-	if(EliminatedTeamId != INDEX_NONE)
-	{ 	// 승리팀 결정
-		for (const int32 TeamId : TeamIds)
-		{
-			if (TeamId != EliminatedTeamId)
+			if (TeamDeathMap[TeamId].Num() >= TotalCount)
 			{
-				WinningTeamId = TeamId;
+				EliminatedTeamId = TeamId;
 				break;
 			}
 		}
+	}
 
+	if(EliminatedTeamId != INDEX_NONE)
+	{
 		if (TeamSubsystem->TeamHasTag(EliminatedTeamId, NaviGameplayTags::TAG_Navi_Team_Role_Attacker))
 		{
 			HandleRoundResult(ERoundWinReason::AttackerTeamEliminated);

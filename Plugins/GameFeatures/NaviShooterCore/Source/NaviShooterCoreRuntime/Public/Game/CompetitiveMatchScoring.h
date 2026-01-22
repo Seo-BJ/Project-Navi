@@ -7,6 +7,8 @@
 #include "AbilitySystem/Phases/LyraGamePhaseSubsystem.h"
 #include "CompetitiveMatchScoring.generated.h"
 
+class ALyraPlayerState;
+
 USTRUCT(BlueprintType)
 struct FSpikePlantedMessage
 {
@@ -77,10 +79,14 @@ public:
 	
 	//UFUNCTION(BlueprintCallable)
 	//void HandleSpikePlanted(APawn* SpikePlanter);
+	
 	UFUNCTION(BlueprintCallable)
 	void HandleRoundResult(ERoundWinReason RoundWinReason);
 	
 
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void StartNewRound();
+	
 protected:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -131,6 +137,8 @@ private:
 	void HandleRoundTimeout();
 	void HandleSpikeDetonated();
 
+	TMap<int32, TArray<TWeakObjectPtr<ALyraPlayerState>>> TeamDeathMap;
+
 public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Scoring")
@@ -160,7 +168,7 @@ protected:
 	int32 GetTeamIdWithRole(const FGameplayTag& RoleTag) const;
 
 	/** 모든 플레이어의 생존 상태를 확인하여 라운드 승패를 결정합니다. */
-	void CheckTeamElimination();
+	void CheckTeamElimination(const FLyraVerbMessage& Message);
 
 
 	// ShooterGameScoringBase의 함수를 오버라이드합니다.
