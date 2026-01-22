@@ -81,6 +81,9 @@ namespace LyraGameplayTags
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_ShooterGame_Weapon_MagazineAmmo);
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_ShooterGame_Weapon_MagazineSize);
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_ShooterGame_Weapon_SpareAmmo);
+
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Item_Dropped);
+
 	
 	
 };

@@ -27,8 +27,6 @@
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Navi_QuickBar_Message_SlotsChanged, "Navi.QuickBar.Message.SlotsChanged");	
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Navi_QuickBar_Message_ActiveIndexChanged, "Navi.QuickBar.Message.ActiveIndexChanged");
-UE_DEFINE_GAMEPLAY_TAG(TAG_Lyra_Item_Dropped, "Lyra.Item.Dropped");
-
 
 
 UNaviQuickBarComponent::UNaviQuickBarComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -250,7 +248,7 @@ void UNaviQuickBarComponent::SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPicku
 		FPickupInstance PickupInstance;
 		PickupInstance.Item = GetActiveSlotItem();
 		// Drop된 Item임을 표시
-		PickupInstance.Item->AddStatTagStack(TAG_Lyra_Item_Dropped, 1);
+		PickupInstance.Item->AddStatTagStack(LyraGameplayTags::Lyra_Item_Dropped, 1);
 		SpawnedItem->StaticInventory.Instances.Add(PickupInstance);
 
 		if (SpawnedItem->IsA(ANaviDropAndPickupable_Weapon::StaticClass()))

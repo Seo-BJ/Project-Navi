@@ -12,12 +12,12 @@
 #include "Kismet/GameplayStatics.h"
 #include "Character/LyraCharacter.h"
 #include "DrawDebugHelpers.h"
+#include "LyraGameplayTags.h"
 #include "NativeGameplayTags.h"
 #include "Equipment/NaviQuickBarComponent.h"
 #include "Inventory/LyraInventoryManagerComponent.h"
 
 #include "GameFramework/Controller.h"
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_Item_Dropped, "Lyra.Item.Dropped")
 
 ULyraGameplayAbility_DropItem::ULyraGameplayAbility_DropItem(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -60,7 +60,7 @@ void ULyraGameplayAbility_DropItem::SpawnPickupableItemActor(TSubclassOf<ALyraDr
         FPickupInstance PickupInstance;
         PickupInstance.Item = ItemInstance;
         // Drop된 Item임을 표시
-        PickupInstance.Item->AddStatTagStack(TAG_Lyra_Item_Dropped, 1);
+        PickupInstance.Item->AddStatTagStack(LyraGameplayTags::Lyra_Item_Dropped, 1);
         SpawnedWeapon->StaticInventory.Instances.Add(PickupInstance);
         
         const FVector LaunchVelocity = ControlRotation.Vector() * LaunchSpeed;

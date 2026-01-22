@@ -27,7 +27,6 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_Item_Dropped, "Lyra.Item.Dropped");
 
 UNaviCredsShopComponent::UNaviCredsShopComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -98,7 +97,7 @@ bool UNaviCredsShopComponent::TryBuyEquipment(AController* RequestingPlayerContr
         }
         else
         {
-            if (ItemInstanceInSlot->HasStatTag(TAG_Lyra_Item_Dropped))
+            if (ItemInstanceInSlot->HasStatTag(LyraGameplayTags::Lyra_Item_Dropped))
             {
                 if (CredsSet->GetCreds() >= Cost)
                 {
