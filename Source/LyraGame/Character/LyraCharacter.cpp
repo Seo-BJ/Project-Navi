@@ -88,73 +88,69 @@ ALyraCharacter::ALyraCharacter(const FObjectInitializer& ObjectInitializer)
 	
 	LagCompensation = CreateDefaultSubobject<ULyraLagCompensationComponent>(TEXT("LagCompensation"));
 
-	/*
 	head = CreateDefaultSubobject<UBoxComponent>(TEXT("head"));
 	head->SetupAttachment(GetMesh(), FName("head"));
-	//HitCollisionBoxes.Add(FName("head"), head);
+	HitCollisionBoxes.Add(FName("head"), head);
 
 	Pelvis = CreateDefaultSubobject<UBoxComponent>(TEXT("Pelvis"));
 	Pelvis->SetupAttachment(GetMesh(), FName("Pelvis"));
-	//HitCollisionBoxes.Add(FName("Pelvis"), Pelvis);
+	HitCollisionBoxes.Add(FName("Pelvis"), Pelvis);
 
 	spine_02 = CreateDefaultSubobject<UBoxComponent>(TEXT("spine_02"));
 	spine_02->SetupAttachment(GetMesh(), FName("spine_02"));
-	//HitCollisionBoxes.Add(FName("spine_02"), spine_02);
+	HitCollisionBoxes.Add(FName("spine_02"), spine_02);
 
 	spine_03 = CreateDefaultSubobject<UBoxComponent>(TEXT("spine_03"));
 	spine_03->SetupAttachment(GetMesh(), FName("spine_03"));
-	//HitCollisionBoxes.Add(FName("spine_03"), spine_03);
+	HitCollisionBoxes.Add(FName("spine_03"), spine_03);
 
 	UpperArm_L = CreateDefaultSubobject<UBoxComponent>(TEXT("UpperArm_L"));
 	UpperArm_L->SetupAttachment(GetMesh(), FName("UpperArm_L"));
-	//HitCollisionBoxes.Add(FName("UpperArm_L"), UpperArm_L);
+	HitCollisionBoxes.Add(FName("UpperArm_L"), UpperArm_L);
 
 	lowerarm_l = CreateDefaultSubobject<UBoxComponent>(TEXT("lowerarm_l"));
 	lowerarm_l->SetupAttachment(GetMesh(), FName("lowerarm_l"));
-	//HitCollisionBoxes.Add(FName("lowerarm_l"), lowerarm_l);
+	HitCollisionBoxes.Add(FName("lowerarm_l"), lowerarm_l);
 
 	Hand_L = CreateDefaultSubobject<UBoxComponent>(TEXT("Hand_L"));
 	Hand_L->SetupAttachment(GetMesh(), FName("Hand_L"));
-	//HitCollisionBoxes.Add(FName("Hand_L"), Hand_L);
+	HitCollisionBoxes.Add(FName("Hand_L"), Hand_L);
 
 	UpperArm_R = CreateDefaultSubobject<UBoxComponent>(TEXT("UpperArm_R"));
 	UpperArm_R->SetupAttachment(GetMesh(), FName("UpperArm_R"));
-	//HitCollisionBoxes.Add(FName("UpperArm_R"), UpperArm_R);
+	HitCollisionBoxes.Add(FName("UpperArm_R"), UpperArm_R);
 
 	lowerarm_r = CreateDefaultSubobject<UBoxComponent>(TEXT("lowerarm_r"));
 	lowerarm_r->SetupAttachment(GetMesh(), FName("lowerarm_r"));
-	//HitCollisionBoxes.Add(FName("lowerarm_r"), lowerarm_r);
+	HitCollisionBoxes.Add(FName("lowerarm_r"), lowerarm_r);
 
 	Hand_R = CreateDefaultSubobject<UBoxComponent>(TEXT("Hand_R"));
 	Hand_R->SetupAttachment(GetMesh(), FName("Hand_R"));
-	//HitCollisionBoxes.Add(FName("Hand_R"), Hand_R);
+	HitCollisionBoxes.Add(FName("Hand_R"), Hand_R);
 	
 	Thigh_L = CreateDefaultSubobject<UBoxComponent>(TEXT("Thigh_L"));
 	Thigh_L->SetupAttachment(GetMesh(), FName("Thigh_L"));
-	//HitCollisionBoxes.Add(FName("Thigh_L"), Thigh_L);
+	HitCollisionBoxes.Add(FName("Thigh_L"), Thigh_L);
 
 	calf_l = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_l"));
 	calf_l->SetupAttachment(GetMesh(), FName("calf_l"));
-	//HitCollisionBoxes.Add(FName("calf_l"), calf_l);
+	HitCollisionBoxes.Add(FName("calf_l"), calf_l);
 
 	Foot_L = CreateDefaultSubobject<UBoxComponent>(TEXT("Foot_L"));
 	Foot_L->SetupAttachment(GetMesh(), FName("Foot_L"));
-	//HitCollisionBoxes.Add(FName("Foot_L"), Foot_L);
+	HitCollisionBoxes.Add(FName("Foot_L"), Foot_L);
 
 	Thigh_R = CreateDefaultSubobject<UBoxComponent>(TEXT("Thigh_R"));
 	Thigh_R->SetupAttachment(GetMesh(), FName("Thigh_R"));
-	//HitCollisionBoxes.Add(FName("Thigh_R"), Thigh_R);
-
-
+	HitCollisionBoxes.Add(FName("Thigh_R"), Thigh_R);
 
 	Foot_R = CreateDefaultSubobject<UBoxComponent>(TEXT("Foot_R"));
 	Foot_R->SetupAttachment(GetMesh(), FName("Foot_R"));
-	//HitCollisionBoxes.Add(FName("Foot_R"), Foot_R);*/
+	HitCollisionBoxes.Add(FName("Foot_R"), Foot_R);
 
-	//calf_r = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_r"));
-	//calf_r->SetupAttachment(GetMesh(), FName("calf_r"));
-	//HitCollisionBoxes.Add(FName("calf_r"), calf_r);
-
+	calf_r = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_r"));
+	calf_r->SetupAttachment(GetMesh(), FName("calf_r"));
+	HitCollisionBoxes.Add(FName("calf_r"), calf_r);
 
 	for (const auto& Box : HitCollisionBoxes)
 	{
