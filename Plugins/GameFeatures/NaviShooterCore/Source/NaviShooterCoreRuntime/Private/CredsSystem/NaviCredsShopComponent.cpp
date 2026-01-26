@@ -188,3 +188,26 @@ int32 UNaviCredsShopComponent::GetEquipmentCost(const FGameplayTag& EquipmentTag
     
     return -1;
 }
+
+const FNaviWeaponStatDefinition* UNaviCredsShopComponent::GetWeaponStatRow(FGameplayTag Tag) const
+{
+	if (!WeaponStatTable || !Tag.IsValid())
+	{
+		return nullptr;
+	}
+
+	const FName RowName = Tag.GetTagName();
+	return WeaponStatTable->FindRow<FNaviWeaponStatDefinition>(RowName, TEXT("GetWeaponStatRow"));
+}
+
+const FNaviArmorStatDefinition* UNaviCredsShopComponent::GetArmorStatRow(FGameplayTag Tag) const
+{
+	// Assuming Armor uses FNaviArmorStatDefinition as seen in other functions
+	if (!ArmorStatTable || !Tag.IsValid())
+	{
+		return nullptr;
+	}
+
+	const FName RowName = Tag.GetTagName();
+	return ArmorStatTable->FindRow<FNaviArmorStatDefinition>(RowName, TEXT("GetArmorStatRow"));
+}

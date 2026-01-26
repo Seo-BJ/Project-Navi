@@ -13,13 +13,14 @@ class UDataTable;
 class AController;
 class ALyraDropAndPickupable;
 struct FNaviWeaponStatDefinition;
+struct FNaviArmorStatDefinition;
 
 /**
  * GameState에 추가되어 무기 상점 역할을 하는 컴포넌트.
  * 모든 무기 정보를 관리하고 플레이어의 구매 요청을 처리합니다.
  */
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class UNaviCredsShopComponent : public UGameStateComponent
+class NAVISHOOTERCORERUNTIME_API UNaviCredsShopComponent : public UGameStateComponent
 {
     GENERATED_BODY()
 
@@ -39,10 +40,15 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Navi|Shop")
     bool TryBuyEquipment(AController* RequestingPlayerController, FGameplayTag TargetEquipmentTag);
 
+public:
+	// Find the weapon stat definition row for the given tag
+	const FNaviWeaponStatDefinition* GetWeaponStatRow(FGameplayTag Tag) const;
+
+	// Find the armor stat definition row for the given tag
+	// (Assuming Armor uses the same definition or a similar one. Adjust return type if FNaviArmorStatDefinition exists)
+	const FNaviArmorStatDefinition* GetArmorStatRow(FGameplayTag Tag) const; 
+
 protected:
-    /**
-     * 무기 스탯 및 가격 정보가 들어있는 데이터 테이블입니다.
-     */
     UPROPERTY(EditDefaultsOnly, Category = "Navi|Shop|Data")
     TObjectPtr<UDataTable> WeaponStatTable;
 

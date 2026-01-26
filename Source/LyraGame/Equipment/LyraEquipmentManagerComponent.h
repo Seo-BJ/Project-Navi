@@ -74,7 +74,7 @@ public:
 		return FFastArraySerializer::FastArrayDeltaSerialize<FLyraAppliedEquipmentEntry, FLyraEquipmentList>(Entries, DeltaParms, *this);
 	}
 
-	ULyraEquipmentInstance* AddEntry(TSubclassOf<ULyraEquipmentDefinition> EquipmentDefinition);
+	ULyraEquipmentInstance* AddEntry(TSubclassOf<ULyraEquipmentDefinition> EquipmentDefinition, UObject* SourceObject = nullptr);
 	void RemoveEntry(ULyraEquipmentInstance* Instance);
 
 private:
@@ -109,10 +109,11 @@ public:
 	ULyraEquipmentManagerComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-	ULyraEquipmentInstance* EquipItem(TSubclassOf<ULyraEquipmentDefinition> EquipmentDefinition);
+	ULyraEquipmentInstance* EquipItem(TSubclassOf<ULyraEquipmentDefinition> EquipmentDefinition, UObject* SourceObject = nullptr);
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
 	void UnequipItem(ULyraEquipmentInstance* ItemInstance);
+
 
 	//~UObject interface
 	virtual bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags) override;

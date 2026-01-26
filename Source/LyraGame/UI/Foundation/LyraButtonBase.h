@@ -10,7 +10,7 @@ class UObject;
 struct FFrame;
 
 UCLASS(Abstract, BlueprintType, Blueprintable)
-class ULyraButtonBase : public UCommonButtonBase
+class LYRAGAME_API ULyraButtonBase : public UCommonButtonBase
 {
 	GENERATED_BODY()
 

@@ -8,6 +8,8 @@
 #include "LyraEquipmentDefinition.h"
 #include "LyraEquipmentInstance.h"
 #include "Net/UnrealNetwork.h"
+#include "Inventory/LyraInventoryItemInstance.h"
+#include "Inventory/LyraInventoryFragment_AbilityGranting.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraEquipmentManagerComponent)
 
@@ -65,7 +67,7 @@ ULyraAbilitySystemComponent* FLyraEquipmentList::GetAbilitySystemComponent() con
 	return Cast<ULyraAbilitySystemComponent>(UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(OwningActor));
 }
 
-ULyraEquipmentInstance* FLyraEquipmentList::AddEntry(TSubclassOf<ULyraEquipmentDefinition> EquipmentDefinition)
+ULyraEquipmentInstance* FLyraEquipmentList::AddEntry(TSubclassOf<ULyraEquipmentDefinition> EquipmentDefinition, UObject* SourceObject)
 {
 	ULyraEquipmentInstance* Result = nullptr;
 
@@ -85,12 +87,36 @@ ULyraEquipmentInstance* FLyraEquipmentList::AddEntry(TSubclassOf<ULyraEquipmentD
 	NewEntry.EquipmentDefinition = EquipmentDefinition;
 	NewEntry.Instance = NewObject<ULyraEquipmentInstance>(OwnerComponent->GetOwner(), InstanceType);  //@TODO: Using the actor instead of component as the outer due to UE-127172
 	Result = NewEntry.Instance;
+	Result->SetInstigator(SourceObject);  // Store the source object as Instigator
 
 	if (ULyraAbilitySystemComponent* ASC = GetAbilitySystemComponent())
 	{
 		for (const TObjectPtr<const ULyraAbilitySet>& AbilitySet : EquipmentCDO->AbilitySetsToGrant)
 		{
 			AbilitySet->GiveToAbilitySystem(ASC, /*inout*/ &NewEntry.GrantedHandles, Result);
+		}
+
+		if (const ULyraInventoryItemInstance* InventoryItem = Cast<ULyraInventoryItemInstance>(SourceObject))
+		{
+			if (const ULyraInventoryItemDefinition* ItemDef = GetDefault<ULyraInventoryItemDefinition>(InventoryItem->GetItemDef()))
+			{
+				for (const ULyraInventoryItemFragment* Fragment : ItemDef->Fragments)
+				{
+					if (const ULyraInventoryFragment_AbilityGranting* GrantingFragment = Cast<ULyraInventoryFragment_AbilityGranting>(Fragment))
+					{
+						TArray<const ULyraAbilitySet*> ExtraSets;
+						GrantingFragment->GetAbilitySetsToGrant(ExtraSets);
+
+						for (const ULyraAbilitySet* Set : ExtraSets)
+						{
+							if (Set)
+							{
+								Set->GiveToAbilitySystem(ASC, /*inout*/ &NewEntry.GrantedHandles, Result);
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 	else
@@ -144,12 +170,12 @@ void ULyraEquipmentManagerComponent::GetLifetimeReplicatedProps(TArray< FLifetim
 	DOREPLIFETIME(ThisClass, EquipmentList);
 }
 
-ULyraEquipmentInstance* ULyraEquipmentManagerComponent::EquipItem(TSubclassOf<ULyraEquipmentDefinition> EquipmentClass)
+ULyraEquipmentInstance* ULyraEquipmentManagerComponent::EquipItem(TSubclassOf<ULyraEquipmentDefinition> EquipmentClass, UObject* SourceObject)
 {
 	ULyraEquipmentInstance* Result = nullptr;
 	if (EquipmentClass != nullptr)
 	{
-		Result = EquipmentList.AddEntry(EquipmentClass);
+		Result = EquipmentList.AddEntry(EquipmentClass, SourceObject);
 		if (Result != nullptr)
 		{
 			Result->OnEquipped();

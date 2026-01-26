@@ -97,11 +97,7 @@ void ULyraQuickBarComponent::EquipItemInSlot()
 			{
 				if (ULyraEquipmentManagerComponent* EquipmentManager = FindEquipmentManager())
 				{
-					EquippedItem = EquipmentManager->EquipItem(EquipDef);
-					if (EquippedItem != nullptr)
-					{
-						EquippedItem->SetInstigator(SlotItem);
-					}
+					EquippedItem = EquipmentManager->EquipItem(EquipDef, SlotItem);
 				}
 			}
 		}
