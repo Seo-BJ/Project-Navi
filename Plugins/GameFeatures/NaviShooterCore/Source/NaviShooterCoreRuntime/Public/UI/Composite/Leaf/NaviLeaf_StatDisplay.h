@@ -20,6 +20,7 @@ class NAVISHOOTERCORERUNTIME_API UNaviLeaf_StatDisplay : public UNaviLeaf
 public:
 	//~ Begin UNaviCompositeBase Interface
 	virtual void UpdateView(const ULyraInventoryItemDefinition* ItemDef) override;
+	virtual void UpdateWeaponStats(const FNaviWeaponStatDefinition& WeaponData) override;
 	//~ End UNaviCompositeBase Interface
 	
 	void SetLabelText(const FText& InText);

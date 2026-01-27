@@ -38,51 +38,76 @@ struct FDamageFalloff
 	float LegShotDamage = 0.0f;
 };
 
+UENUM(BlueprintType)
+enum class ENaviWeaponPenetrationPower : uint8
+{
+	Low,
+	Medium,
+	High,
+};
+
+
+UENUM(BlueprintType)
+enum class ENaviWeaponFireMode : uint8
+{
+	Automatic,
+	SemiAutomatic,
+};
 
 /**
- * 무기 Stat DataTable Row Struct
+ * 얜용┛ Stat DataTable Row Struct
  */
 USTRUCT(BlueprintType)
 struct FNaviWeaponStatDefinition : public FTableRowBase
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 	
-public:
-	// --- 기본 정보 ---
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FText DisplayName; // 무기 이름
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FText DisplayName; 
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FGameplayTag WeaponTag; // 무기 게임플레이 태그
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FGameplayTag WeaponTag; 
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int32 CreditCost; // 인게임 상점 가격
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    int32 CreditCost; 
 
-	// --- 데미지 정보 ---
+    // 관통력 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    ENaviWeaponPenetrationPower PenetrationPower;
+
+    // 발사 방식 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    ENaviWeaponFireMode FireMode = ENaviWeaponFireMode::Automatic;
+
+	// 거리 별 데미지
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FDamageFalloff> DamageFalloffs;
+
+	// 연사 속도 (초당 발사 )
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float FireRate = 600.0f;
 	
-	// --- 무기 스탯 ---
+	// 달리기 속도
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float FireRate = 600.0f; // 연사 속도 (초당 발사 )
+	float RunSpeed = 600.0f;
+	
+	// 장착 속도
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float EquipSpeed = 1.0f;
+	
+	// 재장전 속도
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float ReloadSpeed = 2.5f; 
 
+	// 탄창
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float RunSpeed = 600.0f; // 달리기 속도
+	int32 MagazineSize = 30;
+	
+	// 최대 탄창
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 MaxAmmo = 90; 
 
+	// 초탄 퍼짐
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float EquipSpeed = 1.0f; // 장착 속도
-    
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float ReloadSpeed = 2.5f; // 재장전 속도
-
-	// --- 탄창 정보 ---
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int32 MagazineSize = 30; // 탄창
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int32 MaxAmmo = 90; // 최대 탄창
-
-	// --- 정확도 ---
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float FirstShotSpread = 0.25f; // 초탄 퍼짐
+	float FirstShotSpread = 0.25f; 
 };

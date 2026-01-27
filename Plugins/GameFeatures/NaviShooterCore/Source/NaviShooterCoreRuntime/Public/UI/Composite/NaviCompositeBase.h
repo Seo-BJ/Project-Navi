@@ -8,6 +8,7 @@
 #include "NaviCompositeBase.generated.h"
 
 class ULyraInventoryItemDefinition;
+struct FNaviWeaponStatDefinition;
 
 /**
  * Base class for the Composite UI pattern in Navi.
@@ -17,15 +18,20 @@ UCLASS()
 class NAVISHOOTERCORERUNTIME_API UNaviCompositeBase : public UUserWidget
 {
 	GENERATED_BODY()
-	
+
 public:
 	// Update the view based on the provided Item Definition.
-	// Can be overridden by subclasses to update specific UI elements or propagate to children.
 	virtual void UpdateView(const ULyraInventoryItemDefinition* ItemDef);
+	
+	/**
+	 * Raw Data 기반 업데이트를 위한 인터페이스입니다.
+	 * 무기 데이터를 받아 자신의 UI를 갱신하거나 자식에게 전파합니다.
+	 * 기본 구현은 아무것도 하지 않습니다.
+	 */
+	virtual void UpdateWeaponStats(const FNaviWeaponStatDefinition& WeaponData) {}
 
 	// Helper to collapse or expand the widget
 	virtual void SetIsCollapsed(bool bCollapsed);
-
 	FGameplayTag GetTargetTag() const { return TargetTag; }
 
 protected:

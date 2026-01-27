@@ -23,6 +23,10 @@ public:
 	// Raw Data(배열)를 받아 UI를 갱신합니다.
 	void SetFalloffData(const TArray<FDamageFalloff>& Falloffs);
 
+	//~ Begin UNaviCompositeBase Interface
+	virtual void UpdateWeaponStats(const FNaviWeaponStatDefinition& WeaponData) override;
+	//~ End UNaviCompositeBase Interface
+
 protected:
 	// 서브 위젯들을 담을 컨테이너 패널 (HorizontalBox 등)
 	UPROPERTY(meta = (BindWidget))
