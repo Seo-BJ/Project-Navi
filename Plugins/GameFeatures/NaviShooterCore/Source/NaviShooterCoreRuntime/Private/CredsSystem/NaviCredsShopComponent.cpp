@@ -26,7 +26,7 @@
 #include "Inventory/ItemDropAndPickUp/LyraDropAndPickupable.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
-
+#include "NaviShooterCoreGameplayTags.h"
 
 UNaviCredsShopComponent::UNaviCredsShopComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -37,6 +37,73 @@ UNaviCredsShopComponent::UNaviCredsShopComponent(const FObjectInitializer& Objec
 void UNaviCredsShopComponent::BeginPlay()
 {
     Super::BeginPlay();
+    
+    // 서버/클라이언트 모두에서 UI 표시를 위해 캐싱 필요 (특히 로컬 플레이어용)
+    // 데이터 테이블은 정적이므로 한 번만 계산하면 됩니다.
+    CacheStatRanges();
+}
+
+void UNaviCredsShopComponent::CacheStatRanges()
+{
+	if (!WeaponStatTable) return;
+
+	StatMinMaxCache.Empty();
+
+	const FString ContextString(TEXT("CacheStatRanges"));
+	TArray<FNaviWeaponStatDefinition*> AllRows;
+	WeaponStatTable->GetAllRows<FNaviWeaponStatDefinition>(ContextString, AllRows);
+
+	if (AllRows.Num() == 0) return;
+
+	// 헬퍼 람다: Min/Max 갱신
+	auto UpdateMinMax = [&](FGameplayTag Tag, float Value)
+	{
+		if (!StatMinMaxCache.Contains(Tag))
+		{
+			StatMinMaxCache.Add(Tag, FVector2D(Value, Value));
+		}
+		else
+		{
+			FVector2D& Range = StatMinMaxCache[Tag];
+			Range.X = FMath::Min(Range.X, Value);
+			Range.Y = FMath::Max(Range.Y, Value);
+		}
+	};
+
+	using namespace NaviShooterCoreGameplayTags;
+
+	for (const FNaviWeaponStatDefinition* Row : AllRows)
+	{
+		if (!Row) continue;
+
+		UpdateMinMax(Weapon_Stat_FireRate, Row->FireRate);
+		UpdateMinMax(Weapon_Stat_RunSpeed, Row->RunSpeed);
+		UpdateMinMax(Weapon_Stat_EquipSpeed, Row->EquipSpeed);
+		UpdateMinMax(Weapon_Stat_ReloadSpeed, Row->ReloadSpeed);
+		UpdateMinMax(Weapon_Stat_MagazineSize, (float)Row->MagazineSize);
+		UpdateMinMax(Weapon_Stat_MaxAmmo, (float)Row->MaxAmmo);
+		UpdateMinMax(Weapon_Stat_FirstShotSpread, Row->FirstShotSpread_HipFire); // Use Hip spread for cache/bar
+		UpdateMinMax(Weapon_Stat_CreditCost, (float)Row->CreditCost);
+
+		if (Row->DamageFalloffs.Num() > 0)
+		{
+			const FDamageFalloff& BaseDamage = Row->DamageFalloffs[0];
+			UpdateMinMax(Weapon_Stat_Damage_Head, BaseDamage.HeadShotDamage);
+			UpdateMinMax(Weapon_Stat_Damage_Body, BaseDamage.BodyShotDamage);
+			UpdateMinMax(Weapon_Stat_Damage_Leg, BaseDamage.LegShotDamage);
+		}
+	}
+}
+
+bool UNaviCredsShopComponent::GetStatRange(FGameplayTag Tag, float& OutMin, float& OutMax) const
+{
+	if (const FVector2D* Range = StatMinMaxCache.Find(Tag))
+	{
+		OutMin = Range->X;
+		OutMax = Range->Y;
+		return true;
+	}
+	return false;
 }
 
 bool UNaviCredsShopComponent::TryBuyEquipment(AController* RequestingPlayerController, FGameplayTag TargetEquipmentTag)

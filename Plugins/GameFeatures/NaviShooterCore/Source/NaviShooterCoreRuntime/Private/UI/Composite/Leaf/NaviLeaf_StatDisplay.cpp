@@ -3,22 +3,19 @@
 
 #include "UI/Composite/Leaf/NaviLeaf_StatDisplay.h"
 #include "Components/TextBlock.h"
+#include "Components/ProgressBar.h"
 #include "Inventory/NaviInventoryFragment_UIInfo.h"
 #include "Inventory/LyraInventoryItemDefinition.h"
 #include "Weapons/NaviWeaponStatDefinition.h"
 #include "NativeGameplayTags.h"
+#include "CredsSystem/NaviCredsShopComponent.h"
+#include "GameFramework/GameStateBase.h"
+#include "NaviShooterCoreGameplayTags.h"
 
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_FireRate, "Weapon.Stat.FireRate");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_RunSpeed, "Weapon.Stat.RunSpeed");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_EquipSpeed, "Weapon.Stat.EquipSpeed");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_ReloadSpeed, "Weapon.Stat.ReloadSpeed");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_MagazineSize, "Weapon.Stat.MagazineSize");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_MaxAmmo, "Weapon.Stat.MaxAmmo");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_FirstShotSpread, "Weapon.Stat.FirstShotSpread");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_CreditCost, "Weapon.Stat.CreditCost");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_Damage_Head, "Weapon.Stat.Damage.Head");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_Damage_Body, "Weapon.Stat.Damage.Body");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_Damage_Leg, "Weapon.Stat.Damage.Leg");
+void UNaviLeaf_StatDisplay::NativePreConstruct()
+{
+	Super::NativePreConstruct();
+}
 
 void UNaviLeaf_StatDisplay::UpdateView(const ULyraInventoryItemDefinition* ItemDef)
 {
@@ -49,7 +46,7 @@ void UNaviLeaf_StatDisplay::UpdateView(const ULyraInventoryItemDefinition* ItemD
 	// 3. Update Value or Collapse
 	if (bFound)
 	{
-		UpdateValue(StatValue);
+		SetStatValue(StatValue);
 		SetIsCollapsed(false);
 	}
 	else
@@ -74,28 +71,82 @@ void UNaviLeaf_StatDisplay::UpdateWeaponStats(const FNaviWeaponStatDefinition& W
 {
 	float ValueToSet = 0.0f;
 	bool bValueFound = false;
+	FText UnitText = FText::GetEmpty();
 
-	if (TargetTag == TAG_Weapon_Stat_FireRate) { ValueToSet = WeaponRow.FireRate; bValueFound = true; }
-	else if (TargetTag == TAG_Weapon_Stat_RunSpeed) { ValueToSet = WeaponRow.RunSpeed; bValueFound = true; }
-	else if (TargetTag == TAG_Weapon_Stat_EquipSpeed) { ValueToSet = WeaponRow.EquipSpeed; bValueFound = true; }
-	else if (TargetTag == TAG_Weapon_Stat_ReloadSpeed) { ValueToSet = WeaponRow.ReloadSpeed; bValueFound = true; }
-	else if (TargetTag == TAG_Weapon_Stat_MagazineSize) { ValueToSet = (float)WeaponRow.MagazineSize; bValueFound = true; }
-	else if (TargetTag == TAG_Weapon_Stat_MaxAmmo) { ValueToSet = (float)WeaponRow.MaxAmmo; bValueFound = true; }
-	else if (TargetTag == TAG_Weapon_Stat_FirstShotSpread) { ValueToSet = WeaponRow.FirstShotSpread; bValueFound = true; }
-	else if (TargetTag == TAG_Weapon_Stat_CreditCost) { ValueToSet = (float)WeaponRow.CreditCost; bValueFound = true; }
+	using namespace NaviShooterCoreGameplayTags;
+
+	if (TargetTag == Weapon_Stat_FireRate) 
+	{ 
+		ValueToSet = WeaponRow.FireRate; 
+		UnitText = NSLOCTEXT("ST_NaviShooterCore", "Unit_RoundsPerSec", "round/second");
+		bValueFound = true; 
+	}
+	else if (TargetTag == Weapon_Stat_RunSpeed) 
+	{ 
+		ValueToSet = WeaponRow.RunSpeed; 
+		UnitText = NSLOCTEXT("ST_NaviShooterCore", "Unit_MetersPerSec", "m/s");
+		bValueFound = true; 
+	}
+	else if (TargetTag == Weapon_Stat_EquipSpeed) 
+	{ 
+		ValueToSet = WeaponRow.EquipSpeed; 
+		UnitText = NSLOCTEXT("ST_NaviShooterCore", "Unit_Seconds", "second");
+		bValueFound = true; 
+	}
+	else if (TargetTag == Weapon_Stat_ReloadSpeed) 
+	{ 
+		ValueToSet = WeaponRow.ReloadSpeed; 
+		UnitText = NSLOCTEXT("ST_NaviShooterCore", "Unit_Seconds", "second");
+		bValueFound = true; 
+	}
+	else if (TargetTag == Weapon_Stat_MagazineSize) 
+	{ 
+		ValueToSet = (float)WeaponRow.MagazineSize; 
+		UnitText = NSLOCTEXT("ST_NaviShooterCore", "Unit_Rounds", "round");
+		bValueFound = true; 
+	}
+	else if (TargetTag == Weapon_Stat_MaxAmmo) 
+	{ 
+		ValueToSet = (float)WeaponRow.MaxAmmo; 
+		UnitText = NSLOCTEXT("ST_NaviShooterCore", "Unit_Rounds", "round");
+		bValueFound = true; 
+	}
+	else if (TargetTag == Weapon_Stat_FirstShotSpread) 
+	{ 
+		// Special case for Spread: Show Hip / ADS
+		ValueToSet = WeaponRow.FirstShotSpread_HipFire; // Bar shows Hip spread
+		
+		FNumberFormattingOptions Opts;
+		Opts.MinimumFractionalDigits = 1;
+		Opts.MaximumFractionalDigits = 2;
+		
+		FText HipText = FText::AsNumber(WeaponRow.FirstShotSpread_HipFire, &Opts);
+		FText ADSText = FText::AsNumber(WeaponRow.FirstShotSpread_ADS, &Opts);
+		
+		// Format: "1.0 / 0.5"
+		FText SpreadText = FText::Format(NSLOCTEXT("Navi", "Format_Spread", "{0} / {1}"), HipText, ADSText);
+		
+		SetStatValueComplex(ValueToSet, SpreadText);
+		return;
+	}
+	else if (TargetTag == Weapon_Stat_CreditCost) 
+	{ 
+		ValueToSet = (float)WeaponRow.CreditCost; 
+		bValueFound = true; 
+	}
 	
 	// Damage logic (Base damage for simple display)
 	if (WeaponRow.DamageFalloffs.Num() > 0)
 	{
 		const FDamageFalloff& BaseDamage = WeaponRow.DamageFalloffs[0];
-		if (TargetTag == TAG_Weapon_Stat_Damage_Head) { ValueToSet = BaseDamage.HeadShotDamage; bValueFound = true; }
-		else if (TargetTag == TAG_Weapon_Stat_Damage_Body) { ValueToSet = BaseDamage.BodyShotDamage; bValueFound = true; }
-		else if (TargetTag == TAG_Weapon_Stat_Damage_Leg) { ValueToSet = BaseDamage.LegShotDamage; bValueFound = true; }
+		if (TargetTag == Weapon_Stat_Damage_Head) { ValueToSet = BaseDamage.HeadShotDamage; bValueFound = true; }
+		else if (TargetTag == Weapon_Stat_Damage_Body) { ValueToSet = BaseDamage.BodyShotDamage; bValueFound = true; }
+		else if (TargetTag == Weapon_Stat_Damage_Leg) { ValueToSet = BaseDamage.LegShotDamage; bValueFound = true; }
 	}
 
 	if (bValueFound)
 	{
-		SetStatValue(ValueToSet);
+		SetStatValue(ValueToSet, UnitText);
 	}
 	else
 	{
@@ -103,10 +154,37 @@ void UNaviLeaf_StatDisplay::UpdateWeaponStats(const FNaviWeaponStatDefinition& W
 	}
 }
 
-void UNaviLeaf_StatDisplay::SetStatValue(float Value)
+void UNaviLeaf_StatDisplay::SetStatValue(float Value, const FText& UnitText)
 {
 	UpdateLabel();
 	UpdateValue(Value);
+	
+	// Append Unit if exists
+	if (!UnitText.IsEmpty() && Text_Value)
+	{
+		FText CurrentText = Text_Value->GetText();
+		Text_Value->SetText(FText::Format(NSLOCTEXT("Navi", "Format_StatValueUnit", "{0} {1}"), CurrentText, UnitText));
+	}
+	
+	SetIsCollapsed(false);
+}
+
+void UNaviLeaf_StatDisplay::SetStatValueComplex(float ValueForBar, const FText& FullDisplayText)
+{
+	UpdateLabel();
+	
+	// Update Bar
+	if (ProgressBar_Value)
+	{
+		UpdateProgressBar(ValueForBar);
+	}
+	
+	// Set Custom Text
+	if (Text_Value)
+	{
+		Text_Value->SetText(FullDisplayText);
+	}
+	
 	SetIsCollapsed(false);
 }
 
@@ -136,9 +214,43 @@ void UNaviLeaf_StatDisplay::UpdateValue(float Value)
 
 		Text_Value->SetText(FText::AsNumber(Value, &Options));
 	}
+
+	if (ProgressBar_Value)
+	{
+		UpdateProgressBar(Value);
+	}
 }
 
-void UNaviLeaf_StatDisplay::NativePreConstruct()
+void UNaviLeaf_StatDisplay::UpdateProgressBar(float Value)
 {
-	Super::NativePreConstruct();
+	float Percent = 0.0f;
+	
+	// Find Shop Component to get Min/Max
+	if (UWorld* World = GetWorld())
+	{
+		if (AGameStateBase* GS = World->GetGameState())
+		{
+			if (UNaviCredsShopComponent* ShopComp = GS->GetComponentByClass<UNaviCredsShopComponent>())
+			{
+				float MinStat = 0.f;
+				float MaxStat = 1.f;
+				
+				// Get Cached Range
+				if (ShopComp->GetStatRange(TargetTag, MinStat, MaxStat))
+				{
+					// Normalize Value (0..1)
+					if (FMath::IsNearlyEqual(MinStat, MaxStat))
+					{
+						Percent = 1.0f;
+					}
+					else
+					{
+						Percent = (Value - MinStat) / (MaxStat - MinStat);
+					}
+				}
+			}
+		}
+	}
+	
+	ProgressBar_Value->SetPercent(FMath::Clamp(Percent, 0.0f, 1.0f));
 }

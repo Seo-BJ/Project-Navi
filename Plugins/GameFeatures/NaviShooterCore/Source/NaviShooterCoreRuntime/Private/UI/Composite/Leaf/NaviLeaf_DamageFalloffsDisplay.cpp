@@ -6,8 +6,7 @@
 #include "Weapons/NaviWeaponStatDefinition.h"
 #include "Components/PanelWidget.h"
 #include "NativeGameplayTags.h"
-
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_Damage_Falloffs, "Weapon.Stat.Damage.Falloffs");
+#include "NaviShooterCoreGameplayTags.h"
 
 void UNaviLeaf_DamageFalloffsDisplay::SetFalloffData(const TArray<FDamageFalloff>& Falloffs)
 {
@@ -46,7 +45,7 @@ void UNaviLeaf_DamageFalloffsDisplay::SetFalloffData(const TArray<FDamageFalloff
 void UNaviLeaf_DamageFalloffsDisplay::UpdateWeaponStats(const FNaviWeaponStatDefinition& WeaponData)
 {
 	// 내 타겟 태그가 Falloffs인지 확인 (선택 사항이지만 안전을 위해)
-	if (GetTargetTag().MatchesTag(TAG_Weapon_Stat_Damage_Falloffs))
+	if (GetTargetTag().MatchesTag(NaviShooterCoreGameplayTags::Weapon_Stat_Damage_Falloffs))
 	{
 		SetFalloffData(WeaponData.DamageFalloffs);
 	}

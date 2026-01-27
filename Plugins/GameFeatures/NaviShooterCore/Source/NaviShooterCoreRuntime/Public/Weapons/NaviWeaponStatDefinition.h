@@ -103,11 +103,14 @@ struct FNaviWeaponStatDefinition : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int32 MagazineSize = 30;
 	
-	// 최대 탄창
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int32 MaxAmmo = 90; 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    int32 MaxAmmo = 90; 
+	
+    // 지향 사격 (Hip Fire) 초탄 퍼짐 배수 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    float FirstShotSpread_HipFire = 1.0f; 
 
-	// 초탄 퍼짐
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float FirstShotSpread = 0.25f; 
+    // 조준 사격 (ADS) 초탄 퍼짐 패수 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    float FirstShotSpread_ADS = 1.0f;
 };

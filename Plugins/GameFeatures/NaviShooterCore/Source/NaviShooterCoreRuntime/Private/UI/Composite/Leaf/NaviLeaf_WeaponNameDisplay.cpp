@@ -63,13 +63,14 @@ FText UNaviLeaf_WeaponNameDisplay::GetFireModeText(ENaviWeaponFireMode Mode) con
 
 FText UNaviLeaf_WeaponNameDisplay::GetWeaponTypeText(FGameplayTag WeaponTag) const
 {
-	switch (WeaponTag)
+	if ( WeaponTag.MatchesTag(NaviGameplayTags::Weapon_Primary))
 	{
-	case WeaponTag.MatchesTag(NaviGameplayTags::Weapon_Primary):
 		return NSLOCTEXT("ST_NaviShooterCore", "WeaponType_Primary", "Primary Weapon");
-	case WeaponTag.MatchesTag(NaviGameplayTags::Weapon_Sidearms):
-		return NSLOCTEXT("ST_NaviShooterCore", "WeaponType_Sidearms", "Sidearms");
-	default:
-		return FText::GetEmpty();
 	}
+	if (WeaponTag.MatchesTag(NaviGameplayTags::Weapon_Sidearms))
+	{
+		return NSLOCTEXT("ST_NaviShooterCore", "WeaponType_Sidearms", "Sidearms");
+
+	}
+	return FText::GetEmpty();
 }

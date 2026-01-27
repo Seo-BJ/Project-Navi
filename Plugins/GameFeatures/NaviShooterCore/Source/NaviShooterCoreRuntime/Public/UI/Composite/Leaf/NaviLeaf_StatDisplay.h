@@ -7,6 +7,7 @@
 #include "NaviLeaf_StatDisplay.generated.h"
 
 class UTextBlock;
+class UProgressBar;
 
 /**
  * A specialized Leaf widget to display a numeric stat.
@@ -26,21 +27,36 @@ public:
 	void SetLabelText(const FText& InText);
 	void SetFractionalDigits(int32 Min, int32 Max);
 	
-	/** Manually set the displayed value, bypassing the ItemDef lookup. */
-	void SetStatValue(float Value);
+	/** 
+	 * Manually set the displayed value.
+	 * @param Value The numeric value to display and use for progress bar.
+	 * @param UnitText Optional text to append (e.g., "m/s").
+	 */
+	void SetStatValue(float Value, const FText& UnitText = FText::GetEmpty());
+
+	/**
+	 * Manually set the value for the bar and a custom text for the label.
+	 * Useful for complex displays like "1.0x / 0.5x".
+	 */
+	void SetStatValueComplex(float ValueForBar, const FText& FullDisplayText);
 
 protected:	void UpdateLabel();
 	void UpdateValue(float Value);
+	void UpdateProgressBar(float Value);
 
-	void NativePreConstruct() override;
+	virtual void NativePreConstruct() override;
 
 protected:
 	// The text widget to display the stat value.
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> Text_Value;
 
+	// The progress bar to visualize the stat relative to min/max.
+	UPROPERTY(meta = (BindWidget, OptionalWidget = true))
+	TObjectPtr<UProgressBar> ProgressBar_Value;
+
 	// The text widget to display the label (optional).
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta = (BindWidget, OptionalWidget = true))
 	TObjectPtr<UTextBlock> Text_Label;
 
 	// Text to display on the label. If empty, the label widget might be collapsed or hidden.

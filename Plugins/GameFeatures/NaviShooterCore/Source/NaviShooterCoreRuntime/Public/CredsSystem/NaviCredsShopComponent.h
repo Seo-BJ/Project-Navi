@@ -45,15 +45,30 @@ public:
 	const FNaviWeaponStatDefinition* GetWeaponStatRow(FGameplayTag Tag) const;
 
 	// Find the armor stat definition row for the given tag
-	// (Assuming Armor uses the same definition or a similar one. Adjust return type if FNaviArmorStatDefinition exists)
 	const FNaviArmorStatDefinition* GetArmorStatRow(FGameplayTag Tag) const; 
 
-protected:
-    UPROPERTY(EditDefaultsOnly, Category = "Navi|Shop|Data")
-    TObjectPtr<UDataTable> WeaponStatTable;
+	/**
+	 * 해당 스탯 태그(예: FireRate)의 전체 무기 중 최솟값(Min)과 최댓값(Max)을 반환합니다.
+	 * @param Tag 조회할 스탯 태그
+	 * @param OutMin 최솟값 출력
+	 * @param OutMax 최댓값 출력
+	 * @return 성공 여부 (데이터가 없으면 false)
+	 */
+	bool GetStatRange(FGameplayTag Tag, float& OutMin, float& OutMax) const;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Navi|Shop|Data")
-    TObjectPtr<UDataTable> ArmorStatTable;
+protected:
+	// 데이터 테이블을 순회하여 스탯별 Min/Max 값을 계산하고 캐싱합니다.
+	void CacheStatRanges();
+
+	// Key: StatTag, Value: X=Min, Y=Max
+	UPROPERTY()
+	TMap<FGameplayTag, FVector2D> StatMinMaxCache;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Navi|Shop|Data")
+	TObjectPtr<UDataTable> WeaponStatTable;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Navi|Shop|Data")
+	TObjectPtr<UDataTable> ArmorStatTable;
     
     /**
      * 빠른 조회를 위해 GameplayTag를 키로 사용하는 무기 정의 맵입니다.

@@ -4,20 +4,7 @@
 #include "Inventory/NaviWeaponStatsFragment.h"
 #include "Weapons/NaviWeaponStatDefinition.h"
 #include "NativeGameplayTags.h"
-
-// Define tags for matching. 
-// Ideally these should be in a central tag header, but defining locally for the adapter logic is acceptable.
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_FireRate, "Weapon.Stat.FireRate");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_RunSpeed, "Weapon.Stat.RunSpeed");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_EquipSpeed, "Weapon.Stat.EquipSpeed");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_ReloadSpeed, "Weapon.Stat.ReloadSpeed");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_MagazineSize, "Weapon.Stat.MagazineSize");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_MaxAmmo, "Weapon.Stat.MaxAmmo");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_FirstShotSpread, "Weapon.Stat.FirstShotSpread");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_CreditCost, "Weapon.Stat.CreditCost");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_Damage_Head, "Weapon.Stat.Damage.Head");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_Damage_Body, "Weapon.Stat.Damage.Body");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Stat_Damage_Leg, "Weapon.Stat.Damage.Leg");
+#include "NaviShooterCoreGameplayTags.h"
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Weapon_Info_DisplayName, "Weapon.Info.DisplayName");
 
@@ -30,22 +17,23 @@ float UNaviWeaponStatsFragment::GetNumericStat_Implementation(FGameplayTag Tag, 
 		if (Row)
 		{
 			bFound = true;
-			if (Tag == TAG_Weapon_Stat_FireRate) return Row->FireRate;
-			if (Tag == TAG_Weapon_Stat_RunSpeed) return Row->RunSpeed;
-			if (Tag == TAG_Weapon_Stat_EquipSpeed) return Row->EquipSpeed;
-			if (Tag == TAG_Weapon_Stat_ReloadSpeed) return Row->ReloadSpeed;
-			if (Tag == TAG_Weapon_Stat_MagazineSize) return (float)Row->MagazineSize;
-			if (Tag == TAG_Weapon_Stat_MaxAmmo) return (float)Row->MaxAmmo;
-			if (Tag == TAG_Weapon_Stat_FirstShotSpread) return Row->FirstShotSpread;
-			if (Tag == TAG_Weapon_Stat_CreditCost) return (float)Row->CreditCost;
+			if (Tag == NaviShooterCoreGameplayTags::Weapon_Stat_FireRate) return Row->FireRate;
+			if (Tag ==  NaviShooterCoreGameplayTags::Weapon_Stat_RunSpeed) return Row->RunSpeed;
+			if (Tag ==  NaviShooterCoreGameplayTags::Weapon_Stat_EquipSpeed) return Row->EquipSpeed;
+			if (Tag ==  NaviShooterCoreGameplayTags::Weapon_Stat_ReloadSpeed) return Row->ReloadSpeed;
+			if (Tag ==  NaviShooterCoreGameplayTags::Weapon_Stat_MagazineSize) return (float)Row->MagazineSize;
+			if (Tag ==  NaviShooterCoreGameplayTags::Weapon_Stat_MaxAmmo) return (float)Row->MaxAmmo;
+			if (Tag ==  NaviShooterCoreGameplayTags::Weapon_Stat_FirstShotSpread_HipFire) return Row->FirstShotSpread_HipFire;
+			if (Tag ==  NaviShooterCoreGameplayTags::Weapon_Stat_FirstShotSpread_ADS) return Row->FirstShotSpread_ADS;
+			if (Tag == NaviShooterCoreGameplayTags::Weapon_Stat_CreditCost) return (float)Row->CreditCost;
 			
 			// For damage, we might need a specific range index or just return base damage (Range 0)
 			if (Row->DamageFalloffs.Num() > 0)
 			{
 				const FDamageFalloff& BaseDamage = Row->DamageFalloffs[0];
-				if (Tag == TAG_Weapon_Stat_Damage_Head) return BaseDamage.HeadShotDamage;
-				if (Tag == TAG_Weapon_Stat_Damage_Body) return BaseDamage.BodyShotDamage;
-				if (Tag == TAG_Weapon_Stat_Damage_Leg) return BaseDamage.LegShotDamage;
+				if (Tag == NaviShooterCoreGameplayTags::Weapon_Stat_Damage_Head) return BaseDamage.HeadShotDamage;
+				if (Tag == NaviShooterCoreGameplayTags::Weapon_Stat_Damage_Body) return BaseDamage.BodyShotDamage;
+				if (Tag == NaviShooterCoreGameplayTags::Weapon_Stat_Damage_Leg) return BaseDamage.LegShotDamage;
 			}
 		}
 	}
