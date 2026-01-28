@@ -47,6 +47,10 @@ public:
 	// Find the armor stat definition row for the given tag
 	const FNaviArmorStatDefinition* GetArmorStatRow(FGameplayTag Tag) const; 
 
+	// Find the weapon pickup definition for the given tag
+	UFUNCTION(BlueprintCallable, Category = "Navi|Shop")
+	const ULyraWeaponPickupDefinition* GetWeaponPickupDefinition(FGameplayTag Tag) const;
+
 	/**
 	 * 해당 스탯 태그(예: FireRate)의 전체 무기 중 최솟값(Min)과 최댓값(Max)을 반환합니다.
 	 * @param Tag 조회할 스탯 태그

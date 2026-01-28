@@ -1,6 +1,7 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Fill out your copyright notice in the Description page of Project Settings.
 
-#include "LyraRangedWeaponInstance.h"
+
+#include "Weapons/NaviRangedWeaponInstance.h"
 #include "NativeGameplayTags.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -9,18 +10,17 @@
 #include "Weapons/LyraWeaponInstance.h"
 #include "Weapons/NaviWeaponStatDefinition.h"
 
-#include UE_INLINE_GENERATED_CPP_BY_NAME(LyraRangedWeaponInstance)
+#include UE_INLINE_GENERATED_CPP_BY_NAME(NaviRangedWeaponInstance)
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_Weapon_SteadyAimingCamera, "Lyra.Weapon.SteadyAimingCamera");
-
-ULyraRangedWeaponInstance::ULyraRangedWeaponInstance(const FObjectInitializer& ObjectInitializer)
+UNaviRangedWeaponInstance::UNaviRangedWeaponInstance(const FObjectInitializer& ObjectInitializer) 	
 	: Super(ObjectInitializer)
 {
 	HeatToHeatPerShotCurve.EditorCurveData.AddKey(0.0f, 1.0f);
 	HeatToCoolDownPerSecondCurve.EditorCurveData.AddKey(0.0f, 2.0f);
 }
 
-void ULyraRangedWeaponInstance::PostLoad()
+void UNaviRangedWeaponInstance::PostLoad()
 {
 	Super::PostLoad();
 
@@ -30,13 +30,13 @@ void ULyraRangedWeaponInstance::PostLoad()
 }
 
 #if WITH_EDITOR
-void ULyraRangedWeaponInstance::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void UNaviRangedWeaponInstance::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 	UpdateDebugVisualization();
 }
 
-void ULyraRangedWeaponInstance::UpdateDebugVisualization()
+void UNaviRangedWeaponInstance::UpdateDebugVisualization()
 {
 	ComputeHeatRange(/*out*/ Debug_MinHeat, /*out*/ Debug_MaxHeat);
 	ComputeSpreadRange(/*out*/ Debug_MinSpreadAngle, /*out*/ Debug_MaxSpreadAngle);
@@ -47,7 +47,7 @@ void ULyraRangedWeaponInstance::UpdateDebugVisualization()
 
 #endif
 
-FNaviWeaponStatDefinition ULyraRangedWeaponInstance::GetNaviWeaponStats()
+const FNaviWeaponStatDefinition& UNaviRangedWeaponInstance::GetNaviWeaponStats()
 {
 	if (!CachedNaviWeaponStats && !WeaponStatRow.IsNull())
 	{
@@ -56,7 +56,7 @@ FNaviWeaponStatDefinition ULyraRangedWeaponInstance::GetNaviWeaponStats()
 	return *CachedNaviWeaponStats;
 }
 
-void ULyraRangedWeaponInstance::OnEquipped()
+void UNaviRangedWeaponInstance::OnEquipped()
 {
 	Super::OnEquipped();
 
@@ -74,25 +74,14 @@ void ULyraRangedWeaponInstance::OnEquipped()
 	StandingStillMultiplier = 1.0f;
 	JumpFallMultiplier = 1.0f;
 	CrouchingMultiplier = 1.0f;
-
-	// Set Weapon Stat
-
-	APawn* Pawn = GetPawn();
-	check(Pawn != nullptr);
-	UCharacterMovementComponent* CharMovementComp = Cast<UCharacterMovementComponent>(Pawn->GetMovementComponent());
-	check(CharMovementComp != nullptr);
-	const FNaviWeaponStatDefinition StatDefinition = GetNaviWeaponStats();
-	
-	DefaultMaxWalkSpeed = CharMovementComp->MaxWalkSpeed;
-	CharMovementComp->MaxWalkSpeed = StatDefinition.RunSpeed * 100.0f;
 }
 
-void ULyraRangedWeaponInstance::OnUnequipped()
+void UNaviRangedWeaponInstance::OnUnequipped()
 {
 	Super::OnUnequipped();
 }
 
-void ULyraRangedWeaponInstance::Tick(float DeltaSeconds)
+void UNaviRangedWeaponInstance::Tick(float DeltaSeconds)
 {
 	APawn* Pawn = GetPawn();
 	check(Pawn != nullptr);
@@ -109,7 +98,7 @@ void ULyraRangedWeaponInstance::Tick(float DeltaSeconds)
 #endif
 }
 
-void ULyraRangedWeaponInstance::ComputeHeatRange(float& MinHeat, float& MaxHeat)
+void UNaviRangedWeaponInstance::ComputeHeatRange(float& MinHeat, float& MaxHeat)
 {
 	float Min1;
 	float Max1;
@@ -127,12 +116,12 @@ void ULyraRangedWeaponInstance::ComputeHeatRange(float& MinHeat, float& MaxHeat)
 	MaxHeat = FMath::Max(FMath::Max(Max1, Max2), Max3);
 }
 
-void ULyraRangedWeaponInstance::ComputeSpreadRange(float& MinSpread, float& MaxSpread)
+void UNaviRangedWeaponInstance::ComputeSpreadRange(float& MinSpread, float& MaxSpread)
 {
 	HeatToSpreadCurve.GetRichCurveConst()->GetValueRange(/*out*/ MinSpread, /*out*/ MaxSpread);
 }
 
-void ULyraRangedWeaponInstance::AddSpread()
+void UNaviRangedWeaponInstance::AddSpread()
 {
 	// Sample the heat up curve
 	const float HeatPerShot = HeatToHeatPerShotCurve.GetRichCurveConst()->Eval(CurrentHeat);
@@ -146,13 +135,13 @@ void ULyraRangedWeaponInstance::AddSpread()
 #endif
 }
 
-float ULyraRangedWeaponInstance::GetDistanceAttenuation(float Distance, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags) const
+float UNaviRangedWeaponInstance::GetDistanceAttenuation(float Distance, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags) const
 {
 	const FRichCurve* Curve = DistanceDamageFalloff.GetRichCurveConst();
 	return Curve->HasAnyData() ? Curve->Eval(Distance) : 1.0f;
 }
 
-float ULyraRangedWeaponInstance::GetPhysicalMaterialAttenuation(const UPhysicalMaterial* PhysicalMaterial, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags) const
+float UNaviRangedWeaponInstance::GetPhysicalMaterialAttenuation(const UPhysicalMaterial* PhysicalMaterial, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags) const
 {
 	float CombinedMultiplier = 1.0f;
 	if (const UPhysicalMaterialWithTags* PhysMatWithTags = Cast<const UPhysicalMaterialWithTags>(PhysicalMaterial))
@@ -169,7 +158,7 @@ float ULyraRangedWeaponInstance::GetPhysicalMaterialAttenuation(const UPhysicalM
 	return CombinedMultiplier;
 }
 
-bool ULyraRangedWeaponInstance::UpdateSpread(float DeltaSeconds)
+bool UNaviRangedWeaponInstance::UpdateSpread(float DeltaSeconds)
 {
 	// const float TimeSinceFired = GetWorld()->TimeSince(LastFireTime);
 	const float TimeSinceFired = GetWorld()->TimeSince(TimeLastFired);
@@ -188,14 +177,13 @@ bool ULyraRangedWeaponInstance::UpdateSpread(float DeltaSeconds)
 	return FMath::IsNearlyEqual(CurrentSpreadAngle, MinSpread, KINDA_SMALL_NUMBER);
 }
 
-bool ULyraRangedWeaponInstance::UpdateMultipliers(float DeltaSeconds)
+bool UNaviRangedWeaponInstance::UpdateMultipliers(float DeltaSeconds)
 {
 	const float MultiplierNearlyEqualThreshold = 0.05f;
 
 	APawn* Pawn = GetPawn();
 	check(Pawn != nullptr);
 	UCharacterMovementComponent* CharMovementComp = Cast<UCharacterMovementComponent>(Pawn->GetMovementComponent());
-	check(CharMovementComp != nullptr);
 
 	// See if we are standing still, and if so, smoothly apply the bonus
 	const float PawnSpeed = Pawn->GetVelocity().Size();
@@ -242,7 +230,7 @@ bool ULyraRangedWeaponInstance::UpdateMultipliers(float DeltaSeconds)
 	return bStandingStillMultiplierAtMin && bCrouchingMultiplierAtTarget && bJumpFallMultiplerIs1 && bAimingMultiplierAtTarget;
 }
 
-void ULyraRangedWeaponInstance::StartRecoil()
+void UNaviRangedWeaponInstance::StartRecoil()
 {
 	APawn* const Pawn = GetPawn();
 	if (Pawn == nullptr) return;
@@ -256,7 +244,7 @@ void ULyraRangedWeaponInstance::StartRecoil()
 	TargetRecoil.Y = FMath::Clamp(TargetRecoil.Y, -90.f, 90.f);
 }
 
-void ULyraRangedWeaponInstance::StopRecoil()
+void UNaviRangedWeaponInstance::StopRecoil()
 {
 	if (!bIsFiring) return;
     
@@ -264,7 +252,7 @@ void ULyraRangedWeaponInstance::StopRecoil()
 	ApplyInputCompensation();
 }
 
-void ULyraRangedWeaponInstance::UpdateRecoil(float DeltaTime)
+void UNaviRangedWeaponInstance::UpdateRecoil(float DeltaTime)
 {
 	APawn* const Pawn = GetPawn();
 	if (Pawn == nullptr) return;
@@ -292,7 +280,7 @@ void ULyraRangedWeaponInstance::UpdateRecoil(float DeltaTime)
 	Pawn->AddControllerPitchInput(CurrentRecoil.Y - PreviousRecoil.Y);
 }
 
-void ULyraRangedWeaponInstance::ApplyInputCompensation()
+void UNaviRangedWeaponInstance::ApplyInputCompensation()
 {
 	const float CompWeight = Compensation;
 	const float YawMultiplier = GetInputCompensationMultiplier(CurrentRecoil.X, InputCompensation.X * CompWeight);
@@ -305,7 +293,7 @@ void ULyraRangedWeaponInstance::ApplyInputCompensation()
 	InputCompensation = FVector2D::ZeroVector;
 }
 
-float ULyraRangedWeaponInstance::GetInputCompensationMultiplier(float RecoilValue, float CompensationValue) const
+float UNaviRangedWeaponInstance::GetInputCompensationMultiplier(float RecoilValue, float CompensationValue) const
 {
 	const bool bIsOpposite = (RecoilValue * CompensationValue) <= 0.f;
 

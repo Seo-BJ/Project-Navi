@@ -54,9 +54,7 @@ enum class ENaviWeaponFireMode : uint8
 	SemiAutomatic,
 };
 
-/**
- * 얜용┛ Stat DataTable Row Struct
- */
+
 USTRUCT(BlueprintType)
 struct FNaviWeaponStatDefinition : public FTableRowBase
 {
@@ -113,4 +111,26 @@ struct FNaviWeaponStatDefinition : public FTableRowBase
     // 조준 사격 (ADS) 초탄 퍼짐 패수 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     float FirstShotSpread_ADS = 1.0f;
+};
+
+USTRUCT(BlueprintType)
+struct FNaviWeaponADSStatDefinition : public FTableRowBase
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FGameplayTag WeaponTag;
+
+	// 배율
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float ScopeMagnification = 1.0f;
+	
+	// 달리기 속도
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float FireRateMultiplier = 1.0f;
+	
+	// 장착 속도
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float MovementSpeedMultiplier = 1.0f;
+
 };

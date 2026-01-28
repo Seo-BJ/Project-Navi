@@ -278,3 +278,12 @@ const FNaviArmorStatDefinition* UNaviCredsShopComponent::GetArmorStatRow(FGamepl
 	const FName RowName = Tag.GetTagName();
 	return ArmorStatTable->FindRow<FNaviArmorStatDefinition>(RowName, TEXT("GetArmorStatRow"));
 }
+
+const ULyraWeaponPickupDefinition* UNaviCredsShopComponent::GetWeaponPickupDefinition(FGameplayTag Tag) const
+{
+	if (const TObjectPtr<ULyraWeaponPickupDefinition>* FoundDef = WeaponDefinitionMap.Find(Tag))
+	{
+		return *FoundDef;
+	}
+	return nullptr;
+}

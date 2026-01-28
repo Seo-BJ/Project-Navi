@@ -195,7 +195,6 @@ namespace NaviGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Sidearms_Sheriff, "Weapon.Sidearms.Sheriff", "Weapon Sheriff");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Sidearms_GoldenGun, "Weapon.Sidearms.GoldenGun", "Weapon Golden Gun (Spike Rush Only)");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Sidearms_SnowballLauncher, "Weapon.Sidearms.SnowballLauncher", "Weapon Snowball Launcher (Event Only)");
-
 	
 	// SMGs
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Weapon_Primary_SMGs_Stinger, "Weapon.Primary.SMGs.Stinger", "Weapon Stinger");

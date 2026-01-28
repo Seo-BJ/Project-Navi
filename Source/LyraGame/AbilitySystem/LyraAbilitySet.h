@@ -36,12 +36,11 @@ public:
 	// Level of ability to grant.
 	UPROPERTY(EditDefaultsOnly)
 	int32 AbilityLevel = 1;
-
+	
 	// Tag used to process input for the ability.
 	UPROPERTY(EditDefaultsOnly, Meta = (Categories = "InputTag"))
 	FGameplayTag InputTag;
 };
-
 
 /**
  * FLyraAbilitySet_GameplayEffect
@@ -132,6 +131,8 @@ public:
 	// Grants the ability set to the specified ability system component.
 	// The returned handles can be used later to take away anything that was granted.
 	void GiveToAbilitySystem(ULyraAbilitySystemComponent* LyraASC, FLyraAbilitySet_GrantedHandles* OutGrantedHandles, UObject* SourceObject = nullptr) const;
+
+	const TArray<FLyraAbilitySet_GameplayAbility>& GetGrantedGameplayAbilities() const { return GrantedGameplayAbilities; }
 
 protected:
 

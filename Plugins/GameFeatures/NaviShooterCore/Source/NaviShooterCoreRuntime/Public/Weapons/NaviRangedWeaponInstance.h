@@ -1,31 +1,31 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
-#include "Curves/CurveFloat.h"
-
-#include "LyraWeaponInstance.h"
+#include "CoreMinimal.h"
+#include "Weapons/LyraWeaponInstance.h"
 #include "AbilitySystem/LyraAbilitySourceInterface.h"
 #include "Engine/DataTable.h"
 
-#include "LyraRangedWeaponInstance.generated.h"
+#include "NaviRangedWeaponInstance.generated.h"
 
 class UPhysicalMaterial;
 struct FNaviWeaponStatDefinition;
 
+
 /**
- * ULyraRangedWeaponInstance
- *
- * A piece of equipment representing a ranged weapon spawned and applied to a pawn
+ *  UNaviRangedWeaponInstance
+ *  A piece of equipment representing a ranged weapon spawned and applied to a pawn
+ *  Data-Driven 방식으로 설계되어 Navi Shooter Core에서 사용합니다.
  */
 UCLASS()
-class ULyraRangedWeaponInstance : public ULyraWeaponInstance, public ILyraAbilitySourceInterface
+class NAVISHOOTERCORERUNTIME_API UNaviRangedWeaponInstance : public ULyraWeaponInstance , public ILyraAbilitySourceInterface
 {
 	GENERATED_BODY()
-
+	
 public:
-	ULyraRangedWeaponInstance(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
-
+	UNaviRangedWeaponInstance(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	
 	virtual void PostLoad() override;
 
 #if WITH_EDITOR
@@ -72,7 +72,7 @@ public:
 
 	// Helper to get the stats struct
 	UFUNCTION(BlueprintCallable)
-	FNaviWeaponStatDefinition GetNaviWeaponStats();
+	const FNaviWeaponStatDefinition& GetNaviWeaponStats();
 
 protected:
 #if WITH_EDITORONLY_DATA
@@ -212,8 +212,9 @@ protected:
 	TMap<FGameplayTag, float> MaterialDamageMultiplier;
 
 	// Navi Weapon Stats Table Row
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Data", meta = (RowType = "/Script/NaviShooterCoreRuntime.NaviWeaponStatDefinition"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Navi|Config", meta = (RowType = "/Script/NaviShooterCoreRuntime.NaviWeaponStatDefinition"))
 	FDataTableRowHandle WeaponStatRow;
+
 
 private:
 	// 이 무기가 마지막으로 발사된 시간 (월드 시간 기준)
@@ -240,8 +241,6 @@ private:
 	// 현재 웅크리기(Crouching) 승수
 	float CrouchingMultiplier = 1.0f;
 
-	float DefaultMaxWalkSpeed = 600.0f;
-	
 public:
 	void Tick(float DeltaSeconds);
 
@@ -300,4 +299,5 @@ private:
 
 	// Cached pointer to the weapon stats
 	const FNaviWeaponStatDefinition* CachedNaviWeaponStats = nullptr;
+
 };

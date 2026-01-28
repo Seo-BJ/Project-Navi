@@ -15,7 +15,7 @@ class UObject;
  * A piece of equipment representing a weapon spawned and applied to a pawn
  */
 UCLASS()
-class UPhysicalMaterialWithTags : public UPhysicalMaterial
+class LYRAGAME_API UPhysicalMaterialWithTags : public UPhysicalMaterial
 {
 	GENERATED_BODY()
 

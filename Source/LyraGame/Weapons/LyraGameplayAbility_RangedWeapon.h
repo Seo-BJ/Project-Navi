@@ -89,10 +89,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="Lyra|Ability")
 	bool bUseServerSideRewind = true;
+
+	UPROPERTY(EditDefaultsOnly, Category="Lyra|Ability")
+	int32 BulletsPerCartridge = -1;
 	
-protected:
-
-
 	virtual void AddAdditionalTraceIgnoreActors(FCollisionQueryParams& TraceParams) const;
 
 	// Determine the trace channel to use for the weapon trace(s)
@@ -132,14 +132,10 @@ protected:
 
 	// Does a single weapon trace, either sweeping or ray depending on if SweepRadius is above zero
 	FHitResult WeaponTrace(const FVector& StartTrace, const FVector& EndTrace, float SweepRadius, bool bIsSimulated, OUT TArray<FHitResult>& OutHitResults) const;
-
 	
 	// Called when target data is ready
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnRangedWeaponTargetDataReady(const FGameplayAbilityTargetDataHandle& TargetData);
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float FireRateTimeSeconds = 1.0f;
 
 private:
 	FDelegateHandle OnTargetDataReadyCallbackDelegateHandle;

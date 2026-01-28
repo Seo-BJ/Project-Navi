@@ -397,8 +397,11 @@ void ULyraGameplayAbility_RangedWeapon::TraceBulletsInCartridge(const FRangedWea
 	ULyraRangedWeaponInstance* WeaponData = InputData.WeaponData;
 	check(WeaponData);
 
-	const int32 BulletsPerCartridge = WeaponData->GetBulletsPerCartridge();
-
+	if (BulletsPerCartridge == -1)
+	{
+		BulletsPerCartridge = WeaponData->GetBulletsPerCartridge();
+	}
+	
 	for (int32 BulletIndex = 0; BulletIndex < BulletsPerCartridge; ++BulletIndex)
 	{
 		const float BaseSpreadAngle = WeaponData->GetCalculatedSpreadAngle();
@@ -626,24 +629,27 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 		}
 #endif //WITH_SERVER_CODE
 		
-		if (AController* Controller = GetControllerFromActorInfo())
+		if (AController* Controller = GetControllerFromActorInfo(); IsValid(Controller))
 		{
-			if (Controller->GetLocalRole() != ROLE_Authority && CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
+			if (Controller->GetLocalRole() != ROLE_Authority)
 			{
-				ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
-				check(WeaponData);
-				WeaponData->AddSpread();
-				WeaponData->StartRecoil();
+				if ( CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
+				{
+					ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
+					check(WeaponData);
+					WeaponData->AddSpread();
+					WeaponData->StartRecoil();
 						
-				// Let the blueprint do stuff like apply effects to the targets
-				OnRangedWeaponTargetDataReady(LocalTargetDataHandle);
-			}
-			else
-			{
-				K2_EndAbility();
+					// Let the blueprint do stuff like apply effects to the targets
+					OnRangedWeaponTargetDataReady(LocalTargetDataHandle);
+				}
+				else
+				{
+					K2_EndAbility();
+				}
+	
 			}
 		}
-		
 	}
 	MyAbilityComponent->ConsumeClientReplicatedTargetData(CurrentSpecHandle, CurrentActivationInfo.GetActivationPredictionKey());
 }

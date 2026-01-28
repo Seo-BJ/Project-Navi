@@ -9,7 +9,6 @@
 #include "LyraEquipmentInstance.h"
 #include "Net/UnrealNetwork.h"
 #include "Inventory/LyraInventoryItemInstance.h"
-#include "Inventory/LyraInventoryFragment_AbilityGranting.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraEquipmentManagerComponent)
 
@@ -95,35 +94,8 @@ ULyraEquipmentInstance* FLyraEquipmentList::AddEntry(TSubclassOf<ULyraEquipmentD
 		{
 			AbilitySet->GiveToAbilitySystem(ASC, /*inout*/ &NewEntry.GrantedHandles, Result);
 		}
-
-		if (const ULyraInventoryItemInstance* InventoryItem = Cast<ULyraInventoryItemInstance>(SourceObject))
-		{
-			if (const ULyraInventoryItemDefinition* ItemDef = GetDefault<ULyraInventoryItemDefinition>(InventoryItem->GetItemDef()))
-			{
-				for (const ULyraInventoryItemFragment* Fragment : ItemDef->Fragments)
-				{
-					if (const ULyraInventoryFragment_AbilityGranting* GrantingFragment = Cast<ULyraInventoryFragment_AbilityGranting>(Fragment))
-					{
-						TArray<const ULyraAbilitySet*> ExtraSets;
-						GrantingFragment->GetAbilitySetsToGrant(ExtraSets);
-
-						for (const ULyraAbilitySet* Set : ExtraSets)
-						{
-							if (Set)
-							{
-								Set->GiveToAbilitySystem(ASC, /*inout*/ &NewEntry.GrantedHandles, Result);
-							}
-						}
-					}
-				}
-			}
-		}
 	}
-	else
-	{
-		//@TODO: Warning logging?
-	}
-
+	
 	Result->SpawnEquipmentActors(EquipmentCDO->ActorsToSpawn);
 
 	MarkItemDirty(NewEntry);
