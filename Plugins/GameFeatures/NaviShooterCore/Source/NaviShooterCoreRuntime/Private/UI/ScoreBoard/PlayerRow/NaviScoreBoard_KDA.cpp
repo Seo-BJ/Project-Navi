@@ -6,7 +6,7 @@
 #include "Player/LyraPlayerState.h"
 #include "LyraGameplayTags.h"
 
-void UNaviScoreBoard_KDA::SetPlayerState(ALyraPlayerState* InPlayerState)
+void UNaviScoreBoard_KDA::SetPlayerState_Implementation(ALyraPlayerState* InPlayerState)
 {
 	if (Kill_TextBlock && Death_TextBlock && Assist_TextBlock && InPlayerState)
 	{

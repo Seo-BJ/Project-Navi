@@ -6,7 +6,7 @@
 #include "AbilitySystem/LyraAbilitySystemComponent.h"
 #include "CommonNumericTextBlock.h"
 
-void UNaviScoreBoard_Creds::SetPlayerState(ALyraPlayerState* InPlayerState)
+void UNaviScoreBoard_Creds::SetPlayerState_Implementation(ALyraPlayerState* InPlayerState)
 {
 	if (Creds_TextBlock && InPlayerState)
 	{

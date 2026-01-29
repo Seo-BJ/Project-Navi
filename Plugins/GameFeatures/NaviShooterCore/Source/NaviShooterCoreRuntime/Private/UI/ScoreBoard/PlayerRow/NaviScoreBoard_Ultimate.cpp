@@ -6,7 +6,7 @@
 #include "LyraGameplayTags.h"
 #include "Player/LyraPlayerState.h"
 
-void UNaviScoreBoard_Ultimate::SetPlayerState(ALyraPlayerState* InPlayerState)
+void UNaviScoreBoard_Ultimate::SetPlayerState_Implementation(ALyraPlayerState* InPlayerState)
 {
 	if (CurrentUltimatePoint_TextBlock && RequiredUltimatePoint_TextBlock && InPlayerState)
 	{

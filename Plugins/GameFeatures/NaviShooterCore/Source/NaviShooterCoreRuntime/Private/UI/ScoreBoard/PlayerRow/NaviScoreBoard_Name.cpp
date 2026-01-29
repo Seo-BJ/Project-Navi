@@ -5,7 +5,7 @@
 #include "Player/LyraPlayerState.h"
 #include "CommonTextBlock.h"
 
-void UNaviScoreBoard_Name::SetPlayerState(ALyraPlayerState* InPlayerState)
+void UNaviScoreBoard_Name::SetPlayerState_Implementation(ALyraPlayerState* InPlayerState)
 {
 	if (PlayerName_TextBlock && InPlayerState)
 	{

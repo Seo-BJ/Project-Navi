@@ -19,7 +19,7 @@ class NAVISHOOTERCORERUNTIME_API UNaviScoreBoard_Name : public UUserWidget,  pub
 	
 public:
 	//~ ITakesLyraPlayerState 
-	virtual void SetPlayerState(ALyraPlayerState* InPlayerState) override;
+	virtual void SetPlayerState_Implementation(ALyraPlayerState* InPlayerState) override;
 	//~ End of ITakesLyraPlayerState
 
 protected:

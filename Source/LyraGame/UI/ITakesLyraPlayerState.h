@@ -8,20 +8,19 @@
 
 class ALyraPlayerState;
 
-UINTERFACE(MinimalAPI, BlueprintType, meta = (CannotImplementInterfaceInBlueprint))
+UINTERFACE(MinimalAPI, Blueprintable)
 class UTakesLyraPlayerState : public UInterface
 {
 	GENERATED_BODY()
 };
 
-class ITakesLyraPlayerState
+class LYRAGAME_API ITakesLyraPlayerState
 {
 	GENERATED_BODY()
 
 public:
-
-	UFUNCTION(BlueprintCallable)
-	virtual void SetPlayerState(ALyraPlayerState* InPlayerState) = 0;
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void SetPlayerState(ALyraPlayerState* InPlayerState);
 };
 
 

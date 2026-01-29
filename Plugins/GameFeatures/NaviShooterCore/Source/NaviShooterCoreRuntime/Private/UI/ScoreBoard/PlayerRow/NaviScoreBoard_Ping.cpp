@@ -5,7 +5,7 @@
 #include "Player/LyraPlayerState.h"
 #include "CommonNumericTextBlock.h"
 
-void UNaviScoreBoard_Ping::SetPlayerState(ALyraPlayerState* InPlayerState)
+void UNaviScoreBoard_Ping::SetPlayerState_Implementation(ALyraPlayerState* InPlayerState)
 {
 	if (Ping_TextBlock && InPlayerState)
 	{

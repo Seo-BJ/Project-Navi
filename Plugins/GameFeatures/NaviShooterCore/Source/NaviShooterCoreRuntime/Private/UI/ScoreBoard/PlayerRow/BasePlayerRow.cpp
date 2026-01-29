@@ -4,7 +4,7 @@
 #include "UI/ScoreBoard/PlayerRow/BasePlayerRow.h"
 #include "Player/LyraPlayerState.h"
 
-void UBasePlayerRow::SetPlayerState(ALyraPlayerState* InPlayerState)
+void UBasePlayerRow::SetPlayerState_Implementation(ALyraPlayerState* InPlayerState)
 {
 	AssociatedPlayerState = InPlayerState;
 

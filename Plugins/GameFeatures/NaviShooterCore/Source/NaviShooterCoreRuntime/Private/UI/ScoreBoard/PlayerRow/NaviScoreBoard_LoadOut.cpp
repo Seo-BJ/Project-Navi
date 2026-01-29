@@ -16,7 +16,7 @@
 #include "DataRegistrySubsystem.h"
 
 
-void UNaviScoreBoard_LoadOut::SetPlayerState(ALyraPlayerState* InPlayerState)
+void UNaviScoreBoard_LoadOut::SetPlayerState_Implementation(ALyraPlayerState* InPlayerState)
 {
 	APlayerController* PlayerController = GetOwningPlayer();
 	if (PlayerController)

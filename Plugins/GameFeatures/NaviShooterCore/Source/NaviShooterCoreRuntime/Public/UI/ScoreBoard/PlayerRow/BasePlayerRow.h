@@ -20,7 +20,7 @@ class NAVISHOOTERCORERUNTIME_API UBasePlayerRow : public UUserWidget, public ITa
 	
 public:
 	//~ ITakesLyraPlayerState 
-	virtual void SetPlayerState(ALyraPlayerState* InPlayerState) override;
+	virtual void SetPlayerState_Implementation(ALyraPlayerState* InPlayerState) override;
 	//~ ITakesLyraPlayerState 
 
 protected:

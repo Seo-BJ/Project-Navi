@@ -17,7 +17,7 @@ TArray<UWidget*> UNaviScoreBoard_PlayerRow::GetPlayerStateAwareChildren() const
 			{
 				if (ChildWidget && ChildWidget->Implements<UTakesLyraPlayerState>())
 				{
-					PlayerStateAwareChildren.Add(ChildWidget);
+					// PlayerStateAwareChildren.Add(ChildWidget);
 				}
 			}
 		}
@@ -25,7 +25,7 @@ TArray<UWidget*> UNaviScoreBoard_PlayerRow::GetPlayerStateAwareChildren() const
 	return PlayerStateAwareChildren;
 }
 
-void UNaviScoreBoard_PlayerRow::SetPlayerState(ALyraPlayerState* InPlayerState)
+void UNaviScoreBoard_PlayerRow::SetPlayerState_Implementation(ALyraPlayerState* InPlayerState)
 {
 	Super::SetPlayerState(InPlayerState);
 }

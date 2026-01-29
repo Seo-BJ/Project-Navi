@@ -29,7 +29,7 @@ protected:
 	
 	//~ UBasePlayerRow 
 	virtual TArray<UWidget*> GetPlayerStateAwareChildren() const override;
-	virtual void SetPlayerState(ALyraPlayerState* InPlayerState) override;
+	virtual void SetPlayerState_Implementation(ALyraPlayerState* InPlayerState) override;
 	//~ End of UBasePlayerRow
 	
 	UPROPERTY(meta = (BindWidget))
