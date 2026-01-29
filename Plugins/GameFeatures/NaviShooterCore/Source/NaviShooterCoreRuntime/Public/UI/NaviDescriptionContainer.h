@@ -4,9 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "CommonActivatableWidget.h"
+#include "Equipment/Armor/NaviArmorStatDefinition.h"
+#include "Weapons/NaviWeaponWidgetDefinition.h"
 #include "NaviDescriptionContainer.generated.h"
 
 class UNaviWeaponStatsContainer;
+class UNaviArmorStatsContainer;
 class UCommonVisibilitySwitcher;
 class ULyraInventoryItemDefinition;
 
@@ -32,6 +35,7 @@ protected:
 	
 	// 헬퍼: 무기 스탯 정보로 UI 갱신
 	void UpdateWeaponStats(const struct FNaviWeaponStatDefinition* WeaponRow);
+	void UpdateArmorStats(const FNaviArmorStatDefinition* WeaponRow);
 
 protected:
 	// 아이템 타입(무기, 방어구, 스킬)에 따라 표시할 위젯을 전환하는 스위처입니다.
@@ -44,7 +48,7 @@ protected:
 
 	// 방어구 정보를 표시하는 위젯입니다. (Index 1)
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UUserWidget> ArmorStatsContainer;
+	TObjectPtr<UNaviArmorStatsContainer> ArmorStatsContainer;
 
 	// 스킬 정보를 표시하는 위젯입니다. (Index 2)
 	UPROPERTY(meta = (BindWidget))

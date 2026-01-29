@@ -64,6 +64,10 @@
 		{
 			"Name": "ShooterMaps",
 			"Enabled": true
+		},
+		{
+			"Name": "ShooterCore",
+			"Enabled": true
 		}
 	]
 }

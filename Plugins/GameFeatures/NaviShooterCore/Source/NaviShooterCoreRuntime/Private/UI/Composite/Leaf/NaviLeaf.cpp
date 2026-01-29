@@ -27,3 +27,13 @@ void UNaviLeaf::UpdateView(const ULyraInventoryItemDefinition* ItemDef)
 	bool bShouldShow = OnUpdateView(ItemDef, UIInfo);
 	SetIsCollapsed(!bShouldShow);
 }
+
+void UNaviLeaf::UpdateWeaponStats(const FNaviWeaponStatDefinition& WeaponData)
+{
+	Super::UpdateWeaponStats(WeaponData);
+}
+
+void UNaviLeaf::UpdateArmorStats(const FNaviArmorStatDefinition& WeaponData)
+{
+	Super::UpdateArmorStats(WeaponData);
+}

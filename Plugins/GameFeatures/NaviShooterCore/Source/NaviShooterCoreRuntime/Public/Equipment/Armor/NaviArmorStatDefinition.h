@@ -16,7 +16,9 @@ struct FNaviArmorStatDefinition : public FTableRowBase
 {
 	GENERATED_BODY()
 	
-public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FText DisplayName;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGameplayTag ArmorTag; 
 	

@@ -9,7 +9,7 @@
 
 class ULyraInventoryItemDefinition;
 struct FNaviWeaponStatDefinition;
-
+struct FNaviArmorStatDefinition;
 /**
  * Base class for the Composite UI pattern in Navi.
  * Allows recursive updates of UI based on Inventory Item Definitions.
@@ -29,7 +29,8 @@ public:
 	 * 기본 구현은 아무것도 하지 않습니다.
 	 */
 	virtual void UpdateWeaponStats(const FNaviWeaponStatDefinition& WeaponData) {}
-
+	virtual void UpdateArmorStats(const FNaviArmorStatDefinition& WeaponData) {}
+	
 	// Helper to collapse or expand the widget
 	virtual void SetIsCollapsed(bool bCollapsed);
 	FGameplayTag GetTargetTag() const { return TargetTag; }

@@ -60,6 +60,8 @@ public:
 	 */
 	bool GetStatRange(FGameplayTag Tag, float& OutMin, float& OutMax) const;
 
+	const UDataTable* GetWeaponArmorWidgetTable() {return WeaponArmorWidgetTable;}
+	
 protected:
 	// 데이터 테이블을 순회하여 스탯별 Min/Max 값을 계산하고 캐싱합니다.
 	void CacheStatRanges();
@@ -73,6 +75,9 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Navi|Shop|Data")
 	TObjectPtr<UDataTable> ArmorStatTable;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Navi|Shop|Data")
+	TObjectPtr<UDataTable> WeaponArmorWidgetTable;
     
     /**
      * 빠른 조회를 위해 GameplayTag를 키로 사용하는 무기 정의 맵입니다.

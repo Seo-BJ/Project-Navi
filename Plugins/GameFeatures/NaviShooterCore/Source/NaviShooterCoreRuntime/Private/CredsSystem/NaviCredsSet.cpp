@@ -16,8 +16,6 @@
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NaviCredsSet)
 
 UNaviCredsSet::UNaviCredsSet()
-	: Creds(9000.0f)
-	, MaxCreds(9000.0f)
 {
 	CredsBeforeAttributeChange = 0.0f;
 }

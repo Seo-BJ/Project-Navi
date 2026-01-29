@@ -24,8 +24,6 @@ public:
 	 * Bypasses the need for an ItemDefinition.
 	 */
 	void SetWeaponData(const FNaviWeaponStatDefinition* WeaponRow);
-
-	
 	
 
 	/**

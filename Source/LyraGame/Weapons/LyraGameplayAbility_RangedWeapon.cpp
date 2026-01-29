@@ -667,24 +667,12 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 	AController* Controller = GetControllerFromActorInfo();
 	check(Controller);
 	ULyraWeaponStateComponent* WeaponStateComponent = Controller->FindComponentByClass<ULyraWeaponStateComponent>();
-
-	UE_LOG(LogTemp, Warning, TEXT("[HitMarker Step 1] StartRangedWeaponTargeting - WeaponStateComponent=%s"),
-	       WeaponStateComponent ? TEXT("VALID") : TEXT("NULL"));
-
+	
 	FScopedPredictionWindow ScopedPrediction(MyAbilityComponent, CurrentActivationInfo.GetActivationPredictionKey());
 
 	TArray<FHitResult> FoundHits;
 	PerformLocalTargeting(/*out*/ FoundHits);
-
-	UE_LOG(LogTemp, Warning, TEXT("[HitMarker Step 2] PerformLocalTargeting - FoundHits.Num()=%d"), FoundHits.Num());
-	for (int i = 0; i < FoundHits.Num(); i++)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("  Hit[%d]: Actor=%s, Location=%s"),
-		       i,
-		       FoundHits[i].GetActor() ? *FoundHits[i].GetActor()->GetName() : TEXT("NULL"),
-		       *FoundHits[i].Location.ToString());
-	}
-
+	
 	// Fill out the target data from the hit results
 	FGameplayAbilityTargetDataHandle TargetData;
 	TargetData.UniqueId = WeaponStateComponent ? WeaponStateComponent->GetUnconfirmedServerSideHitMarkerCount() : 0;
@@ -718,16 +706,8 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 	const bool bProjectileWeapon = false;
 	if (!bProjectileWeapon && (WeaponStateComponent != nullptr))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[HitMarker Step 3] AddUnconfirmedServerSideHitMarkers - UniqueId=%d"), TargetData.UniqueId);
 		WeaponStateComponent->AddUnconfirmedServerSideHitMarkers(TargetData, FoundHits);
 	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("[HitMarker Step 3 FAILED] bProjectileWeapon=%d, WeaponStateComponent=%s"),
-		       bProjectileWeapon, WeaponStateComponent ? TEXT("VALID") : TEXT("NULL"));
-	}
 
-	// Process the target data immediately
-	UE_LOG(LogTemp, Warning, TEXT("[HitMarker Step 4] OnTargetDataReadyCallback (Client Prediction)"));
 	OnTargetDataReadyCallback(TargetData, FGameplayTag());
 }

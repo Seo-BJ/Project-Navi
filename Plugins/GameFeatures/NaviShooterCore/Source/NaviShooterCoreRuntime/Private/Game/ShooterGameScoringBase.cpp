@@ -71,7 +71,7 @@ void UShooterGameScoringBase::OnEliminationMessageReceived(FGameplayTag Tag, con
 
 		if (ALyraPlayerState* TargetPS = Cast<ALyraPlayerState>(Message.Target))
 		{
-			TargetPS->AddStatTagStack(NaviGameplayTags::Navi_Score_Eliminations, 1);
+			TargetPS->AddStatTagStack(NaviGameplayTags::Navi_Score_Deaths, 1);
 		}
 	}
 }

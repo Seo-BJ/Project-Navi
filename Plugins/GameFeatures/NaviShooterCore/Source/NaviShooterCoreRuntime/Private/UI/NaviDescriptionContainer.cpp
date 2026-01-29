@@ -3,6 +3,7 @@
 
 #include "UI/NaviDescriptionContainer.h"
 #include "UI/Composite/NaviWeaponStatsContainer.h"
+#include "UI/Composite/NaviArmorStatsContainer.h"
 #include "CredsSystem/NaviCredsShopComponent.h"
 #include "CommonUI/Public/CommonVisibilitySwitcher.h"
 #include "GameFramework/GameStateBase.h"
@@ -53,8 +54,6 @@ void UNaviDescriptionContainer::SetDataToDisplay(FGameplayTag EquipmentTag)
 	}
 	else if (EquipmentTag.MatchesTag(TAG_Navi_Armor))
 	{
-		// TODO: ArmorStatDefinition을 사용하는 로직 추가
-		/*
 		const FNaviArmorStatDefinition* ArmorRow = ShopComp->GetArmorStatRow(EquipmentTag);
 		if (ArmorRow)
 		{
@@ -63,15 +62,7 @@ void UNaviDescriptionContainer::SetDataToDisplay(FGameplayTag EquipmentTag)
 				PreviewSwitcher->SetActiveWidgetIndex(1); // Armor Index
 				SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 			}
-			// UpdateArmorStats(ArmorRow);
-		}
-		*/
-		
-		// 임시: 방어구라고 치고 스위처만 전환 (데이터가 없어서 내용은 못 채움)
-		if (PreviewSwitcher)
-		{
-			PreviewSwitcher->SetActiveWidgetIndex(1);
-			SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+			UpdateArmorStats(ArmorRow);
 		}
 	}
 	else
@@ -88,5 +79,15 @@ void UNaviDescriptionContainer::UpdateWeaponStats(const FNaviWeaponStatDefinitio
 		// NaviWeaponStatsContainer가 ItemDef 대신 Raw Data를 받을 수 있도록 함수 호출
 		// (이 함수는 다음 단계에서 NaviWeaponStatsContainer에 추가해야 함)
 		WeaponStatsContainer->SetWeaponData(WeaponRow);
+	}
+}
+
+void UNaviDescriptionContainer::UpdateArmorStats(const FNaviArmorStatDefinition* ArmorRow)
+{
+	if (ArmorStatsContainer)
+	{
+		// NaviWeaponStatsContainer가 ItemDef 대신 Raw Data를 받을 수 있도록 함수 호출
+		// (이 함수는 다음 단계에서 NaviWeaponStatsContainer에 추가해야 함)
+		ArmorStatsContainer->SetArmorData(ArmorRow);
 	}
 }

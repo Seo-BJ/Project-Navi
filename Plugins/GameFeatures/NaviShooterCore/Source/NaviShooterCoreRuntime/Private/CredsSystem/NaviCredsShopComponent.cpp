@@ -194,7 +194,6 @@ bool UNaviCredsShopComponent::TryBuyEquipment(AController* RequestingPlayerContr
     }
     else if (TargetEquipmentTag.MatchesTag(NaviGameplayTags::Armor))
     {
-        
         // ArmorStatTable에서 EquipmentTag에 해당하는 방어구 스탯 정보를 찾습니다.
         // 데이터 테이블의 RowName이 태그의 TagName과 일치한다고 가정합니다.
         const FName RowName = TargetEquipmentTag.GetTagName();
@@ -202,19 +201,32 @@ bool UNaviCredsShopComponent::TryBuyEquipment(AController* RequestingPlayerContr
 
         if (ArmorStat)
         {
-            // Armor 속성을 변경할 GameplayEffect를 생성합니다.
-            UGameplayEffect* ArmorEffect = NewObject<UGameplayEffect>(GetTransientPackage(), TEXT("ArmorPurchaseEffect"));
-            ArmorEffect->DurationPolicy = EGameplayEffectDurationType::Instant;
+            if (CredsSet->GetCreds() >= Cost)
+            {
+                // 크레드 차감 이펙트
+                UGameplayEffect* CostEffect = NewObject<UGameplayEffect>(GetTransientPackage(), TEXT("CredsCostEffect"));
+                CostEffect->DurationPolicy = EGameplayEffectDurationType::Instant;
+                FGameplayModifierInfo ModifierInfo;
+                ModifierInfo.Attribute = UNaviCredsSet::GetCredsAttribute();
+                ModifierInfo.ModifierOp = EGameplayModOp::Additive;
+                ModifierInfo.ModifierMagnitude = FGameplayEffectModifierMagnitude(-Cost);
+                CostEffect->Modifiers.Add(ModifierInfo);
+                ASC->ApplyGameplayEffectToSelf(CostEffect, 1.0f, ASC->MakeEffectContext());
 
-            FGameplayModifierInfo ArmorModifierInfo;
-            ArmorModifierInfo.Attribute = ULyraHealthSet::GetArmorAttribute();
-            // AbsorbAmount 값으로 Armor 속성을 덮어씁니다.
-            ArmorModifierInfo.ModifierOp = EGameplayModOp::Override;
-            ArmorModifierInfo.ModifierMagnitude = FGameplayEffectModifierMagnitude(ArmorStat->AbsorbAmount); 
-            ArmorEffect->Modifiers.Add(ArmorModifierInfo);
+                // Armor 속성을 변경할 GameplayEffect를 생성합니다.
+                UGameplayEffect* ArmorEffect = NewObject<UGameplayEffect>(GetTransientPackage(), TEXT("ArmorPurchaseEffect"));
+                ArmorEffect->DurationPolicy = EGameplayEffectDurationType::Instant;
 
-            // 플레이어의 ASC에 GameplayEffect를 적용하여 Armor 속성을 즉시 업데이트합니다.
-            ASC->ApplyGameplayEffectToSelf(ArmorEffect, 1.0f, ASC->MakeEffectContext());
+                FGameplayModifierInfo ArmorModifierInfo;
+                ArmorModifierInfo.Attribute = ULyraHealthSet::GetArmorAttribute();
+                // AbsorbAmount 값으로 Armor 속성을 덮어씁니다.
+                ArmorModifierInfo.ModifierOp = EGameplayModOp::Override;
+                ArmorModifierInfo.ModifierMagnitude = FGameplayEffectModifierMagnitude(ArmorStat->AbsorbAmount);
+                ArmorEffect->Modifiers.Add(ArmorModifierInfo);
+
+                // 플레이어의 ASC에 GameplayEffect를 적용하여 Armor 속성을 즉시 업데이트합니다.
+                ASC->ApplyGameplayEffectToSelf(ArmorEffect, 1.0f, ASC->MakeEffectContext());
+            }
         }
     }
     return true;

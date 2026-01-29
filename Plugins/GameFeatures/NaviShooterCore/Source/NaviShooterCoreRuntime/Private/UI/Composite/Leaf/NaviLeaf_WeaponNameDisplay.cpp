@@ -2,7 +2,7 @@
 
 
 #include "UI/Composite/Leaf/NaviLeaf_WeaponNameDisplay.h"
-
+#include "Weapons/NaviWeaponStatDefinition.h"
 #include "LyraGameplayTags.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"

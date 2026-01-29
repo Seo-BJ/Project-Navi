@@ -3,12 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UI/Composite/NaviCompositeBase.h"
+#include "UI/Composite/Leaf/NaviLeaf.h"
 #include "Weapons/NaviWeaponStatDefinition.h"
 #include "NaviLeaf_WeaponNameDisplay.generated.h"
 
 class UTextBlock;
 class UImage;
+struct FNaviWeaponStatDefinition;
 
 /**
  * 무기의 이름, 발사 방식(자동/반자동), 관통력을 표시하는 리프 위젯입니다.
@@ -30,6 +31,7 @@ protected:
 	// 무기 이름
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> Text_WeaponName;
+
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> Text_WeaponType;

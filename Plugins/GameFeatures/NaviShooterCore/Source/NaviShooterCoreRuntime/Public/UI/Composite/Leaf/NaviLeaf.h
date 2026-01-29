@@ -20,6 +20,8 @@ class NAVISHOOTERCORERUNTIME_API UNaviLeaf : public UNaviCompositeBase
 
 public:
 	virtual void UpdateView(const ULyraInventoryItemDefinition* ItemDef) override;
+	virtual void UpdateWeaponStats(const FNaviWeaponStatDefinition& WeaponData) override;
+	virtual void UpdateArmorStats(const FNaviArmorStatDefinition& WeaponData) override;
 
 protected:
 	// Event called when UpdateView is triggered.
