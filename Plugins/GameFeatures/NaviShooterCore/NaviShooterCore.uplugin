@@ -20,11 +20,6 @@
 			"Name": "NaviShooterCoreRuntime",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
-		},
-		{
-			"Name": "LagCompensation",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
 		}
 	],
 	"ExplicitlyLoaded": true,
@@ -64,14 +59,6 @@
 		},
 		{
 			"Name": "LyraExampleContent",
-			"Enabled": true
-		},
-		{
-			"Name": "ShooterCore",
-			"Enabled": true
-		},
-		{
-			"Name": "ShooterExplorer",
 			"Enabled": true
 		},
 		{
