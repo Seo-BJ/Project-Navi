@@ -199,12 +199,7 @@ protected:
 	// 총알 트레이스 스윕 구체의 반지름입니다 (0.0이면 라인 트레이스가 됨).
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Weapon Config", meta=(ForceUnits=cm))
 	float BulletTraceSweepRadius = 0.0f;
-
-	// 거리(cm)를 관련 게임플레이 이펙트의 기본 데미지에 대한 승수로 매핑하는 커브입니다.
-	// 이 커브에 데이터가 없으면 무기는 거리에 따른 데미지 감소(Falloff)가 없는 것으로 간주됩니다.
-	UPROPERTY(EditAnywhere, Category = "Weapon Config")
-	FRuntimeFloatCurve DistanceDamageFalloff;
-
+	
 	// 데미지 처리에 영향을 미치는 특수 태그 목록입니다.
 	// 이 태그들은 피격된 물체의 물리 재질(Physical Material)에 있는 태그와 비교됩니다.
 	// 두 개 이상의 태그가 존재하는 경우, 승수(Multiplier)들은 곱셈으로 결합됩니다.
@@ -299,5 +294,5 @@ private:
 	bool bIsFiring;
 
 	// Cached pointer to the weapon stats
-	const FNaviWeaponStatDefinition* CachedNaviWeaponStats = nullptr;
+	FNaviWeaponStatDefinition* CachedNaviWeaponStats = nullptr;
 };

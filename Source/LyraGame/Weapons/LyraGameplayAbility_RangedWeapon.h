@@ -90,8 +90,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Lyra|Ability")
 	bool bUseServerSideRewind = true;
 
-	UPROPERTY(EditDefaultsOnly, Category="Lyra|Ability")
-	int32 BulletsPerCartridge = -1;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Lyra|Ability")
+	int32 BulletsPerCartridge = 1;
 	
 	virtual void AddAdditionalTraceIgnoreActors(FCollisionQueryParams& TraceParams) const;
 

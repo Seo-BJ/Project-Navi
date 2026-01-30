@@ -148,8 +148,23 @@ void ULyraRangedWeaponInstance::AddSpread()
 
 float ULyraRangedWeaponInstance::GetDistanceAttenuation(float Distance, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags) const
 {
-	const FRichCurve* Curve = DistanceDamageFalloff.GetRichCurveConst();
-	return Curve->HasAnyData() ? Curve->Eval(Distance) : 1.0f;
+	float LocalDistance = Distance / 100.0f;
+	if (CachedNaviWeaponStats)
+	{
+		for (const FDamageFalloff& DamageFalloff : CachedNaviWeaponStats->DamageFalloffs)
+		{
+			float Start = DamageFalloff.RangeStart;
+			float End = DamageFalloff.RangeEnd;
+			if (Start <= LocalDistance && LocalDistance < End)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("LocalDistance : %f, Damage : %f"), LocalDistance,  DamageFalloff.BodyShotDamage);
+				return DamageFalloff.BodyShotDamage;
+			}
+		}
+		UE_LOG(LogTemp, Warning, TEXT("50+ LocalDistance : %f, Damage : %f"), LocalDistance, CachedNaviWeaponStats->DamageFalloffs.Last().BodyShotDamage);
+		return CachedNaviWeaponStats->DamageFalloffs.Last().BodyShotDamage;
+	}
+	return -1.0f;
 }
 
 float ULyraRangedWeaponInstance::GetPhysicalMaterialAttenuation(const UPhysicalMaterial* PhysicalMaterial, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags) const

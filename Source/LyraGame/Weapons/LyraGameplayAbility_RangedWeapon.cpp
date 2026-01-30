@@ -396,11 +396,6 @@ void ULyraGameplayAbility_RangedWeapon::TraceBulletsInCartridge(const FRangedWea
 {
 	ULyraRangedWeaponInstance* WeaponData = InputData.WeaponData;
 	check(WeaponData);
-
-	if (BulletsPerCartridge == -1)
-	{
-		BulletsPerCartridge = WeaponData->GetBulletsPerCartridge();
-	}
 	
 	for (int32 BulletIndex = 0; BulletIndex < BulletsPerCartridge; ++BulletIndex)
 	{

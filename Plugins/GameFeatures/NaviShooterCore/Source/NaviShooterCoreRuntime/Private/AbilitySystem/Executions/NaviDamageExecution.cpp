@@ -16,13 +16,11 @@
 
 struct FNaviDamageStatics
 {
-	FGameplayEffectAttributeCaptureDefinition BaseDamageDef;
 	FGameplayEffectAttributeCaptureDefinition HealthDef;
 	FGameplayEffectAttributeCaptureDefinition ArmorDef;
 	
 	FNaviDamageStatics()
 	{
-		BaseDamageDef = FGameplayEffectAttributeCaptureDefinition(ULyraCombatSet::GetBaseDamageAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
 		ArmorDef = FGameplayEffectAttributeCaptureDefinition(ULyraHealthSet::GetArmorAttribute(), EGameplayEffectAttributeCaptureSource::Target, true);
 	}
 };
@@ -36,7 +34,6 @@ static FNaviDamageStatics& NaviDamageStatics()
 
 UNaviDamageExecution::UNaviDamageExecution()
 {
-	RelevantAttributesToCapture.Add(NaviDamageStatics().BaseDamageDef);
 	RelevantAttributesToCapture.Add(NaviDamageStatics().ArmorDef);
 }
 
@@ -54,12 +51,9 @@ void UNaviDamageExecution::Execute_Implementation(const FGameplayEffectCustomExe
 	EvaluateParameters.SourceTags = SourceTags;
 	EvaluateParameters.TargetTags = TargetTags;
 
-	float SourceBaseDamage = 0.0f;
-	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(NaviDamageStatics().BaseDamageDef, EvaluateParameters, SourceBaseDamage);
 	float TargetArmor = 0.0f;
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(NaviDamageStatics().ArmorDef, EvaluateParameters, TargetArmor);
-
-
+	
 	const AActor* EffectCauser = TypedContext->GetEffectCauser();
 	const FHitResult* HitActorResult = TypedContext->GetHitResult();
 
@@ -125,7 +119,7 @@ void UNaviDamageExecution::Execute_Implementation(const FGameplayEffectCustomExe
 
 	// Apply ability source modifiers
 	float PhysicalMaterialAttenuation = 1.0f;
-	float DistanceAttenuation = 1.0f;
+	float BaseDamageWithDistanceAttenuation = 1.0f;
 	if (const ILyraAbilitySourceInterface* AbilitySource = TypedContext->GetAbilitySource())
 	{
 		if (const UPhysicalMaterial* PhysMat = TypedContext->GetPhysicalMaterial())
@@ -133,12 +127,12 @@ void UNaviDamageExecution::Execute_Implementation(const FGameplayEffectCustomExe
 			PhysicalMaterialAttenuation = AbilitySource->GetPhysicalMaterialAttenuation(PhysMat, SourceTags, TargetTags);
 		}
 
-		DistanceAttenuation = AbilitySource->GetDistanceAttenuation(Distance, SourceTags, TargetTags);
+		BaseDamageWithDistanceAttenuation = AbilitySource->GetDistanceAttenuation(Distance, SourceTags, TargetTags);
 	}
-	DistanceAttenuation = FMath::Max(DistanceAttenuation, 0.0f);
+	BaseDamageWithDistanceAttenuation = FMath::Max(BaseDamageWithDistanceAttenuation, 0.0f);
 
 	// Clamping is done when damage is converted to -health
-	const float AdjustedDamage  = FMath::Max(SourceBaseDamage * DistanceAttenuation * PhysicalMaterialAttenuation * DamageInteractionAllowedMultiplier, 0.0f);
+	const float AdjustedDamage  = FMath::Max(BaseDamageWithDistanceAttenuation * PhysicalMaterialAttenuation * DamageInteractionAllowedMultiplier, 0.0f);
 	float DamageToHealth = 0.0f;
 	float DamageToArmor = 0.0f;
 

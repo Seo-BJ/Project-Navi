@@ -12,7 +12,7 @@ void UNaviInventoryFragment_SetStatsFromDataTable::OnInstanceCreated(ULyraInvent
 {
     Super::OnInstanceCreated(Instance);
     
-    if (Instance == nullptr || WeaponStatsTable == nullptr)
+    if (Instance == nullptr || WeaponStatRow.IsNull())
     {
         return;
     }
@@ -27,19 +27,11 @@ void UNaviInventoryFragment_SetStatsFromDataTable::OnInstanceCreated(ULyraInvent
     
     if (TSubclassOf<ULyraInventoryItemDefinition> ItemDefinition = Instance->GetItemDef())
     {
-        const FGameplayTag ItemTag = ItemDefinition->GetDefaultObject<ULyraInventoryItemDefinition>()->ItemTag;
-        const FName WeaponRowName = ItemTag.GetTagName();
-        const FString ContextString(TEXT("Finding Weapon Stats"));
-        const FNaviWeaponStatDefinition* WeaponStats = WeaponStatsTable->FindRow<FNaviWeaponStatDefinition>(WeaponRowName, ContextString);
-
-        if (!WeaponStats)
+        if (const FNaviWeaponStatDefinition* WeaponStats = WeaponStatRow.GetRow<FNaviWeaponStatDefinition>(TEXT("LyraRangedWeaponInstance_GetStats")))
         {
-            UE_LOG(LogTemp, Warning, TEXT("WeaponStatsTable [%s]에서 WeaponTag [%s]에 해당하는 행을 찾을 수 없습니다."), *GetNameSafe(WeaponStatsTable), *WeaponRowName.ToString());
-            return;
+            Instance->AddStatTagStack(LyraGameplayTags::Lyra_ShooterGame_Weapon_MagazineAmmo, WeaponStats->MagazineSize);
+            Instance->AddStatTagStack(LyraGameplayTags::Lyra_ShooterGame_Weapon_MagazineSize, WeaponStats->MagazineSize);
+            Instance->AddStatTagStack(LyraGameplayTags::Lyra_ShooterGame_Weapon_SpareAmmo, WeaponStats->MaxAmmo);
         }
-        
-        Instance->AddStatTagStack(LyraGameplayTags::Lyra_ShooterGame_Weapon_MagazineAmmo, WeaponStats->MagazineSize);
-        Instance->AddStatTagStack(LyraGameplayTags::Lyra_ShooterGame_Weapon_MagazineSize, WeaponStats->MagazineSize);
-        Instance->AddStatTagStack(LyraGameplayTags::Lyra_ShooterGame_Weapon_SpareAmmo, WeaponStats->MaxAmmo);
     }
 }

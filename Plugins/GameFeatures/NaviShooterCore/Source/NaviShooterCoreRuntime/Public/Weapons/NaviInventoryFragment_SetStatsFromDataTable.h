@@ -24,6 +24,6 @@ public:
 
 protected:
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TObjectPtr<UDataTable> WeaponStatsTable;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (RowType = "/Script/NaviShooterCoreRuntime.NaviWeaponStatDefinition"))
+	FDataTableRowHandle WeaponStatRow;
 };
