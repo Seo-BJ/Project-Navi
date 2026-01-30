@@ -48,4 +48,7 @@ public:
 
 	/**  */
 	virtual void CustomizeInteractionEventData(const FGameplayTag& InteractionEventTag, FGameplayEventData& InOutEventData) { }
+
+	/** Return the scene component to attach the interaction indicator to. Returns nullptr if root should be used. */
+	virtual USceneComponent* GetInteractionSceneComponent() { return nullptr; }
 };

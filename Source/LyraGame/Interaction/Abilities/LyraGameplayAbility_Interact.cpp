@@ -59,7 +59,18 @@ void ULyraGameplayAbility_Interact::UpdateInteractions(const TArray<FInteraction
 
 				UIndicatorDescriptor* Indicator = NewObject<UIndicatorDescriptor>();
 				Indicator->SetDataObject(InteractableTargetActor);
-				Indicator->SetSceneComponent(InteractableTargetActor->GetRootComponent());
+				
+				USceneComponent* TargetComp = nullptr;
+				if (InteractionOption.InteractableTarget)
+				{
+					TargetComp = InteractionOption.InteractableTarget->GetInteractionSceneComponent();
+				}
+				if (!TargetComp)
+				{
+					TargetComp = InteractableTargetActor->GetRootComponent();
+				}
+				Indicator->SetSceneComponent(TargetComp);
+				
 				Indicator->SetIndicatorClass(InteractionWidgetClass);
 				IndicatorManager->AddIndicator(Indicator);
 

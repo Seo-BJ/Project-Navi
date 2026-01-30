@@ -4,6 +4,7 @@
 #include "AbilitySystem/LyraActorWithAbilities.h"
 #include "Interaction/IInteractableTarget.h"
 #include "Interaction/InteractionOption.h"
+#include "Interaction/SimpleInteractable.h"
 #include "NaviInteractiveDoor.generated.h"
 
 class UStaticMeshComponent;
@@ -20,11 +21,11 @@ enum class EDoorMoveType : uint8
 /**
  * ANaviInteractiveDoor
  * 
- * An interactive door that can be opened/closed via a button.
- * It has health and can be destroyed.
+ * 버튼을 통해 열고 닫을 수 있는 상호작용 문입니다.
+ * 체력을 가지고 있으며 파괴될 수 있습니다.
  */
 UCLASS()
-class NAVISHOOTERCORERUNTIME_API ANaviInteractiveDoor : public ALyraActorWithAbilities, public IInteractableTarget
+class NAVISHOOTERCORERUNTIME_API ANaviInteractiveDoor : public ALyraActorWithAbilities, public IInteractableTarget, public ISimpleInteractable
 {
 	GENERATED_BODY()
 
@@ -36,56 +37,66 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	//~IInteractableTarget interface
+	//~IInteractableTarget 인터페이스
 	virtual void GatherInteractionOptions(const FInteractionQuery& InteractQuery, FInteractionOptionBuilder& OptionBuilder) override;
-	//~End IInteractableTarget interface
+	//~IInteractableTarget 인터페이스 끝
 
-	/** Toggle the door open/closed state. Can be called by GameplayAbilities. */
+	//~ISimpleInteractable 인터페이스
+	virtual void SimpleInteract_Implementation(AActor* InstigatorActor) override;
+	//~ISimpleInteractable 인터페이스 끝
+
+	virtual USceneComponent* GetInteractionSceneComponent() override { return InteractionPoint; }
+
+	/** 문의 열림/닫힘 상태를 토글합니다. GameplayAbilities에서 호출할 수 있습니다. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Navi|Door")
 	void ToggleDoor();
 
 protected:
-	/** Frame of the door (Static) */
+	/** 문의 프레임 (고정된 부분) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Navi|Door")
 	TObjectPtr<UStaticMeshComponent> DoorFrameMesh;
 
-	/** Moving part of the door */
+	/** 움직이는 문 본체 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Navi|Door")
 	TObjectPtr<UStaticMeshComponent> DoorBodyMesh;
 
-	/** Button to interact with */
+	/** 상호작용할 버튼 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Navi|Door")
 	TObjectPtr<UStaticMeshComponent> ButtonMesh;
+	
+	/** 상호작용 UI가 표시될 위치 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Navi|Door")
+	TObjectPtr<USceneComponent> InteractionPoint;
 
-	/** Type of movement */
+	/** 이동 방식 타입 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Navi|Door")
 	EDoorMoveType MoveType;
 
-	/** Distance (for translation) or Angle (for rotation) to move */
+	/** 이동할 거리(평행 이동 시) 또는 각도(회전 시) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Navi|Door")
 	float MoveAmount;
 
-	/** Speed of opening/closing */
+	/** 열림/닫힘 이동 속도 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Navi|Door")
 	float MoveSpeed;
 
-	/** Interaction Option to display */
+	/** 표시할 상호작용 옵션 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Navi|Door")
 	FInteractionOption InteractionOption;
 
-	/** Initial Relative Transform of the Door Body */
+	/** 문 본체의 초기 상대 트랜스폼 */
 	UPROPERTY()
 	FTransform InitialDoorTransform;
 
-	/** Target Relative Transform (calculated based on Open state) */
+	/** 목표 상대 트랜스폼 (열림 상태에 따라 계산됨) */
 	FTransform TargetDoorTransform;
 
 private:
-	/** True if the door is open */
+	/** 문이 열려있는지 여부 */
 	UPROPERTY(ReplicatedUsing = OnRep_IsOpen, SaveGame)
 	bool bIsOpen;
 
-	/** True if the door is destroyed */
+	/** 문이 파괴되었는지 여부 */
 	UPROPERTY(ReplicatedUsing = OnRep_IsDestroyed, SaveGame)
 	bool bIsDestroyed;
 
@@ -95,10 +106,10 @@ private:
 	UFUNCTION()
 	void OnRep_IsDestroyed();
 
-	/** Called when health reaches zero */
+	/** 체력이 0에 도달했을 때 호출됨 */
 	UFUNCTION()
 	void OnOutOfHealth(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec& DamageEffectSpec, float DamageMagnitude);
 
-	/** Updates the door transform tick */
+	/** 매 틱마다 문의 트랜스폼 이동을 업데이트합니다. */
 	void UpdateDoorMovement(float DeltaTime);
 };
