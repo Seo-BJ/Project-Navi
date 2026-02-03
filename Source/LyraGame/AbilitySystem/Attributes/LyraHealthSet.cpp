@@ -243,7 +243,7 @@ void ULyraHealthSet::ClampAttribute(const FGameplayAttribute& Attribute, float& 
 void ULyraHealthSet::BroadcastDamageMessage(const FGameplayEffectModCallbackData& Data)
 {
 	// Send a standardized verb message that other systems can observe
-	if (Data.EvaluatedData.Magnitude > 0.0f)
+	//if (Data.EvaluatedData.Magnitude > 0.0f)
 	{
 		FLyraVerbMessage Message;
 		Message.Verb = TAG_Lyra_Damage_Message;

@@ -2,6 +2,7 @@
 
 #include "LyraAbilityCost_ItemTagStack.h"
 
+#include "AbilitySystemComponent.h"
 #include "Equipment/LyraGameplayAbility_FromEquipment.h"
 #include "Inventory/LyraInventoryItemInstance.h"
 #include "NativeGameplayTags.h"
@@ -26,12 +27,19 @@ bool ULyraAbilityCost_ItemTagStack::CheckCost(const ULyraGameplayAbility* Abilit
 
 			const float NumStacksReal = Quantity.GetValueAtLevel(AbilityLevel);
 			const int32 NumStacks = FMath::TruncToInt(NumStacksReal);
-			const bool bCanApplyCost = ItemInstance->GetStatTagStackCount(Tag) >= NumStacks;
+			bool bCanApplyCost = ItemInstance->GetStatTagStackCount(Tag) >= NumStacks;
 
 			// Inform other abilities why this cost cannot be applied
 			if (!bCanApplyCost && OptionalRelevantTags && FailureTag.IsValid())
 			{
 				OptionalRelevantTags->AddTag(FailureTag);				
+			}
+
+			// Check ActorInfo has Conditional Free Tag
+			UAbilitySystemComponent* AbilitySystemComponent = ActorInfo->AbilitySystemComponent.Get();
+			if (IsValid(AbilitySystemComponent) && ActorInfo->AbilitySystemComponent->HasMatchingGameplayTag(ConditionalFreeTag))
+			{
+				bCanApplyCost = true;
 			}
 			return bCanApplyCost;
 		}
@@ -50,8 +58,15 @@ void ULyraAbilityCost_ItemTagStack::ApplyCost(const ULyraGameplayAbility* Abilit
 				const int32 AbilityLevel = Ability->GetAbilityLevel(Handle, ActorInfo);
 
 				const float NumStacksReal = Quantity.GetValueAtLevel(AbilityLevel);
-				const int32 NumStacks = FMath::TruncToInt(NumStacksReal);
+				int32 NumStacks = FMath::TruncToInt(NumStacksReal);
 
+				// Check ActorInfo has Conditional Free Tag
+				UAbilitySystemComponent* AbilitySystemComponent = ActorInfo->AbilitySystemComponent.Get();
+				if (IsValid(AbilitySystemComponent) && ActorInfo->AbilitySystemComponent->HasMatchingGameplayTag(ConditionalFreeTag))
+				{
+					NumStacks = 0;
+				}
+				
 				ItemInstance->RemoveStatTagStack(Tag, NumStacks);
 			}
 		}

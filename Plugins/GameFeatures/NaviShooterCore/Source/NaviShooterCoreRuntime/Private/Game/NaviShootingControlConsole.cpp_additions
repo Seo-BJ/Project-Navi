@@ -1,0 +1,12 @@
+
+void ANaviShootingControlConsole::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ANaviShootingControlConsole, CurrentSettings);
+}
+
+void ANaviShootingControlConsole::OnRep_CurrentSettings()
+{
+	UpdateDisplay();
+}

@@ -1,0 +1,19 @@
+
+void UNaviShootingTestComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UNaviShootingTestComponent, bIsTestRunning);
+	DOREPLIFETIME(UNaviShootingTestComponent, CurrentKillCount);
+	DOREPLIFETIME(UNaviShootingTestComponent, TargetKillCount);
+}
+
+void UNaviShootingTestComponent::OnRep_IsTestRunning()
+{
+	OnTestStateChanged.Broadcast(bIsTestRunning);
+}
+
+void UNaviShootingTestComponent::OnRep_CurrentKillCount()
+{
+	OnScoreUpdated.Broadcast(CurrentKillCount, TargetKillCount);
+}

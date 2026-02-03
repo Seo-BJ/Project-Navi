@@ -41,6 +41,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Costs)
 	FGameplayTag Tag;
 
+	/** Which tag to spend some of */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Costs)
+	FGameplayTag ConditionalFreeTag;
+
 	/** Which tag to send back as a response if this cost cannot be applied */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Costs)
 	FGameplayTag FailureTag;
