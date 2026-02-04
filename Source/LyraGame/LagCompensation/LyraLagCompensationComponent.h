@@ -134,9 +134,15 @@ private:
 	// 되감기 중 Actor의 메인 Mesh Collision을 활성화 상태 설정
 	void SetMeshCollisionEnabledType(AActor* HitActor, ECollisionEnabled::Type CollsionEnabled);
 	
+	// 내부 헬퍼: 특정 박스들에 대해 Trace 수행
+	bool PerformHitCheck(const TArray<UBoxComponent*>& BoxesToCheck, const FVector& Start, const FVector& End, const FCollisionQueryParams& Params, FHitResult& OutHit);
+
+	// 내부 헬퍼: ConfirmHit 결과 시각화
+	void VisualizeConfirmHit(const FVector& Start, const FVector& End, bool bSuccess, const FHitResult& HitResult, AActor* HitActor);
+
 	// Draw Debug 함수
-	void DrawDebugFramePackage(const FFramePackage& FramePackage);
-	void DrawDebugConfirmHitResult(FHitResult ConfirmHitResult);
+	void DrawDebugFramePackage(const FFramePackage& FramePackage) const;
+	void DrawDebugHitResult(FHitResult HitResult, bool bConfirmHit) const;
 
 	// 서버가 관리하는 엑터의 과거 프레임 데이터
 	TDoubleLinkedList<FFramePackage> FrameHistory;
@@ -145,7 +151,7 @@ private:
 	bool bDrawFrameHistory = false;
 
 	UPROPERTY(EditAnywhere)
-	bool bDrawHitResult = true;
+	bool bDrawHitResult = false;
 
 	// 서버가 프레임 데이터를 얼마나 오랫동안 보관하는지 (초 단위)
 	UPROPERTY(EditAnywhere)

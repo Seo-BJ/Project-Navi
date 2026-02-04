@@ -29,6 +29,11 @@ ALyraActorWithAbilities::ALyraActorWithAbilities(const FObjectInitializer& Objec
 
 	HealthSet = CreateDefaultSubobject<ULyraHealthSet>(TEXT("HealthSet"));
 	CombatSet = CreateDefaultSubobject<ULyraCombatSet>(TEXT("CombatSet"));
+
+	if (BoxComponent)
+	{
+		HitCollisionBoxes.Add(FName("head"), BoxComponent);
+	}
 }
 
 void ALyraActorWithAbilities::PostInitializeComponents()
@@ -43,6 +48,11 @@ void ALyraActorWithAbilities::PostInitializeComponents()
 UAbilitySystemComponent* ALyraActorWithAbilities::GetAbilitySystemComponent() const
 {
 	return AbilitySystemComponent;
+}
+
+const TMap<FName, TObjectPtr<UBoxComponent>>& ALyraActorWithAbilities::GetHitCollisionBoxes() const
+{
+	return HitCollisionBoxes;
 }
 
 void ALyraActorWithAbilities::BeginPlay()

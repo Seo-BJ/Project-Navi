@@ -697,8 +697,23 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 				if (IsValid(LyraPC))
 				{
 					ULyraTimeSyncComponent* TimeSyncComponent = LyraPC->GetComponentByClass<ULyraTimeSyncComponent>();
-					const float HitTime = (IsValid(TimeSyncComponent)) ? (TimeSyncComponent->GetServerTime() - TimeSyncComponent->GetSingleTripTime()) : GetWorld()->GetTimeSeconds();
-					NewTargetData->HitTime = HitTime;
+					if (IsValid(TimeSyncComponent))
+					{
+						const float CurrentServerTime = TimeSyncComponent->GetServerTime();
+						const float SingleTripTime = TimeSyncComponent->GetSingleTripTime();
+				
+						const float HitTime = CurrentServerTime - SingleTripTime - InterpDelay;
+
+						UE_LOG(LogTemp, Log, TEXT("[LagComp] ServerTimeNow: %f, HitTime: %f, Gap: %f (PingOffset: %f + Interp: %f)"), 
+							CurrentServerTime, HitTime, CurrentServerTime - HitTime, SingleTripTime, InterpDelay);
+
+						NewTargetData->HitTime = HitTime;
+					}
+					else
+					{
+						const float HitTime = GetWorld()->GetTimeSeconds();
+						NewTargetData->HitTime = HitTime;
+					}
 				}
 			}
 

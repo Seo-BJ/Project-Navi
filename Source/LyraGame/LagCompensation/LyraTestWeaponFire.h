@@ -10,7 +10,7 @@
 class ALyraPatrolPath;
 
 UCLASS()
-class LYRAGAME_API ALyraTestWeaponFire : public ALyraActorWithAbilities, public ILagCompensationTarget
+class LYRAGAME_API ALyraTestWeaponFire : public ALyraActorWithAbilities
 {
 	GENERATED_BODY()
 

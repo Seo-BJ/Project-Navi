@@ -104,76 +104,127 @@ FServerSideRewindResult ULyraLagCompensationComponent::ConfirmHit(const FFramePa
 	if (!Target || !World) return FServerSideRewindResult();
 	
 	// 2. 현재 상태 저장
-	FFramePackage CurrentFrame; // 현재 프레임 정보를 담을 변수
-	CacheCurrentFrame(HitActor, CurrentFrame); // 되감기 전, 캐릭터의 '현재' 히트박스 위치들을 백업
+	FFramePackage CurrentFrame; 
+	CacheCurrentFrame(HitActor, CurrentFrame);
 
 	// 3. 엑터 상태 되감기 (Rewind)
-	RewindFrame(HitActor, FrameToCheck); // 엑터 히트박스들을 FramePackage에 담긴 '과거'의 위치로 강제 이동
-	SetMeshCollisionEnabledType(HitActor, ECollisionEnabled::NoCollision); // 메시 콜리전은 잠시 비활성화
+	RewindFrame(HitActor, FrameToCheck); 
+	SetMeshCollisionEnabledType(HitActor, ECollisionEnabled::NoCollision); 
 
-	// 4. 공격자 엑터 무시
+	// 4. Trace 설정
 	AActor* Attacker = GetOwner();
 	FCollisionQueryParams TraceParams;
 	if (Attacker)
 	{
 		TraceParams.AddIgnoredActor(Attacker);
 	}
-	
+	const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;
+
+	// [DEBUG] 서버 트레이스 경로 시각화 (Trace 전)
+	if (bDrawHitResult)
+	{
+		DrawDebugLine(World, TraceStart, TraceEnd, FColor::Red, false, DrawDebugHitBoxTime, 0, 1.0f);
+		DrawDebugPoint(World, HitLocation, 10.0f, FColor::Cyan, false, DrawDebugHitBoxTime);
+	}
+
+	FHitResult ConfirmHitResult;
+	bool bHitSuccess = false;
+	bool bHeadShot = false;
+
 	// 5. 헤드샷 우선 판정
-	UBoxComponent* HeadBox = nullptr; 
 	const TMap<FName, TObjectPtr<UBoxComponent>>& HitBoxes = Target->GetHitCollisionBoxes();
 	const TObjectPtr<UBoxComponent>* FoundBoxPtr = HitBoxes.Find(FName("head"));
-	if (FoundBoxPtr)
-	{
-		HeadBox = *FoundBoxPtr;
-	}
 	
-	FHitResult ConfirmHitResult;
-	const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f; // 클라이언트가 쏜 위치보다 약간 더 길게 트레이스 설정
+	if (FoundBoxPtr && *FoundBoxPtr)
+	{
+		TArray<UBoxComponent*> HeadBoxes;
+		HeadBoxes.Add(*FoundBoxPtr);
+		
+		if (PerformHitCheck(HeadBoxes, TraceStart, TraceEnd, TraceParams, ConfirmHitResult))
+		{
+			bHitSuccess = true;
+			bHeadShot = true;
+		}
+	}
 
-	if (IsValid(HeadBox))
-	{	
-		HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly); 
-		HeadBox->SetCollisionResponseToChannel(LagCompensation_TraceChannel_HitBox, ECollisionResponse::ECR_Block); 
-	
-		World->LineTraceSingleByChannel(ConfirmHitResult, TraceStart, TraceEnd, LagCompensation_TraceChannel_HitBox, TraceParams);
-		if (ConfirmHitResult.bBlockingHit) 
+	// 6. 바디샷 판정 (헤드샷 실패 시)
+	if (!bHitSuccess)
+	{
+		TArray<UBoxComponent*> AllBoxes;
+		for (auto& Pair : HitBoxes)
 		{
-			// 5-1. 헤드샷 성공 및 상태 복원
-			ResetHitBoxes(HitActor, CurrentFrame); 
-			SetMeshCollisionEnabledType(HitActor, ECollisionEnabled::QueryAndPhysics); 
-			if (bDrawHitResult)
+			if (Pair.Value) AllBoxes.Add(Pair.Value);
+		}
+
+		if (PerformHitCheck(AllBoxes, TraceStart, TraceEnd, TraceParams, ConfirmHitResult))
+		{
+			bHitSuccess = true;
+			bHeadShot = false;
+		}
+	}
+
+	// 7. 결과 시각화 (상태 복원 전 수행하여 되감긴 위치에 그리기)
+	if (bDrawHitResult)
+	{
+		VisualizeConfirmHit(TraceStart, TraceEnd, bHitSuccess, ConfirmHitResult, HitActor);
+	}
+
+	// 8. 상태 복원
+	ResetHitBoxes(HitActor, CurrentFrame); 
+	SetMeshCollisionEnabledType(HitActor, ECollisionEnabled::QueryAndPhysics); 
+
+	return FServerSideRewindResult{ bHitSuccess, bHeadShot };
+}
+
+bool ULyraLagCompensationComponent::PerformHitCheck(const TArray<UBoxComponent*>& BoxesToCheck, const FVector& Start, const FVector& End, const FCollisionQueryParams& Params, FHitResult& OutHit)
+{
+	for (UBoxComponent* Box : BoxesToCheck)
+	{
+		if (Box)
+		{
+			Box->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+			Box->SetCollisionResponseToChannel(LagCompensation_TraceChannel_HitBox, ECollisionResponse::ECR_Block);
+		}
+	}
+
+	bool bHit = GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, LagCompensation_TraceChannel_HitBox, Params);
+
+	// Trace 후 콜리전 다시 끄기 (ResetHitBoxes에서 어차피 복구되지만, 안전을 위해)
+	for (UBoxComponent* Box : BoxesToCheck)
+	{
+		if (Box)
+		{
+			Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			Box->SetCollisionResponseToChannel(LagCompensation_TraceChannel_HitBox, ECollisionResponse::ECR_Ignore);
+		}
+	}
+
+	return bHit;
+}
+
+void ULyraLagCompensationComponent::VisualizeConfirmHit(const FVector& Start, const FVector& End, bool bSuccess, const FHitResult& HitResult, AActor* HitActor)
+{
+	if (bSuccess)
+	{
+		DrawDebugHitResult(HitResult, true);
+		UE_LOG(LogLagCompensation, Log, TEXT("ConfirmHit SUCCESS. Actor: %s, Bone: %s"), *HitActor->GetName(), *HitResult.BoneName.ToString());
+	}
+	else
+	{
+		UE_LOG(LogLagCompensation, Warning, TEXT("ConfirmHit FAILED. TraceStart: %s, Actor: %s"), *Start.ToString(), *HitActor->GetName());
+		
+		ILagCompensationTarget* Target = Cast<ILagCompensationTarget>(HitActor);
+		if (Target)
+		{
+			for (auto& HitBoxPair : Target->GetHitCollisionBoxes())
 			{
-				DrawDebugConfirmHitResult(ConfirmHitResult);
+				if (HitBoxPair.Value)
+				{
+					DrawDebugBox(GetWorld(), HitBoxPair.Value->GetComponentLocation(), HitBoxPair.Value->GetScaledBoxExtent(), HitBoxPair.Value->GetComponentQuat(), FColor::Green, false, DrawDebugHitBoxTime);
+				}
 			}
-			return FServerSideRewindResult{ true, true }; // {명중 확정, 헤드샷} 결과를 반환
 		}
 	}
-	// 6. 바디샷 판정
-	for (auto& HitBoxPair : Target->GetHitCollisionBoxes())
-	{
-		if (HitBoxPair.Value != nullptr)
-		{
-			HitBoxPair.Value->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-			HitBoxPair.Value->SetCollisionResponseToChannel(LagCompensation_TraceChannel_HitBox, ECollisionResponse::ECR_Block);
-		}
-	}
-	World->LineTraceSingleByChannel(ConfirmHitResult, TraceStart, TraceEnd, LagCompensation_TraceChannel_HitBox, TraceParams);
-	if (ConfirmHitResult.bBlockingHit) 
-	{
-		// 6-1. 바디샷 성공 및 상태 복원
-		ResetHitBoxes(HitActor, CurrentFrame); 
-		SetMeshCollisionEnabledType(HitActor, ECollisionEnabled::QueryAndPhysics);
-		if (bDrawHitResult)
-		{
-			DrawDebugConfirmHitResult(ConfirmHitResult);
-		}
-		return FServerSideRewindResult{ true, false }; // {명중 확정, 헤드샷 아님} 결과를 반환
-	}
-	// 7. Hit 실패 및 상태 복원
-	ResetHitBoxes(HitActor, CurrentFrame); // HitActor의 히트박스를 '현재' 위치로 복원
-	SetMeshCollisionEnabledType(HitActor, ECollisionEnabled::QueryAndPhysics); // 콜리전 재활성화
-	return FServerSideRewindResult{ false , false }; // {명중 실패, 헤드샷 아님} 결과를 반환
 }
 
 FFramePackage ULyraLagCompensationComponent::GetHitTimeFrame(AActor* HitActor, float HitTime)
@@ -260,8 +311,13 @@ FFramePackage ULyraLagCompensationComponent::InterpolateBetweenTwoFrames(const F
 		const FBoxInformation& YoungerBox = YoungerFrame.HitBoxInfo[BoxInfoName];
 			
 		FBoxInformation InterpBoxInfo;
-		InterpBoxInfo.Location = FMath::VInterpTo(OlderBox.Location, YoungerBox.Location, 1.f, InterpolateFraction);
-		InterpBoxInfo.Rotation = FMath::RInterpTo(OlderBox.Rotation, YoungerBox.Rotation, 1.f, InterpolateFraction);
+		InterpBoxInfo.Location = FMath::Lerp(OlderBox.Location, YoungerBox.Location, InterpolateFraction);
+
+		FQuat OlderQuat(OlderBox.Rotation);
+		FQuat YoungerQuat(YoungerBox.Rotation);
+		FQuat InterpQuat = FQuat::Slerp(OlderQuat, YoungerQuat, InterpolateFraction);
+		InterpBoxInfo.Rotation = InterpQuat.Rotator();
+
 		InterpBoxInfo.BoxExtent = YoungerBox.BoxExtent;
 		InterpFramePackage.HitBoxInfo.Add(BoxInfoName, InterpBoxInfo);
 	}
@@ -386,22 +442,28 @@ void ULyraLagCompensationComponent::SetMeshCollisionEnabledType(AActor* HitActor
 	}
 }
 
-void ULyraLagCompensationComponent::DrawDebugFramePackage(const FFramePackage& FramePackage)
+void ULyraLagCompensationComponent::DrawDebugFramePackage(const FFramePackage& FramePackage) const
 {
 	for (auto& BoxInfo : FramePackage.HitBoxInfo)
 	{
-		DrawDebugBox(GetWorld(), BoxInfo.Value.Location, BoxInfo.Value.BoxExtent, FQuat(BoxInfo.Value.Rotation), FColor::Red, false, DrawDebugHitBoxTime);
+		DrawDebugBox(GetWorld(), BoxInfo.Value.Location, BoxInfo.Value.BoxExtent, FQuat(BoxInfo.Value.Rotation), FColor::Green, false, DrawDebugHitBoxTime);
 	}
 }
 
-void ULyraLagCompensationComponent::DrawDebugConfirmHitResult(FHitResult ConfirmHitResult)
+void ULyraLagCompensationComponent::DrawDebugHitResult(FHitResult HitResult, bool bConfirmHit) const
 {
-	if (ConfirmHitResult.Component.IsValid())
+	if (HitResult.Component.IsValid())
 	{
-		UBoxComponent* Box = Cast<UBoxComponent>(ConfirmHitResult.Component);
-		if (Box)
+		if (UBoxComponent* Box = Cast<UBoxComponent>(HitResult.Component))
 		{
-			DrawDebugBox(GetWorld(), Box->GetComponentLocation(), Box->GetScaledBoxExtent(), FQuat(Box->GetComponentRotation()), FColor::Blue, false, DrawDebugHitBoxTime);
+			if (bConfirmHit)
+			{
+				DrawDebugBox(GetWorld(), Box->GetComponentLocation(), Box->GetScaledBoxExtent(), FQuat(Box->GetComponentRotation()), FColor::Blue, false, DrawDebugHitBoxTime);
+			}
+			else
+			{
+				DrawDebugBox(GetWorld(), Box->GetComponentLocation(), Box->GetScaledBoxExtent(), FQuat(Box->GetComponentRotation()), FColor::Red, false, DrawDebugHitBoxTime);
+			}
 		}
 	}
 }

@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "AbilitySystemInterface.h"
+#include "LagCompensation/ILagCompensationTarget.h"
 #include "LyraActorWithAbilities.generated.h"
 
 class ULyraAbilitySystemComponent;
@@ -12,7 +13,7 @@ class UBoxComponent;
 class UGameplayEffect;
 
 UCLASS()
-class LYRAGAME_API ALyraActorWithAbilities : public AActor, public IAbilitySystemInterface
+class LYRAGAME_API ALyraActorWithAbilities : public AActor, public IAbilitySystemInterface, public ILagCompensationTarget
 {
 	GENERATED_BODY()
 	
@@ -24,6 +25,12 @@ public:
 	//~ IAbilitySystemInterface
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	//~ End IAbilitySystemInterface
+
+	//~ ILagCompensationTarget interface
+	virtual const TMap<FName, TObjectPtr<UBoxComponent>>& GetHitCollisionBoxes() const override;
+	//~ End ILagCompensationTarget interface
+
+	
 
 protected:
 
@@ -49,5 +56,7 @@ protected:
 	
 	UPROPERTY(EditAnywhere, Category = "Lyra|Ability System")
 	TSubclassOf<UGameplayEffect> HealthInitEffect;
-	
+
+private:
+	TMap<FName, TObjectPtr<UBoxComponent>> HitCollisionBoxes;
 };

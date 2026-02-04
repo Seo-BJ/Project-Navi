@@ -49,7 +49,9 @@ class ULyraGameplayAbility_RangedWeapon : public ULyraGameplayAbility_FromEquipm
 	GENERATED_BODY()
 
 public:
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
+	float InterpDelay = 0.0f;
+	
 	ULyraGameplayAbility_RangedWeapon(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	UFUNCTION(BlueprintCallable, Category="Lyra|Ability")
