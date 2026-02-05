@@ -10,6 +10,8 @@ LYRAGAME_API DECLARE_LOG_CATEGORY_EXTERN(LogLagCompensation, Log, All);
 
 class ALyraCharacter;
 class ALyraPlayerController;
+class UBoxComponent;
+
 
 // Hitbox의 위치, 회전, 크기 정보를 담는 구조체
 USTRUCT(BlueprintType)

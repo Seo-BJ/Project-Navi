@@ -88,7 +88,10 @@ protected:
 		{
 		}
 	};
-
+	
+	UPROPERTY(EditDefaultsOnly, Category="Lyra|Ability")
+	bool bProjectileWeapon = false;
+	
 	UPROPERTY(EditDefaultsOnly, Category="Lyra|Ability")
 	bool bUseServerSideRewind = true;
 

@@ -18,6 +18,7 @@
 #include "TimerManager.h"
 #include "Components/BoxComponent.h"
 #include "LagCompensation/LyraLagCompensationComponent.h"
+#include "LagCompensation/LyraMeshLagCompensationComponent.h"
 #include "Physics/LyraCollisionChannels.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraCharacter)
@@ -86,8 +87,9 @@ ALyraCharacter::ALyraCharacter(const FObjectInitializer& ObjectInitializer)
 	BaseEyeHeight = 80.0f;
 	CrouchedEyeHeight = 50.0f;
 	
-	LagCompensation = CreateDefaultSubobject<ULyraLagCompensationComponent>(TEXT("LagCompensation"));
-
+	//LagCompensation = CreateDefaultSubobject<ULyraLagCompensationComponent>(TEXT("LagCompensation"));
+	LagCompensation = CreateDefaultSubobject<ULyraMeshLagCompensationComponent>(TEXT("LyraLagCompensation"));
+	
 	head = CreateDefaultSubobject<UBoxComponent>(TEXT("head"));
 	head->SetupAttachment(GetMesh(), FName("head"));
 	HitCollisionBoxes.Add(FName("head"), head);

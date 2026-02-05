@@ -11,10 +11,12 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystem/LyraGameplayAbilityTargetData_SingleTargetHit.h"
 #include "DrawDebugHelpers.h"
+#include "LyraWeaponDebugSettings.h"
 
 #include "TimerManager.h"
 #include "Character/LyraCharacter.h"
 #include "LagCompensation/LyraLagCompensationComponent.h"
+#include "LagCompensation/LyraMeshLagCompensationComponent.h"
 #include "LagCompensation/LyraTimeSyncComponent.h"
 #include "Player/LyraPlayerController.h"
 
@@ -23,7 +25,7 @@
 namespace LyraConsoleVariables
 {
 	static float DrawBulletTracesDuration = 0.0f;
-	static FAutoConsoleVariableRef CVarDrawBulletTraceDuraton(
+	static FAutoConsoleVariableRef CVarDrawBulletTraceDuration(
 		TEXT("lyra.Weapon.DrawBulletTraceDuration"),
 		DrawBulletTracesDuration,
 		TEXT("Should we do debug drawing for bullet traces (if above zero, sets how long (in seconds))"),
@@ -40,7 +42,21 @@ namespace LyraConsoleVariables
 	static FAutoConsoleVariableRef CVarDrawBulletHitRadius(
 		TEXT("lyra.Weapon.DrawBulletHitRadius"),
 		DrawBulletHitRadius,
-		TEXT("When bullet hit debug drawing is enabled (see DrawBulletHitDuration), how big should the hit radius be? (in uu)"),
+		TEXT("When bullet hit debug drawing is enabled (see DrawBulletHitDuration), how big should the hit radius be? (in cm)"),
+		ECVF_Default);
+
+	static bool bDrawMeshLagCompensation = false;
+	static FAutoConsoleVariableRef CVarbDrawMeshLagCompensation(
+		TEXT("lyra.Weapon.DrawMeshLagCompensation"),
+		bDrawMeshLagCompensation,
+		TEXT("Should we do debug drawing for mesh lag compensation?"),
+		ECVF_Default);
+
+	static float DrawMeshLagCompensationDuration = 3.0f;
+	static FAutoConsoleVariableRef CVarDrawMeshLagCompensationDuration(
+		TEXT("lyra.Weapon.DrawMeshLagCompensationDuration"),
+		DrawMeshLagCompensationDuration,
+		TEXT("Should we do debug drawing for mesh lag compensation (if above zero, sets how long (in seconds)"),
 		ECVF_Default);
 }
 
@@ -509,8 +525,6 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 		}
 
 		const bool bIsTargetDataValid = true;
-		
-		bool bProjectileWeapon = false;
 
 #if WITH_SERVER_CODE
 		if (!bProjectileWeapon)
@@ -523,32 +537,41 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 				if (bUseServerSideRewind)
 				{
 					ALyraCharacter* AttackerCharacter = GetLyraCharacterFromActorInfo();
-					ULyraLagCompensationComponent* LagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraLagCompensationComponent>() : nullptr;
-					if (IsValid(LagComp))
+					ULyraMeshLagCompensationComponent* MeshLagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraMeshLagCompensationComponent>() : nullptr;
+					ULyraLagCompensationComponent* BoxLagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraLagCompensationComponent>() : nullptr;
+
+					for (uint8 i = 0; (i < LocalTargetDataHandle.Num()) && (i < 255); ++i)
 					{
-						for (uint8 i = 0; (i < LocalTargetDataHandle.Num()) && (i < 255); ++i)
+						if (FLyraGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<FLyraGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
 						{
-							if (FLyraGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<FLyraGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
+							const float LocalHitTime = SingleTargetHit->HitTime;
+							const FHitResult& LocalHitResult = SingleTargetHit->HitResult;
+							
+							FServerSideRewindResult RewindResult;
+
+							// 1순위: Mesh 기반 정밀 판정
+							if (IsValid(MeshLagComp))
 							{
-								const float LocalHitTime = SingleTargetHit->HitTime;
-								const FHitResult& LocalHitResult = SingleTargetHit->HitResult;
-								
-								// 서버 사이드 리와인드 실행
-								FServerSideRewindResult RewindResult = LagComp->ServerSideRewind(LocalHitResult.GetActor(), LocalHitResult.TraceStart, LocalHitResult.ImpactPoint, LocalHitTime);
+								RewindResult = MeshLagComp->ServerSideRewind(LocalHitResult.GetActor(), LocalHitResult.TraceStart, LocalHitResult.ImpactPoint, LocalHitTime);
+							}
+							// 2순위: Box 기반 판정 (기존)
+							else if (IsValid(BoxLagComp))
+							{
+								RewindResult = BoxLagComp->ServerSideRewind(LocalHitResult.GetActor(), LocalHitResult.TraceStart, LocalHitResult.ImpactPoint, LocalHitTime);
+							}
 
-								UE_LOG(LogTemp, Warning, TEXT("  Hit[%d]: Actor=%s, bConfirmed=%d, bHeadshot=%d"), i, LocalHitResult.GetActor() ? *LocalHitResult.GetActor()->GetName() : TEXT("NULL"), RewindResult.bHitConfirmed, RewindResult.bHeadShot);
+							UE_LOG(LogTemp, Warning, TEXT("  Hit[%d]: Actor=%s, bConfirmed=%d, bHeadshot=%d"), i, LocalHitResult.GetActor() ? *LocalHitResult.GetActor()->GetName() : TEXT("NULL"), RewindResult.bHitConfirmed, RewindResult.bHeadShot);
 
-								// @Todo: 서버 권위적인 로직을 통해 Hit Replaced 시스템을 사용
-								if (SingleTargetHit->bHitReplaced)
-								{
-									HitReplaces.Add(i);
-								}
+							// @Todo: 서버 권위적인 로직을 통해 Hit Replaced 시스템을 사용
+							if (SingleTargetHit->bHitReplaced)
+							{
+								HitReplaces.Add(i);
+							}
 
-								if (RewindResult.bHitConfirmed)
-								{
-									// 동일하다면, 이 피격은 유효하다고 간주
-									bOverallHitSuccess = true;
-								}
+							if (RewindResult.bHitConfirmed)
+							{
+								// 동일하다면, 이 피격은 유효하다고 간주
+								bOverallHitSuccess = true;
 							}
 						}
 					}
@@ -714,6 +737,16 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 						const float HitTime = GetWorld()->GetTimeSeconds();
 						NewTargetData->HitTime = HitTime;
 					}
+					if (LyraConsoleVariables::bDrawMeshLagCompensation)
+					{
+						ALyraCharacter* AttackerCharacter = GetLyraCharacterFromActorInfo();
+						ULyraMeshLagCompensationComponent* MeshLagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraMeshLagCompensationComponent>() : nullptr;
+						ULyraLagCompensationComponent* BoxLagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraLagCompensationComponent>() : nullptr;
+
+						FMeshFramePackage LocalFramePackage;
+						MeshLagComp->CacheCurrentFrame(FoundHit.GetActor(), LocalFramePackage);
+						MeshLagComp->DrawDebugPose(LocalFramePackage, FColor::White);
+					}
 				}
 			}
 
@@ -722,11 +755,12 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 	}
 
 	// Send hit marker information
-	const bool bProjectileWeapon = false;
 	if (!bProjectileWeapon && (WeaponStateComponent != nullptr))
 	{
 		WeaponStateComponent->AddUnconfirmedServerSideHitMarkers(TargetData, FoundHits);
 	}
+
+	
 
 	OnTargetDataReadyCallback(TargetData, FGameplayTag());
 }
