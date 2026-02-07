@@ -10,7 +10,7 @@
 
 class USpringArmComponent;
 class UBoxComponent;
-class ULyraLagCompensationComponent;
+class ULyraLagCompensationComponent_BoxComponent;
 
 /**
  * 

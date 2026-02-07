@@ -10,7 +10,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Camera/LyraCameraComponent.h"
 #include "Components/BoxComponent.h"
-#include "LagCompensation/LyraLagCompensationComponent.h"
+#include "LagCompensation/LyraLagCompensationComponent_BoxComponent.h"
 
 
 ANaviFppCharacter::ANaviFppCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)

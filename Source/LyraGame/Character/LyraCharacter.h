@@ -30,7 +30,8 @@ struct FGameplayTag;
 struct FGameplayTagContainer;
 class UBoxComponent;
 class ULyraLagCompensationComponent;
-class ULyraMeshLagCompensationComponent;
+class ULyraLagCompensationComponent_BoxComponent;
+class ULyraLagCompensationComponent_SkeletalMesh;
 
 /**
  * FLyraReplicatedAcceleration: Compressed representation of acceleration
@@ -242,7 +243,7 @@ private:
 	void OnRep_MyTeamID(FGenericTeamId OldTeamID);
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<ULyraMeshLagCompensationComponent> LagCompensation;
+	TObjectPtr<ULyraLagCompensationComponent> LyraLagCompensation;
 
 	UPROPERTY()
 	TMap<FName, TObjectPtr<UBoxComponent>> HitCollisionBoxes;

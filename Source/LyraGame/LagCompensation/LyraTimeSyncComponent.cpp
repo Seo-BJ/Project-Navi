@@ -50,8 +50,8 @@ void ULyraTimeSyncComponent::ServerRequestServerTime_Implementation(float TimeOf
 void ULyraTimeSyncComponent::ClientReportServerTime_Implementation(float TimeOfClientRequest, float TimeServerReceivedClientRequest)
 {
 	const float RoundTripTime = GetWorld()->GetTimeSeconds() - TimeOfClientRequest;
-	SingleTripTime = FMath::Max(0.f, RoundTripTime * 0.5f); // 음수 방지
-
+	SingleTripTime = FMath::Max(0.f, RoundTripTime * 0.5f);
+	
 	const float CurrentServerTime = TimeServerReceivedClientRequest + SingleTripTime;
 	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
 }

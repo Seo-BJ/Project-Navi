@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "LyraMeshLagCompensationComponent.h"
+#include "LyraLagCompensationComponent_SkeletalMesh.h"
 #include "Weapons/LyraWeaponDebugSettings.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Character.h"
@@ -29,14 +29,14 @@ DECLARE_DWORD_COUNTER_STAT(TEXT("LagComp - History Frames"), STAT_LyraLag_Histor
 // DEFINE_LOG_CATEGORY(LogLagCompensation); 
 // 만약 링크 에러나면 별도 카테고리 정의 필요
 
-ULyraMeshLagCompensationComponent::ULyraMeshLagCompensationComponent()
+ULyraLagCompensationComponent_SkeletalMesh::ULyraLagCompensationComponent_SkeletalMesh()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	// 틱 그룹을 물리가 끝난 뒤로 설정하여 최신 포즈를 캡처하도록 함
 	PrimaryComponentTick.TickGroup = TG_PostPhysics; 
 }
 
-USkeletalMeshComponent* ULyraMeshLagCompensationComponent::GetSkeletalMesh(AActor* InActor) const
+USkeletalMeshComponent* ULyraLagCompensationComponent_SkeletalMesh::GetSkeletalMesh(AActor* InActor) const
 {
 	if (!IsValid(InActor)) return nullptr;
 
@@ -48,16 +48,12 @@ USkeletalMeshComponent* ULyraMeshLagCompensationComponent::GetSkeletalMesh(AActo
 	return InActor->FindComponentByClass<USkeletalMeshComponent>();
 }
 
-void ULyraMeshLagCompensationComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void ULyraLagCompensationComponent_SkeletalMesh::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	
-	if (!GetOwner()->HasAuthority()) return;
-
-	UpdateFrameHistory();
 }
 
-void ULyraMeshLagCompensationComponent::UpdateFrameHistory()
+void ULyraLagCompensationComponent_SkeletalMesh::UpdateFrameHistory()
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(LyraLag_UpdateHistory);
 	SCOPE_CYCLE_COUNTER(STAT_LyraLag_UpdateHistory);
@@ -79,7 +75,7 @@ void ULyraMeshLagCompensationComponent::UpdateFrameHistory()
 	}
 }
 
-void ULyraMeshLagCompensationComponent::CacheCurrentFrame(AActor* HitActor, FMeshFramePackage& OutPackage)
+void ULyraLagCompensationComponent_SkeletalMesh::CacheCurrentFrame(AActor* HitActor, FMeshFramePackage& OutPackage)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(LyraLag_CacheFrame);
 	SCOPE_CYCLE_COUNTER(STAT_LyraLag_CacheFrame);
@@ -108,7 +104,7 @@ void ULyraMeshLagCompensationComponent::CacheCurrentFrame(AActor* HitActor, FMes
 	}
 }
 
-FServerSideRewindResult ULyraMeshLagCompensationComponent::ServerSideRewind(AActor* HitActor, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime)
+FServerSideRewindResult ULyraLagCompensationComponent_SkeletalMesh::ServerSideRewind(AActor* HitActor, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(LyraLag_ServerSideRewind);
 	SCOPE_CYCLE_COUNTER(STAT_LyraLag_Rewind);
@@ -122,13 +118,13 @@ FServerSideRewindResult ULyraMeshLagCompensationComponent::ServerSideRewind(AAct
 	return ConfirmHit(FrameToCheck, HitActor, TraceStart, HitLocation);
 }
 
-FMeshFramePackage ULyraMeshLagCompensationComponent::GetHitTimeFrame(AActor* HitActor, float HitTime)
+FMeshFramePackage ULyraLagCompensationComponent_SkeletalMesh::GetHitTimeFrame(const AActor* HitActor, float HitTime)
 {
 	// HitActor에 붙은 컴포넌트를 가져와야 함 (자신의 History가 아니라 타겟의 History를 봐야 하므로)
 	// 하지만 현재 구조상 ServerSideRewind는 공격자의 컴포넌트에서 호출됨.
 	// 따라서 타겟 Actor의 ULyraMeshLagCompensationComponent를 찾아야 함.
 	
-	ULyraMeshLagCompensationComponent* TargetComp = HitActor->FindComponentByClass<ULyraMeshLagCompensationComponent>();
+	ULyraLagCompensationComponent_SkeletalMesh* TargetComp = HitActor->FindComponentByClass<ULyraLagCompensationComponent_SkeletalMesh>();
 	if (!TargetComp || TargetComp->FrameHistory.Num() == 0)
 	{
 		return FMeshFramePackage();
@@ -159,7 +155,7 @@ FMeshFramePackage ULyraMeshLagCompensationComponent::GetHitTimeFrame(AActor* Hit
 	return History.GetTail()->GetValue();
 }
 
-FMeshFramePackage ULyraMeshLagCompensationComponent::InterpolateFrame(const FMeshFramePackage& Older, const FMeshFramePackage& Younger, float HitTime)
+FMeshFramePackage ULyraLagCompensationComponent_SkeletalMesh::InterpolateFrame(const FMeshFramePackage& Older, const FMeshFramePackage& Younger, float HitTime)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(LyraLag_Interpolate);
 	SCOPE_CYCLE_COUNTER(STAT_LyraLag_Interpolate);
@@ -187,56 +183,14 @@ FMeshFramePackage ULyraMeshLagCompensationComponent::InterpolateFrame(const FMes
 	return InterpPackage;
 }
 
-void ULyraMeshLagCompensationComponent::RewindFrame(AActor* HitActor, const FMeshFramePackage& Package)
-{
-	if (!HitActor) return;
-	
-	USkeletalMeshComponent* Mesh = nullptr;
-	if (ACharacter* Character = Cast<ACharacter>(HitActor))
-	{
-		Mesh = Character->GetMesh();
-	}
-	else
-	{
-		Mesh = HitActor->FindComponentByClass<USkeletalMeshComponent>();
-	}
-
-	if (Mesh && Package.BoneTransforms.Num() > 0)
-	{
-		// 1. 포즈 강제 주입
-		// 주의: 본 개수가 맞는지 확인 필요 (LOD 변경 등으로 다를 수 있음)
-		if (Mesh->GetNumComponentSpaceTransforms() == Package.BoneTransforms.Num())
-		{
-			// bNeedToFlipSpace 등은 내부적으로 처리됨. 단순히 배열 덮어쓰기.
-			// 하지만 protected 멤버라 직접 접근 불가할 수 있음 -> GetBoneSpaceTransforms는 const ref 반환, Set은 없음?
-			// 언리얼 엔진 버전에 따라 다름. 보통 직접 Set하는 API가 없으면 아래와 같이 함:
-			
-			// A. PoseableMeshComponent라면 쉽지만, Character Mesh는 SkeletalMeshComponent임.
-			// B. SnapshotPose 사용 (권장)
-			// 하지만 여기선 Raw Data가 있으므로, 직접 접근이 어렵다면
-			// 각 본별로 SetBoneTransform을 루프 돌려야 할 수도 있음 (느림)
-			
-			// 최적화: BoneSpaceTransforms를 직접 수정할 수 없다면, 
-			// SkeletalMeshComponent에는 보통 외부에서 포즈를 주입하는 기능이 제한적임.
-			// 대안: Animation Blueprint의 'Modify Bone' 등을 쓰는게 아니라
-			// 물리 바디를 직접 움직여야 함.
-			
-			// 사실 렉 보상의 핵심은 '렌더링'이 아니라 '물리'임.
-			// 따라서 UpdateBodiesFromComponentSpaceTransforms 를 쓰면 됨.
-			// 이 함수는 Component Space Transform 배열을 인자로 받음.
-			
-			//	Mesh->UpdateBodiesFromComponentSpaceTransforms(Package.BoneTransforms, ETeleportType::ResetPhysics);
-		}
-	}
-}
-
-FServerSideRewindResult ULyraMeshLagCompensationComponent::ConfirmHit(const FMeshFramePackage& FrameToCheck, AActor* HitActor, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation)
+FServerSideRewindResult ULyraLagCompensationComponent_SkeletalMesh::ConfirmHit(const FMeshFramePackage& FrameToCheck, AActor* HitActor, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation)
 {
 	const ULyraWeaponDebugSettings* WeaponDebugSettings = GetDefault<ULyraWeaponDebugSettings>();
 	const bool bDrawDebug = WeaponDebugSettings->bDrawMeshLagCompensation;
-	const float DrawDebugDuration = WeaponDebugSettings->DrawMeshLagCompensationDuration;
-
+	
+#if ENABLE_DRAW_DEBUG
 	UE_LOG(LogTemp, Warning, TEXT("[MeshLagComp] ConfirmHit ENTERED (bDrawDebug: %s)"), bDrawDebug ? TEXT("TRUE") : TEXT("FALSE"));
+#endif
 	const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;
 	FHitResult OutHit;
 	
@@ -258,7 +212,7 @@ FServerSideRewindResult ULyraMeshLagCompensationComponent::ConfirmHit(const FMes
 	return FServerSideRewindResult { bHit, (bHit && OutHit.BoneName == FName("head")) };
 }
 
-bool ULyraMeshLagCompensationComponent::PerformPhysicsAssetCollision(const TObjectPtr<AActor> HitActor,
+bool ULyraLagCompensationComponent_SkeletalMesh::PerformPhysicsAssetCollision(const TObjectPtr<AActor> HitActor,
 	const FMeshFramePackage& Frame, const FVector& TraceStart, const FVector& TraceEnd, FHitResult& OutHit)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(LyraLag_PerformCollision);
@@ -282,15 +236,16 @@ bool ULyraMeshLagCompensationComponent::PerformPhysicsAssetCollision(const TObje
 	{
 		return false;
 	}
-
-	const bool bDrawDebug = GetDefault<ULyraWeaponDebugSettings>()->bDrawMeshLagCompensation;
-
+	
+#if ENABLE_DRAW_DEBUG
 	// 디버그 로그
-	if (bDrawDebug)
+	if (const bool bDrawDebug = GetDefault<ULyraWeaponDebugSettings>()->bDrawMeshLagCompensation)
 	{
 		UE_LOG(LogTemp, Log, TEXT("[MeshLagComp] PerformPhysicsAssetCollision: BoneCount=%d, Start=%s, End=%s"), 
 			Frame.BoneTransforms.Num(), *TraceStart.ToString(), *TraceEnd.ToString());
 	}
+
+#endif
 
 	bool bHit = false;
 	float ClosestHitDistance = FLT_MAX;
@@ -419,7 +374,8 @@ bool ULyraMeshLagCompensationComponent::PerformPhysicsAssetCollision(const TObje
 	return bHit;
 }
 
-void ULyraMeshLagCompensationComponent::VisualizeConfirmHit(const FVector& Start, const FVector& End, bool bSuccess, const FHitResult& HitResult, AActor* HitActor)
+#if ENABLE_DRAW_DEBUG
+void ULyraLagCompensationComponent_SkeletalMesh::VisualizeConfirmHit(const FVector& Start, const FVector& End, bool bSuccess, const FHitResult& HitResult, AActor* HitActor)
 {
 	const float DrawDebugDuration = GetDefault<ULyraWeaponDebugSettings>()->DrawMeshLagCompensationDuration;
 
@@ -436,7 +392,7 @@ void ULyraMeshLagCompensationComponent::VisualizeConfirmHit(const FVector& Start
 	}
 }
 
-void ULyraMeshLagCompensationComponent::DrawDebugPose(const FMeshFramePackage& Package, FColor Color) const
+void ULyraLagCompensationComponent_SkeletalMesh::DrawDebugPose(const FMeshFramePackage& Package, FColor Color) const
 {
 	if (!IsValid(Package.HitActor)) return;
 
@@ -492,3 +448,4 @@ void ULyraMeshLagCompensationComponent::DrawDebugPose(const FMeshFramePackage& P
 		}
 	}
 }
+#endif

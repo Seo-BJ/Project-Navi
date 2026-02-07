@@ -15,8 +15,8 @@
 
 #include "TimerManager.h"
 #include "Character/LyraCharacter.h"
-#include "LagCompensation/LyraLagCompensationComponent.h"
-#include "LagCompensation/LyraMeshLagCompensationComponent.h"
+#include "LagCompensation/LyraLagCompensationComponent_BoxComponent.h"
+#include "LagCompensation/LyraLagCompensationComponent_SkeletalMesh.h"
 #include "LagCompensation/LyraTimeSyncComponent.h"
 #include "Player/LyraPlayerController.h"
 
@@ -518,13 +518,10 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 		// Take ownership of the target data to make sure no callbacks into game code invalidate it out from under us
 		FGameplayAbilityTargetDataHandle LocalTargetDataHandle(MoveTemp(const_cast<FGameplayAbilityTargetDataHandle&>(InData)));
 
-		const bool bShouldNotifyServer = CurrentActorInfo->IsLocallyControlled() && !CurrentActorInfo->IsNetAuthority();
-		if (bShouldNotifyServer)
+		if (bool bShouldNotifyServer = CurrentActorInfo->IsLocallyControlled() && !CurrentActorInfo->IsNetAuthority())
 		{
 			MyAbilityComponent->CallServerSetReplicatedTargetData(CurrentSpecHandle,CurrentActivationInfo.GetActivationPredictionKey(),LocalTargetDataHandle,ApplicationTag,MyAbilityComponent->ScopedPredictionKey);
 		}
-
-		const bool bIsTargetDataValid = true;
 
 #if WITH_SERVER_CODE
 		if (!bProjectileWeapon)
@@ -537,9 +534,7 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 				if (bUseServerSideRewind)
 				{
 					ALyraCharacter* AttackerCharacter = GetLyraCharacterFromActorInfo();
-					ULyraMeshLagCompensationComponent* MeshLagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraMeshLagCompensationComponent>() : nullptr;
-					ULyraLagCompensationComponent* BoxLagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraLagCompensationComponent>() : nullptr;
-
+					ULyraLagCompensationComponent* LagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraLagCompensationComponent>() : nullptr;
 					for (uint8 i = 0; (i < LocalTargetDataHandle.Num()) && (i < 255); ++i)
 					{
 						if (FLyraGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<FLyraGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
@@ -548,20 +543,13 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 							const FHitResult& LocalHitResult = SingleTargetHit->HitResult;
 							
 							FServerSideRewindResult RewindResult;
-
-							// 1순위: Mesh 기반 정밀 판정
-							if (IsValid(MeshLagComp))
+							if (IsValid(LagComp))
 							{
-								RewindResult = MeshLagComp->ServerSideRewind(LocalHitResult.GetActor(), LocalHitResult.TraceStart, LocalHitResult.ImpactPoint, LocalHitTime);
+								RewindResult = LagComp->ServerSideRewind(LocalHitResult.GetActor(), LocalHitResult.TraceStart, LocalHitResult.ImpactPoint, LocalHitTime);
 							}
-							// 2순위: Box 기반 판정 (기존)
-							else if (IsValid(BoxLagComp))
-							{
-								RewindResult = BoxLagComp->ServerSideRewind(LocalHitResult.GetActor(), LocalHitResult.TraceStart, LocalHitResult.ImpactPoint, LocalHitTime);
-							}
-
+#if ENABLE_DRAW_DEBUG
 							UE_LOG(LogTemp, Warning, TEXT("  Hit[%d]: Actor=%s, bConfirmed=%d, bHeadshot=%d"), i, LocalHitResult.GetActor() ? *LocalHitResult.GetActor()->GetName() : TEXT("NULL"), RewindResult.bHitConfirmed, RewindResult.bHeadShot);
-
+#endif
 							// @Todo: 서버 권위적인 로직을 통해 Hit Replaced 시스템을 사용
 							if (SingleTargetHit->bHitReplaced)
 							{
@@ -584,9 +572,7 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 						if (const FGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<const FGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
 						{
 							const FHitResult& ClientHitResult = SingleTargetHit->HitResult;
-							AActor* ClientHitActor = ClientHitResult.GetActor();
-
-							if (ClientHitActor)
+							if (AActor* ClientHitActor = ClientHitResult.GetActor())
 							{
 								// 서버가 '현재 시간' 기준으로 직접 트레이스를 수행
 								FHitResult ServerHitResult;
@@ -727,9 +713,10 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 				
 						const float HitTime = CurrentServerTime - SingleTripTime - InterpDelay;
 
+#if ENABLE_DRAW_DEBUG
 						UE_LOG(LogTemp, Log, TEXT("[LagComp] ServerTimeNow: %f, HitTime: %f, Gap: %f (PingOffset: %f + Interp: %f)"), 
 							CurrentServerTime, HitTime, CurrentServerTime - HitTime, SingleTripTime, InterpDelay);
-
+#endif
 						NewTargetData->HitTime = HitTime;
 					}
 					else
@@ -740,8 +727,8 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 					if (LyraConsoleVariables::bDrawMeshLagCompensation)
 					{
 						ALyraCharacter* AttackerCharacter = GetLyraCharacterFromActorInfo();
-						ULyraMeshLagCompensationComponent* MeshLagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraMeshLagCompensationComponent>() : nullptr;
-						ULyraLagCompensationComponent* BoxLagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraLagCompensationComponent>() : nullptr;
+						ULyraLagCompensationComponent_SkeletalMesh* MeshLagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraLagCompensationComponent_SkeletalMesh>() : nullptr;
+						ULyraLagCompensationComponent_BoxComponent* BoxLagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraLagCompensationComponent_BoxComponent>() : nullptr;
 
 						FMeshFramePackage LocalFramePackage;
 						MeshLagComp->CacheCurrentFrame(FoundHit.GetActor(), LocalFramePackage);
@@ -753,14 +740,12 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 			TargetData.Add(NewTargetData);
 		}
 	}
-
+	
 	// Send hit marker information
 	if (!bProjectileWeapon && (WeaponStateComponent != nullptr))
 	{
 		WeaponStateComponent->AddUnconfirmedServerSideHitMarkers(TargetData, FoundHits);
 	}
-
 	
-
 	OnTargetDataReadyCallback(TargetData, FGameplayTag());
 }
