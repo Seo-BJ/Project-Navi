@@ -28,6 +28,7 @@
 #include "Tests/LyraGameplayRpcRegistrationComponent.h"
 #include "HttpServerModule.h"
 #endif
+#include "ReplicationGrpah/LyraReplicationGraph.h"
 #include "Teams/LyraTeamCreationComponent.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraPlayerController)
@@ -229,6 +230,21 @@ bool ALyraPlayerController::ShouldRecordClientReplay()
 void ALyraPlayerController::OnPlayerStateChangedTeam(UObject* TeamAgent, int32 OldTeam, int32 NewTeam)
 {
 	ConditionalBroadcastTeamChanged(this, IntegerToGenericTeamId(OldTeam), IntegerToGenericTeamId(NewTeam));
+
+	if (HasAuthority() && NewTeam != INDEX_NONE && PlayerState == TeamAgent)
+	{
+		if (const UWorld* World = GetWorld())
+		{
+			if (const UNetDriver* NetworkDriver = World->GetNetDriver())
+			{
+				if (ULyraReplicationGraph* RepGraph = NetworkDriver->GetReplicationDriver<ULyraReplicationGraph>())
+				{
+					RepGraph->SetTeamForPlayerController(this, NewTeam);
+				}
+			}
+		}
+	}
+	
 }
 
 void ALyraPlayerController::OnPlayerStateChanged()

@@ -10,7 +10,8 @@ UENUM()
 enum class EClassRepNodeMapping : uint32
 {
 	NotRouted,						// 어떤 노드에도 매핑되지 않습니다. 특수 케이스 노드(ULyraReplicationGraphNode_PlayerStateFrequencyLimiter 등)에서 처리되는 특수 액터에 사용됩니다.
-	RelevantAllConnections,			// AlwaysRelevantNode 또는 AlwaysRelevantStreamingLevelNode 노드로 라우팅됩니다.
+	RelevantAllConnections,			// AlwaysRelevantGlobalNode 또는 AlwaysRelevantStreamingLevelNode 노드로 라우팅됩니다.
+	RelevantToTeam,					// 특정 팀에게만 항상 연관된 액터들을 위한 정책입니다.
 
 	// 아래는 공간화(Spatialized)된 열거형들입니다. ULyraReplicationGraph::IsSpatialized를 참조하세요.
 

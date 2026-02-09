@@ -50,7 +50,6 @@ public:
 
 	/** If ture, Server Create Teams and Assign Players To Team When Experience Loaded
 	 * If false, Server 
-	 * 
 	 */
 	
 	UPROPERTY(EditDefaultsOnly, Category = Teams)

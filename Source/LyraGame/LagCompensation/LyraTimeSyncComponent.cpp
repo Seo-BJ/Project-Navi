@@ -20,8 +20,14 @@ void ULyraTimeSyncComponent::BeginPlay()
 	if (IsValid(Controller))
 	{
 		OwnerController = Controller;
-		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
+		if (!HasAuthority())
+		{
 
+		}
+		else
+		{
+			ServerRequestServerTime(GetWorld()->GetTimeSeconds());
+		}
 	}
 }
 

@@ -13,6 +13,7 @@
 #endif
 
 #include "LyraLogChannels.h"
+#include "ReplicationGrpah/LyraReplicationGraph.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraTeamCreationComponent)
 
@@ -136,7 +137,6 @@ void ULyraTeamCreationComponent::ServerChooseTeamForPlayer(ALyraPlayerState* PS)
 			
 			const FGenericTeamId TeamID = IntegerToGenericTeamId(BestTeamId); 
 			PS->SetGenericTeamId(TeamID);
-			
 			PS->SetIndexInTeam(NewIndexInTeam);
 		}
 		else
@@ -385,8 +385,7 @@ void ULyraTeamCreationComponent::ServerHandlePlayerLogout(AController* LeavingCo
 
 	for (int32 i = 0; i < RemainingPlayersInTeam.Num(); ++i)
     {
-        ALyraPlayerState* RemainingPlayer = RemainingPlayersInTeam[i];
-        if (RemainingPlayer)
+	    if (ALyraPlayerState* RemainingPlayer = RemainingPlayersInTeam[i])
         {
             if (RemainingPlayer->GetIndexInTeam() != i)
             {

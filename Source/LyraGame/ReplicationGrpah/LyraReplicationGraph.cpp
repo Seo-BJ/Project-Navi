@@ -82,6 +82,7 @@
 #include "GameplayDebuggerCategoryReplicator.h"
 #endif
 
+#include "LyraConnectionManager.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameState.h"
 #include "GameFramework/PlayerState.h"
@@ -93,6 +94,8 @@
 #include "LyraReplicationGraphSettings.h"
 #include "Character/LyraCharacter.h"
 #include "Player/LyraPlayerController.h"
+
+#include "Teams/LyraTeamSubsystem.h"
 
 DEFINE_LOG_CATEGORY( LogLyraRepGraph );
 
@@ -169,6 +172,8 @@ namespace Lyra::RepGraph
 
 ULyraReplicationGraph::ULyraReplicationGraph()
 {
+	ReplicationConnectionManagerClass = ULyraConnectionManager::StaticClass();
+	
 	if (!UReplicationDriver::CreateReplicationDriverDelegate().IsBound())
 	{
 		UReplicationDriver::CreateReplicationDriverDelegate().BindLambda(
@@ -184,8 +189,11 @@ void ULyraReplicationGraph::ResetGameWorldState()
 	Super::ResetGameWorldState();
 
 	AlwaysRelevantStreamingLevelActors.Empty();
+	TeamConnectionListMap.Empty();
+	PendingTeamRequests.Empty();
+	PendingConnectionActors.Empty();
 
-	for (UNetReplicationGraphConnection* ConnManager : Connections)
+	auto ResetConnectionNodes = [](UNetReplicationGraphConnection* ConnManager)
 	{
 		for (UReplicationGraphNode* ConnectionNode : ConnManager->GetConnectionGraphNodes())
 		{
@@ -193,18 +201,21 @@ void ULyraReplicationGraph::ResetGameWorldState()
 			{
 				AlwaysRelevantConnectionNode->ResetGameWorldState();
 			}
+			else if (ULyraReplicationGraphNode_AlwaysRelevant_ForTeam* TeamNode = Cast<ULyraReplicationGraphNode_AlwaysRelevant_ForTeam>(ConnectionNode))
+			{
+				TeamNode->NotifyResetAllNetworkActors();
+			}
 		}
+	};
+
+	for (UNetReplicationGraphConnection* ConnManager : Connections)
+	{
+		ResetConnectionNodes(ConnManager);
 	}
 
 	for (UNetReplicationGraphConnection* ConnManager : PendingConnections)
 	{
-		for (UReplicationGraphNode* ConnectionNode : ConnManager->GetConnectionGraphNodes())
-		{
-			if (ULyraReplicationGraphNode_AlwaysRelevant_ForConnection* AlwaysRelevantConnectionNode = Cast<ULyraReplicationGraphNode_AlwaysRelevant_ForConnection>(ConnectionNode))
-			{
-				AlwaysRelevantConnectionNode->ResetGameWorldState();
-			}
-		}
+		ResetConnectionNodes(ConnManager);
 	}
 }
 
@@ -221,6 +232,7 @@ EClassRepNodeMapping ULyraReplicationGraph::GetClassNodeMapping(UClass* Class) c
 	
 	if (const EClassRepNodeMapping* Ptr = ClassRepNodePolicies.FindWithoutClassRecursion(Class))
 	{
+		UE_LOG(LogLyraRepGraph, Log, TEXT("GetClassNodeMapping: %s found in ClassRepNodePolicies -> %s"), *Class->GetName(), *StaticEnum<EClassRepNodeMapping>()->GetNameStringByValue((int64)*Ptr));
 		return *Ptr;
 	}
 	
@@ -235,11 +247,6 @@ EClassRepNodeMapping ULyraReplicationGraph::GetClassNodeMapping(UClass* Class) c
 		return CDO->GetIsReplicated() && (!(CDO->bAlwaysRelevant || CDO->bOnlyRelevantToOwner || CDO->bNetUseOwnerRelevancy));
 	};
 
-	auto GetLegacyDebugStr = [](const AActor* CDO)
-	{
-		return FString::Printf(TEXT("%s [%d/%d/%d]"), *CDO->GetClass()->GetName(), CDO->bAlwaysRelevant, CDO->bOnlyRelevantToOwner, CDO->bNetUseOwnerRelevancy);
-	};
-
 	// 부모 클래스와 설정이 같다면 부모의 설정을 따릅니다. (중복 등록 방지)
 	UClass* SuperClass = Class->GetSuperClass();
 	if (AActor* SuperCDO = Cast<AActor>(SuperClass->GetDefaultObject()))
@@ -252,17 +259,28 @@ EClassRepNodeMapping ULyraReplicationGraph::GetClassNodeMapping(UClass* Class) c
 		{
 			return GetClassNodeMapping(SuperClass);
 		}
+		else
+		{
+			UE_LOG(LogLyraRepGraph, Warning, TEXT("GetClassNodeMapping: %s differs from Super %s. Flags: [AR:%d/%d] [ORO:%d/%d] [NUOR:%d/%d]"), 
+				*Class->GetName(), *SuperClass->GetName(), 
+				ActorCDO->bAlwaysRelevant, SuperCDO->bAlwaysRelevant,
+				ActorCDO->bOnlyRelevantToOwner, SuperCDO->bOnlyRelevantToOwner,
+				ActorCDO->bNetUseOwnerRelevancy, SuperCDO->bNetUseOwnerRelevancy);
+		}
 	}
 
 	if (ShouldSpatialize(ActorCDO))
 	{
+		UE_LOG(LogLyraRepGraph, Warning, TEXT("GetClassNodeMapping: %s -> Spatialize_Dynamic (Default)"), *Class->GetName());
 		return EClassRepNodeMapping::Spatialize_Dynamic; // 거리 기반 동적 액터로 분류
 	}
 	else if (ActorCDO->bAlwaysRelevant && !ActorCDO->bOnlyRelevantToOwner)
 	{
+		UE_LOG(LogLyraRepGraph, Warning, TEXT("GetClassNodeMapping: %s -> RelevantAllConnections (AlwaysRelevant)"), *Class->GetName());
 		return EClassRepNodeMapping::RelevantAllConnections; // 모든 연결에 항상 연관된 액터로 분류
 	}
 
+	UE_LOG(LogLyraRepGraph, Warning, TEXT("GetClassNodeMapping: %s -> NotRouted (Fallback)"), *Class->GetName());
 	return EClassRepNodeMapping::NotRouted;
 }
 
@@ -559,27 +577,68 @@ void ULyraReplicationGraph::InitGlobalGraphNodes()
 	// -----------------------------------------------
 	//	Always Relevant (to everyone) Actors
 	// -----------------------------------------------
-	AlwaysRelevantNode = CreateNewNode<UReplicationGraphNode_ActorList>();
-	AddGlobalGraphNode(AlwaysRelevantNode);
+	AlwaysRelevantGlobalNode = CreateNewNode<UReplicationGraphNode_ActorList>();
+	AddGlobalGraphNode(AlwaysRelevantGlobalNode);
 
 	// -----------------------------------------------
 	//	Player State specialization. This will return a rolling subset of the player states to replicate
 	// -----------------------------------------------
 	ULyraReplicationGraphNode_PlayerStateFrequencyLimiter* PlayerStateNode = CreateNewNode<ULyraReplicationGraphNode_PlayerStateFrequencyLimiter>();
 	AddGlobalGraphNode(PlayerStateNode);
+
+	// -----------------------------------------------
+	//	Lyra Team Subsystem 기반 
+	// -----------------------------------------------
+
+	// Create the always relevant node
+	AlwaysRelevantNode = CreateNewNode<UReplicationGraphNode_AlwaysRelevant_WithPending>();
+	AddGlobalGraphNode(AlwaysRelevantNode);
 }
 
-void ULyraReplicationGraph::InitConnectionGraphNodes(UNetReplicationGraphConnection* RepGraphConnection)
+void ULyraReplicationGraph::InitConnectionGraphNodes(UNetReplicationGraphConnection* ConnectionManager)
 {
-	Super::InitConnectionGraphNodes(RepGraphConnection);
+	Super::InitConnectionGraphNodes(ConnectionManager);
+	ULyraConnectionManager* LyraConnectionManager = Cast<ULyraConnectionManager>(ConnectionManager);
+	if (ensure(LyraConnectionManager))
+	{
+		ULyraReplicationGraphNode_AlwaysRelevant_ForConnection* AlwaysRelevantConnectionNode = CreateNewNode<ULyraReplicationGraphNode_AlwaysRelevant_ForConnection>();
+		// This node needs to know when client levels go in and out of visibility
+		LyraConnectionManager->OnClientVisibleLevelNameAdd.AddUObject(AlwaysRelevantConnectionNode, &ULyraReplicationGraphNode_AlwaysRelevant_ForConnection::OnClientLevelVisibilityAdd);
+		LyraConnectionManager->OnClientVisibleLevelNameRemove.AddUObject(AlwaysRelevantConnectionNode, &ULyraReplicationGraphNode_AlwaysRelevant_ForConnection::OnClientLevelVisibilityRemove);
+		AddConnectionGraphNode(AlwaysRelevantConnectionNode, LyraConnectionManager);
+		
+		LyraConnectionManager->TeamConnectionNode = CreateNewNode<ULyraReplicationGraphNode_AlwaysRelevant_ForTeam>();
+		AddConnectionGraphNode(LyraConnectionManager->TeamConnectionNode, ConnectionManager);
+	}
+}
 
-	ULyraReplicationGraphNode_AlwaysRelevant_ForConnection* AlwaysRelevantConnectionNode = CreateNewNode<ULyraReplicationGraphNode_AlwaysRelevant_ForConnection>();
+void ULyraReplicationGraph::RemoveClientConnection(UNetConnection* NetConnection)
+{
+	auto CleanupTeamInfo = [&](TArray<TObjectPtr<UNetReplicationGraphConnection>>& ConnectionList)
+	{
+		for (const TObjectPtr<UNetReplicationGraphConnection>& Conn : ConnectionList)
+		{
+			if (Conn && Conn->NetConnection == NetConnection)
+			{
+				if (ULyraConnectionManager* LyraConn = Cast<ULyraConnectionManager>(Conn))
+				{
+					if (LyraConn->Team != -1)
+					{
+						TeamConnectionListMap.RemoveConnectionFromTeam(LyraConn->Team, LyraConn);
+					}
+				}
+				return true;
+			}
+		}
+		return false;
+	};
 
-	// This node needs to know when client levels go in and out of visibility
-	RepGraphConnection->OnClientVisibleLevelNameAdd.AddUObject(AlwaysRelevantConnectionNode, &ULyraReplicationGraphNode_AlwaysRelevant_ForConnection::OnClientLevelVisibilityAdd);
-	RepGraphConnection->OnClientVisibleLevelNameRemove.AddUObject(AlwaysRelevantConnectionNode, &ULyraReplicationGraphNode_AlwaysRelevant_ForConnection::OnClientLevelVisibilityRemove);
+	if (!CleanupTeamInfo(Connections))
+	{
+		CleanupTeamInfo(PendingConnections);
+	}
 
-	AddConnectionGraphNode(AlwaysRelevantConnectionNode, RepGraphConnection);
+	Super::RemoveClientConnection(NetConnection);
 }
 
 EClassRepNodeMapping ULyraReplicationGraph::GetMappingPolicy(UClass* Class)
@@ -603,13 +662,24 @@ void ULyraReplicationGraph::RouteAddNetworkActorToNodes(const FNewReplicatedActo
 		{
 			if (ActorInfo.StreamingLevelName == NAME_None)
 			{
-				AlwaysRelevantNode->NotifyAddNetworkActor(ActorInfo);
+				AlwaysRelevantGlobalNode->NotifyAddNetworkActor(ActorInfo);
 			}
 			else
 			{
 				FActorRepListRefView& RepList = AlwaysRelevantStreamingLevelActors.FindOrAdd(ActorInfo.StreamingLevelName);
 				RepList.ConditionalAdd(ActorInfo.Actor);
 			}
+			break;
+		}
+
+		case EClassRepNodeMapping::RelevantToTeam:
+		{
+			if (ULyraConnectionManager* ConnectionManager = GetLyraConnectionManagerFromActor(ActorInfo.GetActor()))
+			{
+				ConnectionManager->TeamConnectionNode->NotifyAddNetworkActor(ActorInfo);
+			}
+
+				
 			break;
 		}
 
@@ -647,7 +717,7 @@ void ULyraReplicationGraph::RouteRemoveNetworkActorToNodes(const FNewReplicatedA
 		{
 			if (ActorInfo.StreamingLevelName == NAME_None)
 			{
-				AlwaysRelevantNode->NotifyRemoveNetworkActor(ActorInfo);
+				AlwaysRelevantGlobalNode->NotifyRemoveNetworkActor(ActorInfo);
 			}
 			else
 			{
@@ -660,6 +730,15 @@ void ULyraReplicationGraph::RouteRemoveNetworkActorToNodes(const FNewReplicatedA
 
 			SetActorDestructionInfoToIgnoreDistanceCulling(ActorInfo.GetActor());
 
+			break;
+		}
+
+		case EClassRepNodeMapping::RelevantToTeam:
+		{
+			if (ULyraConnectionManager* ConnectionManager = GetLyraConnectionManagerFromActor(ActorInfo.GetActor()))
+			{
+				ConnectionManager->TeamConnectionNode->NotifyRemoveNetworkActor(ActorInfo);
+			}
 			break;
 		}
 
@@ -681,6 +760,70 @@ void ULyraReplicationGraph::RouteRemoveNetworkActorToNodes(const FNewReplicatedA
 			break;
 		}
 	};
+}
+
+void ULyraReplicationGraph::SetTeamForPlayerController(APlayerController* PlayerController, int32 Team)
+{
+	if (PlayerController)
+	{
+		if (ULyraConnectionManager* ConnectionManager = GetLyraConnectionManagerFromActor(PlayerController))
+		{
+			const int32 CurrentTeam = ConnectionManager->Team;
+			if (CurrentTeam != Team)
+			{
+				// Remove the connection to the old team list
+				if (CurrentTeam != -1)
+				{
+					TeamConnectionListMap.RemoveConnectionFromTeam(CurrentTeam, ConnectionManager);
+				}
+
+				// Add the graph to the new team list
+				if (Team != -1)
+				{
+					TeamConnectionListMap.AddConnectionToTeam(Team, ConnectionManager);
+				}
+				
+				ConnectionManager->Team = Team;
+			}
+		}
+		else
+		{
+			// Add to PendingTeamRequests if the net connection is not ready yet
+			PendingTeamRequests.Emplace(Team, PlayerController);
+		}
+	}
+}
+
+void ULyraReplicationGraph::HandlePendingActorsAndTeamRequests()
+{
+	// Setup all pending team requests
+	if(PendingTeamRequests.Num() > 0)
+	{
+		TArray<TTuple<int32, APlayerController*>> TempRequests = MoveTemp(PendingTeamRequests);
+
+		for (const TTuple<int32, APlayerController*>& Request : TempRequests)
+		{
+			if (IsValid(Request.Value))
+			{
+				SetTeamForPlayerController(Request.Value, Request.Key);
+			}
+		}
+	}
+
+	// Set up all pending connections
+	if (PendingConnectionActors.Num() > 0)
+	{
+		TArray<AActor*> PendingActors = MoveTemp(PendingConnectionActors);
+
+		for (AActor* Actor : PendingActors)
+		{
+			if (IsValid(Actor))
+			{
+				FGlobalActorReplicationInfo& GlobalInfo = GlobalActorReplicationInfoMap.Get(Actor);
+				RouteAddNetworkActorToNodes(FNewReplicatedActorInfo(Actor), GlobalInfo);
+			}
+		}
+	}
 }
 
 // Since we listen to global (static) events, we need to watch out for cross world broadcasts (PIE)
@@ -733,6 +876,41 @@ void ULyraReplicationGraph::OnGameplayDebuggerOwnerChange(AGameplayDebuggerCateg
 #endif
 
 #undef CHECK_WORLDS
+
+
+ULyraConnectionManager* ULyraReplicationGraph::GetLyraConnectionManagerFromActor(const AActor* Actor)
+{
+	if (Actor)
+	{
+		if (UNetConnection* NetConnection = Actor->GetNetConnection())
+		{
+			if (ULyraConnectionManager* ConnectionManager = Cast<ULyraConnectionManager>(FindOrAddConnectionManager(NetConnection)))
+			{
+				return ConnectionManager;
+			}
+		}
+	}
+	
+	return nullptr;
+}
+
+int32 ULyraReplicationGraph::GetTeamID(const UNetReplicationGraphConnection* RepGraphConnection) const
+{
+    if (RepGraphConnection && RepGraphConnection->NetConnection)
+	{
+	    // UNetConnection -> PlayerController -> PlayerState 순으로 접근
+		if (APlayerController* PC = Cast<APlayerController>(RepGraphConnection->NetConnection->PlayerController))
+		{
+			// LyraTeamSubsystem 활용 (미리 찾아둔 파일 정보 기준)
+			if (ULyraTeamSubsystem* TeamSubsystem = GetWorld()->GetSubsystem<ULyraTeamSubsystem>())
+			{
+				return TeamSubsystem->FindTeamFromObject(PC);
+			}
+		}
+	}
+    return INDEX_NONE;
+}
+
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -948,14 +1126,44 @@ void ULyraReplicationGraphNode_PlayerStateFrequencyLimiter::LogNode(FReplication
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+UReplicationGraphNode_AlwaysRelevant_WithPending::UReplicationGraphNode_AlwaysRelevant_WithPending()
+{
+	bRequiresPrepareForReplicationCall = true;
+}
+
+void UReplicationGraphNode_AlwaysRelevant_WithPending::PrepareForReplication()
+{
+	ULyraReplicationGraph* ReplicationGraph = Cast<ULyraReplicationGraph>(GetOuter());
+	ReplicationGraph->HandlePendingActorsAndTeamRequests();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 void ULyraReplicationGraphNode_AlwaysRelevant_ForTeam::GatherActorListsForConnection(const FConnectionGatherActorListParameters& Params)
 {
-	Super::GatherActorListsForConnection(Params);
+	ULyraReplicationGraph* ReplicationGraph = CastChecked<ULyraReplicationGraph>(GetOuter());
+	const ULyraConnectionManager* ConnectionManager = Cast<ULyraConnectionManager>(&Params.ConnectionManager);
+	
+	// Get all other team members with the same team ID from ReplicationGraph->TeamConnectionListMap
+	if (ReplicationGraph && ConnectionManager && ConnectionManager->Team != -1)
+	{
+		if (TArray<ULyraConnectionManager*>* TeamConnections = ReplicationGraph->TeamConnectionListMap.GetConnectionArrayForTeam(ConnectionManager->Team))
+		{
+			for (const ULyraConnectionManager* TeamMember : *TeamConnections)
+			{
+				TeamMember->TeamConnectionNode->GatherActorListsForConnectionDefault(Params);
+			}
+		}
+	}
+	else
+	{
+		Super::GatherActorListsForConnection(Params);
+	}
 }
 
 void ULyraReplicationGraphNode_AlwaysRelevant_ForTeam::GatherActorListsForConnectionDefault(const FConnectionGatherActorListParameters& Params)
 {
-	
+	Super::GatherActorListsForConnection(Params);
 }
 
 
