@@ -2,69 +2,72 @@
 
 /**
 *	
-*	===================== LyraReplicationGraph Replication =====================
+*	===================== LyraReplicationGraph 레플리케이션 =====================
 *
-*	Overview
+*	개요
 *	
-*		This changes the way actor relevancy works. AActor::IsNetRelevantFor is NOT used in this system!
+*		이 시스템은 액터의 연관성(Relevancy) 작동 방식을 변경합니다. 이 시스템에서는 AActor::IsNetRelevantFor를 사용하지 않습니다!
 *		
-*		Instead, The ULyraReplicationGraph contains UReplicationGraphNodes. These nodes are responsible for generating lists of actors to replicate for each connection.
-*		Most of these lists are persistent across frames. This enables most of the gathering work ("which actors should be considered for replication) to be shared/reused.
-*		Nodes may be global (used by all connections), connection specific (each connection gets its own node), or shared (e.g, teams: all connections on the same team share).
-*		Actors can be in multiple nodes! For example a pawn may be in the spatialization node but also in the always-relevant-for-team node. It will be returned twice for 
-*		teammates. This is ok though should be minimized when possible.
+*		대신, ULyraReplicationGraph는 UReplicationGraphNodes를 포함합니다. 이 노드들은 각 연결(Connection)에 대해 레플리케이션할 액터 목록을 생성하는 역할을 합니다.
+*		이 목록의 대부분은 프레임 간에 유지(Persistent)됩니다. 이를 통해 대부분의 수집 작업("어떤 액터를 레플리케이션 대상으로 고려할 것인가")을 공유하고 재사용할 수 있습니다.
+*		노드는 전역 노드(모든 연결이 사용), 연결 특정 노드(각 연결마다 개별 노드 생성), 또는 공유 노드(예: 팀 - 같은 팀의 모든 연결이 공유)가 될 수 있습니다.
+*		액터는 여러 노드에 속할 수 있습니다! 예를 들어 Pawn은 공간화 노드(Spatialization Node)에 있으면서 동시에 팀별 항상 연관 노드(Always-relevant-for-team Node)에 있을 수 있습니다.
+*		이 경우 팀원에게는 두 번 반환되지만, 이는 허용되며 가능한 최소화해야 합니다.
 *		
-*		ULyraReplicationGraph is intended to not be directly used by the game code. That is, you should not have to include LyraReplicationGraph.h anywhere else.
-*		Rather, ULyraReplicationGraph depends on the game code and registers for events that the game code broadcasts (e.g., events for players joining/leaving teams).
-*		This choice was made because it gives ULyraReplicationGraph a complete holistic view of actor replication. Rather than exposing generic public functions that any
-*		place in game code can invoke, all notifications are explicitly registered in ULyraReplicationGraph::InitGlobalActorClassSettings.
+*		ULyraReplicationGraph는 게임 코드에서 직접 사용되지 않도록 설계되었습니다. 즉, 다른 곳에서 LyraReplicationGraph.h를 포함할 필요가 없어야 합니다.
+*		대신 ULyraReplicationGraph는 게임 코드에 의존하며, 게임 코드에서 브로드캐스트하는 이벤트(예: 플레이어의 팀 참가/이탈 이벤트)를 등록하여 처리합니다.
+*		이러한 구조는 ULyraReplicationGraph가 액터 레플리케이션에 대해 전체적이고 통합된 뷰를 가질 수 있게 해줍니다. 게임 코드의 임의의 위치에서 호출할 수 있는 
+*		일반적인 공개 함수를 노출하는 대신, 모든 알림은 ULyraReplicationGraph::InitGlobalActorClassSettings에서 명시적으로 등록됩니다.
 *		
-*	Lyra Nodes
+*	Lyra 노드 (Lyra Nodes)
 *	
-*		These are the top level nodes currently used:
+*		현재 사용되는 주요 노드들은 다음과 같습니다:
 *		
 *		UReplicationGraphNode_GridSpatialization2D: 
-*		This is the spatialization node. All "distance based relevant" actors will be routed here. This node divides the map into a 2D grid. Each cell in the grid contains 
-*		children nodes that hold lists of actors based on how they update/go dormant. Actors are put in multiple cells. Connections pull from the single cell they are in.
+*		공간화 노드입니다. "거리 기반 연관성"을 가진 모든 액터가 여기로 라우팅됩니다. 이 노드는 맵을 2D 그리드로 나눕니다. 
+*		그리드의 각 셀은 업데이트 방식이나 휴면(Dormancy) 상태에 따라 액터 목록을 보관하는 자식 노드들을 가집니다. 
+*		액터는 여러 셀에 배치될 수 있으며, 연결(Connection)은 자신이 속한 셀에서 데이터를 가져옵니다.
 *		
-*		UReplicationGraphNode_ActorList
-*		This is an actor list node that contains the always relevant actors. These actors are always relevant to every connection.
+*		UReplicationGraphNode_ActorList:
+*		모든 연결에 항상 연관된(Always Relevant) 액터들을 포함하는 노드입니다.
 *		
-*		ULyraReplicationGraphNode_AlwaysRelevant_ForConnection
-*		This is the node for connection specific always relevant actors. This node does not maintain a persistent list but builds it each frame. This is possible because (currently)
-*		these actors are all easily accessed from the PlayerController. A persistent list would require notifications to be broadcast when these actors change, which would be possible
-*		but currently not necessary.
+*		ULyraReplicationGraphNode_AlwaysRelevant_ForConnection:
+*		연결별로 특정한 항상 연관된 액터들을 위한 노드입니다. 이 노드는 지속적인 목록을 유지하지 않고 매 프레임 목록을 새로 빌드합니다.
+*		현재 이 액터들은 PlayerController에서 쉽게 접근할 수 있기 때문에 이 방식이 가능합니다. 지속적인 목록을 사용하려면 액터가 변경될 때마다 
+*		알림을 브로드캐스트해야 하는데, 현재로서는 그럴 필요가 없습니다.
 *		
-*		ULyraReplicationGraphNode_PlayerStateFrequencyLimiter
-*		A custom node for handling player state replication. This replicates a small rolling set of player states (currently 2/frame). This is so player states replicate
-*		to simulated connections at a low, steady frequency, and to take advantage of serialization sharing. Auto proxy player states are replicated at higher frequency (to the
-*		owning connection only) via ULyraReplicationGraphNode_AlwaysRelevant_ForConnection.
+*		ULyraReplicationGraphNode_PlayerStateFrequencyLimiter:
+*		PlayerState 레플리케이션을 처리하기 위한 커스텀 노드입니다. 소수의 PlayerState 세트(현재 프레임당 2개)를 순환하며 레플리케이션합니다.
+*		이를 통해 Simulated Connection에 낮은 빈도로 꾸준하게 PlayerState를 전달하며, 직렬화 공유(Serialization Sharing) 이점을 활용합니다.
+*		자신의 PlayerState(Auto proxy)는 ULyraReplicationGraphNode_AlwaysRelevant_ForConnection을 통해 소유한 연결에 더 높은 빈도로 레플리케이션됩니다.
 *		
-*		UReplicationGraphNode_TearOff_ForConnection
-*		Connection specific node for handling tear off actors. This is created and managed in the base implementation of Replication Graph.
+*		UReplicationGraphNode_TearOff_ForConnection:
+*		Tear Off 액터들을 처리하기 위한 연결 특정 노드입니다. 레플리케이션 그래프의 기본 구현에서 생성 및 관리됩니다.
 *	
-*	How To Use
+*	사용 방법
 *	
-*		Making something always relevant: Please avoid if you can :) If you must, just setting AActor::bAlwaysRelevant = true in the class defaults will do it.
+*		항상 연관(Always Relevant)되게 만들기: 가능하면 피하세요 :) 꼭 필요하다면 클래스 기본값에서 AActor::bAlwaysRelevant = true로 설정하면 됩니다.
 *		
-*		Making something always relevant to connection: You will need to modify ULyraReplicationGraphNode_AlwaysRelevant_ForConnection::GatherActorListsForConnection. You will also want 
-*		to make sure the actor does not get put in one of the other nodes. The safest way to do this is by setting its EClassRepNodeMapping to NotRouted in ULyraReplicationGraph::InitGlobalActorClassSettings.
+*		특정 연결에만 항상 연관되게 만들기: ULyraReplicationGraphNode_AlwaysRelevant_ForConnection::GatherActorListsForConnection을 수정해야 합니다. 
+*		또한 해당 액터가 다른 노드에 들어가지 않도록 주의해야 합니다. 가장 안전한 방법은 ULyraReplicationGraph::InitGlobalActorClassSettings에서 
+*		해당 클래스의 EClassRepNodeMapping을 NotRouted로 설정하는 것입니다.
 *
-*	How To Debug
+*	디버깅 방법
 *	
-*		Its a good idea to just disable rep graph to see if your problem is specific to this system or just general replication/game play problem.
+*		문제가 이 시스템(Rep Graph)에 국한된 것인지, 아니면 일반적인 레플리케이션/게임플레이 문제인지 확인하기 위해 레플리케이션 그래프를 비활성화해 보는 것이 좋습니다.
 *		
-*		If it is replication graph related, there are several useful commands that can be used: see ReplicationGraph_Debugging.cpp. The most useful are below. Use the 'cheat' command to run these on the server from a client.
+*		레플리케이션 그래프와 관련된 문제라면 몇 가지 유용한 명령어를 사용할 수 있습니다 (ReplicationGraph_Debugging.cpp 참조). 
+*		가장 유용한 명령어들은 다음과 같습니다. 클라이언트에서 서버로 실행하려면 'cheat' 명령어를 앞에 붙이세요.
 *	
-*		"Net.RepGraph.PrintGraph" - this will print the graph to the log: each node and actor. 
-*		"Net.RepGraph.PrintGraph class" - same as above but will group by class.
-*		"Net.RepGraph.PrintGraph nclass" - same as above but will group by native classes (hides blueprint noise)
+*		"Net.RepGraph.PrintGraph" - 그래프의 모든 노드와 액터를 로그에 출력합니다. 
+*		"Net.RepGraph.PrintGraph class" - 위와 같지만 클래스별로 그룹화하여 출력합니다.
+*		"Net.RepGraph.PrintGraph nclass" - 위와 같지만 네이티브 클래스별로 그룹화합니다 (블루프린트 노이즈 제거).
 *		
-*		Net.RepGraph.PrintAll <Frames> <ConnectionIdx> <"Class"/"Nclass"> -  will print the entire graph, the gathered actors, and how they were prioritized for a given connection for X amount of frames.
+*		Net.RepGraph.PrintAll <Frames> <ConnectionIdx> <"Class"/"Nclass"> - 특정 연결에 대해 수집된 액터들과 우선순위가 지정된 방식을 X 프레임 동안 출력합니다.
 *		
-*		Net.RepGraph.PrintAllActorInfo <ActorMatchString> - will print the class, global, and connection replication info associated with an actor/class. If MatchString is empty will print everything. Call directly from client.
+*		Net.RepGraph.PrintAllActorInfo <ActorMatchString> - 액터/클래스와 연관된 클래스 정보, 전역 및 연결 레플리케이션 정보를 출력합니다.
 *		
-*		Lyra.RepGraph.PrintRouting - will print the EClassRepNodeMapping for each class. That is, how a given actor class is routed (or not) in the Replication Graph.
+*		Lyra.RepGraph.PrintRouting - 각 클래스에 대한 EClassRepNodeMapping을 출력합니다. 즉, 액터 클래스가 그래프에서 어떻게 라우팅되는지 보여줍니다.
 *	
 */
 
@@ -162,7 +165,7 @@ namespace Lyra::RepGraph
 	}
 };
 
-// ----------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 ULyraReplicationGraph::ULyraReplicationGraph()
 {
@@ -205,6 +208,10 @@ void ULyraReplicationGraph::ResetGameWorldState()
 	}
 }
 
+/**
+ * 클래스별 레플리케이션 노드 매핑을 결정하는 정책 함수입니다.
+ * 액터가 항상 연관되는지(Always Relevant), 소유자에게만 중요한지(Only Relevant to Owner) 등을 분석합니다.
+ */
 EClassRepNodeMapping ULyraReplicationGraph::GetClassNodeMapping(UClass* Class) const
 {
 	if (!Class)
@@ -233,7 +240,7 @@ EClassRepNodeMapping ULyraReplicationGraph::GetClassNodeMapping(UClass* Class) c
 		return FString::Printf(TEXT("%s [%d/%d/%d]"), *CDO->GetClass()->GetName(), CDO->bAlwaysRelevant, CDO->bOnlyRelevantToOwner, CDO->bNetUseOwnerRelevancy);
 	};
 
-	// Only handle this class if it differs from its super. There is no need to put every child class explicitly in the graph class mapping
+	// 부모 클래스와 설정이 같다면 부모의 설정을 따릅니다. (중복 등록 방지)
 	UClass* SuperClass = Class->GetSuperClass();
 	if (AActor* SuperCDO = Cast<AActor>(SuperClass->GetDefaultObject()))
 	{
@@ -249,11 +256,11 @@ EClassRepNodeMapping ULyraReplicationGraph::GetClassNodeMapping(UClass* Class) c
 
 	if (ShouldSpatialize(ActorCDO))
 	{
-		return EClassRepNodeMapping::Spatialize_Dynamic;
+		return EClassRepNodeMapping::Spatialize_Dynamic; // 거리 기반 동적 액터로 분류
 	}
 	else if (ActorCDO->bAlwaysRelevant && !ActorCDO->bOnlyRelevantToOwner)
 	{
-		return EClassRepNodeMapping::RelevantAllConnections;
+		return EClassRepNodeMapping::RelevantAllConnections; // 모든 연결에 항상 연관된 액터로 분류
 	}
 
 	return EClassRepNodeMapping::NotRouted;
@@ -320,13 +327,17 @@ void ULyraReplicationGraph::RegisterClassReplicationInfo(UClass* ReplicatedClass
 	}
 }
 
+/**
+ * 레플리케이션 그래프의 전역 클래스 설정을 초기화합니다.
+ * 어떤 클래스가 어떤 노드에 배치될지, 컬링 거리(Cull Distance)는 얼마인지 등을 여기서 설정합니다.
+ */
 void ULyraReplicationGraph::InitGlobalActorClassSettings()
 {
-	// Setup our lazy init function for classes that are not currently loaded.
+	// 아직 로드되지 않은 클래스들을 위해 지연 초기화(Lazy Init) 함수를 설정합니다.
 	GlobalActorReplicationInfoMap.SetInitClassInfoFunc(
 		[this](UClass* Class, FClassReplicationInfo& ClassInfo)
 		{
-			RegisterClassRepNodeMapping(Class); // This needs to run before RegisterClassReplicationInfo.
+			RegisterClassRepNodeMapping(Class); // 라우팅 정책 등록
 
 			const bool bHandled = ConditionalInitClassReplicationInfo(Class, ClassInfo);
 
@@ -369,7 +380,7 @@ void ULyraReplicationGraph::InitGlobalActorClassSettings()
 	const ULyraReplicationGraphSettings* LyraRepGraphSettings = GetDefault<ULyraReplicationGraphSettings>();
 	check(LyraRepGraphSettings);
 
-	// Set Classes Node Mappings
+	// 설정(Settings) 파일에 등록된 클래스별 커스텀 매핑을 적용합니다.
 	for (const FRepGraphActorClassSettings& ActorClassSettings : LyraRepGraphSettings->ClassSettings)
 	{
 		if (ActorClassSettings.bAddClassRepInfoToMap)
@@ -383,9 +394,10 @@ void ULyraReplicationGraph::InitGlobalActorClassSettings()
 	}
 
 #if WITH_GAMEPLAY_DEBUGGER
-	AddClassRepInfo(AGameplayDebuggerCategoryReplicator::StaticClass(), EClassRepNodeMapping::NotRouted);				// Replicated via ULyraReplicationGraphNode_AlwaysRelevant_ForConnection
+	AddClassRepInfo(AGameplayDebuggerCategoryReplicator::StaticClass(), EClassRepNodeMapping::NotRouted);				// AlwaysRelevant_ForConnection 노드에서 별도 처리
 #endif
 
+    // 모든 레플리케이션되는 클래스들을 순회하며 기본 설정을 등록합니다.
 	TArray<UClass*> AllReplicatedClasses;
 
 	for (TObjectIterator<UClass> It; It; ++It)
@@ -397,25 +409,21 @@ void ULyraReplicationGraph::InitGlobalActorClassSettings()
 			continue;
 		}
 
-		// Skip SKEL and REINST classes. I don't know a better way to do this.
+		// SKEL 및 REINST 클래스(에디터 전용 내부 클래스)는 스킵합니다.
 		if (Class->GetName().StartsWith(TEXT("SKEL_")) || Class->GetName().StartsWith(TEXT("REINST_")))
 		{
 			continue;
 		}
-
+		
 		// --------------------------------------------------------------------
 		// This is a replicated class. Save this off for the second pass below
 		// --------------------------------------------------------------------
 
 		AllReplicatedClasses.Add(Class);
-
 		RegisterClassRepNodeMapping(Class);
 	}
 
-	// -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-	// Setup FClassReplicationInfo. This is essentially the per class replication settings. Some we set explicitly, the rest we are setting via looking at the legacy settings on AActor.
-	// -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
+	// 캐릭터 클래스(ACharacter)에 대한 특수 설정 (Cull Distance, FastShared 이동 복제 등)
 	auto SetClassInfo = [&](UClass* Class, const FClassReplicationInfo& Info) { GlobalActorReplicationInfoMap.SetClassInfo(Class, Info); ExplicitlySetClasses.Add(Class); };
 	ExplicitlySetClasses.Reset();
 
@@ -440,6 +448,8 @@ void ULyraReplicationGraph::InitGlobalActorClassSettings()
 	//	Setup FastShared replication for pawns. This is called up to once per frame per pawn to see if it wants
 	//	to send a FastShared update to all relevant connections.
 	// ------------------------------------------------------------------------------------------------------
+
+	// LyraCharacter 전용 고속 공유 레플리케이션(FastShared Replication) 함수 등록
 	CharacterClassRepInfo.FastSharedReplicationFunc = [](AActor* Actor)
 	{
 		bool bSuccess = false;
@@ -724,7 +734,7 @@ void ULyraReplicationGraph::OnGameplayDebuggerOwnerChange(AGameplayDebuggerCateg
 
 #undef CHECK_WORLDS
 
-// ------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 void ULyraReplicationGraphNode_AlwaysRelevant_ForConnection::ResetGameWorldState()
 {
@@ -875,7 +885,7 @@ void ULyraReplicationGraphNode_AlwaysRelevant_ForConnection::LogNode(FReplicatio
 	DebugInfo.PopIndent();
 }
 
-// ------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 ULyraReplicationGraphNode_PlayerStateFrequencyLimiter::ULyraReplicationGraphNode_PlayerStateFrequencyLimiter()
 {
@@ -936,7 +946,20 @@ void ULyraReplicationGraphNode_PlayerStateFrequencyLimiter::LogNode(FReplication
 	DebugInfo.PopIndent();
 }
 
-// ------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
+
+void ULyraReplicationGraphNode_AlwaysRelevant_ForTeam::GatherActorListsForConnection(const FConnectionGatherActorListParameters& Params)
+{
+	Super::GatherActorListsForConnection(Params);
+}
+
+void ULyraReplicationGraphNode_AlwaysRelevant_ForTeam::GatherActorListsForConnectionDefault(const FConnectionGatherActorListParameters& Params)
+{
+	
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 void ULyraReplicationGraph::PrintRepNodePolicies()
 {

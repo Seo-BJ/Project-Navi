@@ -1,8 +1,9 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "LyraReplicationGraphSettings.h"
+#include "LyraReplicationGraph.h"
 #include "Misc/App.h"
-#include "System/LyraReplicationGraph.h"
+
 
 ULyraReplicationGraphSettings::ULyraReplicationGraphSettings()
 {
