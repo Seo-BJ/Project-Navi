@@ -13,6 +13,9 @@
 #endif // UE_WITH_IRIS
 
 
+#include "ReplicationGrpah/LyraReplicationGraph.h"
+#include "ReplicationGrpah/LyraReplicationGraphSettings.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraEquipmentInstance)
 
 class FLifetimeProperty;
@@ -89,6 +92,16 @@ void ULyraEquipmentInstance::SpawnEquipmentActors(const TArray<FLyraEquipmentAct
 			NewActor->SetActorRelativeTransform(SpawnInfo.AttachTransform);
 			NewActor->AttachToComponent(AttachTarget, FAttachmentTransformRules::KeepRelativeTransform, SpawnInfo.AttachSocket);
 
+			const ULyraReplicationGraphSettings* Settings = GetDefault<ULyraReplicationGraphSettings>();
+			if (Settings->bDisableReplicationGraph == false)
+			{
+				// 1. Replication Graph 인스턴스 가져오기
+				if (ULyraReplicationGraph* RepGraph = Cast<ULyraReplicationGraph>(GetWorld()->GetNetDriver()->GetReplicationDriver()))
+				{
+					// 2. 액터를 캐릭터의 종속 액터 리스트에서 추가
+					RepGraph->AddDependentActor(NewActor->GetOwner(), NewActor);
+				}
+			}
 			SpawnedActors.Add(NewActor);
 		}
 	}
@@ -98,6 +111,16 @@ void ULyraEquipmentInstance::DestroyEquipmentActors()
 {
 	for (AActor* Actor : SpawnedActors)
 	{
+		const ULyraReplicationGraphSettings* Settings = GetDefault<ULyraReplicationGraphSettings>();
+		if (Settings->bDisableReplicationGraph == false)
+		{
+			// 1. Replication Graph 인스턴스 가져오기 
+			if (ULyraReplicationGraph* RepGraph = Cast<ULyraReplicationGraph>(GetWorld()->GetNetDriver()->GetReplicationDriver()))
+			{
+				// 2. 액터를 캐릭터의 종속 액터 리스트에서 제거
+				RepGraph->RemoveDependentActor( Actor->GetOwner(), Actor);
+			}
+		}
 		if (Actor)
 		{
 			Actor->Destroy();

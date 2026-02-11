@@ -651,8 +651,7 @@ EClassRepNodeMapping ULyraReplicationGraph::GetMappingPolicy(UClass* Class)
 
 void ULyraReplicationGraph::RouteAddNetworkActorToNodes(const FNewReplicatedActorInfo& ActorInfo, FGlobalActorReplicationInfo& GlobalInfo)
 {
-	EClassRepNodeMapping Policy = GetMappingPolicy(ActorInfo.Class);
-	switch(Policy)
+	switch(const EClassRepNodeMapping Policy = GetMappingPolicy(ActorInfo.Class))
 	{
 		case EClassRepNodeMapping::NotRouted:
 		{
@@ -896,7 +895,22 @@ void ULyraReplicationGraph::OnGameplayDebuggerOwnerChange(AGameplayDebuggerCateg
 
 #undef CHECK_WORLDS
 
+void ULyraReplicationGraph::AddDependentActor(AActor* ParentActor, AActor* DependentActor)
+{
+	if (ParentActor && DependentActor)
+	{
+		GlobalActorReplicationInfoMap.AddDependentActor(ParentActor, DependentActor);
+	}
+}
 
+void ULyraReplicationGraph::RemoveDependentActor(AActor* ParentActor, AActor* DependentActor)
+{
+	if (ParentActor && DependentActor)
+	{
+		GlobalActorReplicationInfoMap.RemoveDependentActor(ParentActor, DependentActor);
+	}
+	
+}
 ULyraConnectionManager* ULyraReplicationGraph::GetLyraConnectionManagerFromActor(const AActor* Actor)
 {
 	if (Actor)

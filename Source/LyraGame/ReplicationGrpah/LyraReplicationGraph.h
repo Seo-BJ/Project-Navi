@@ -62,6 +62,10 @@ public:
 #endif
 
 	void PrintRepNodePolicies();
+	
+	void AddDependentActor(AActor* ParentActor, AActor* DependentActor);
+	void RemoveDependentActor(AActor* ParentActor, AActor* DependentActor);
+
 
 private:
 	void AddClassRepInfo(UClass* Class, EClassRepNodeMapping Mapping);
@@ -80,7 +84,7 @@ private:
 	
 	/** ULyraReplicationGraph::InitGlobalActorClassSettings 코드에서 레플리케이션 설정이 명시적으로 설정된 클래스들입니다. */
 	TArray<UClass*> ExplicitlySetClasses;
-
+	
 	ULyraConnectionManager* GetLyraConnectionManagerFromActor(const AActor* Actor);
 
 	UPROPERTY()

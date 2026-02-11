@@ -33,6 +33,8 @@ public:
 
 	virtual void OnEquippedClient() override;
 
+	virtual void OnRep_Owner() override;
+
 	FTransform GetAimPointTransform();
 
 

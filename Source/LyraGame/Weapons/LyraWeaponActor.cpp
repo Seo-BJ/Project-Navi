@@ -3,14 +3,15 @@
 
 #include "LyraWeaponActor.h"
 
+#include "ReplicationGraph.h"
 #include "Character/LyraCharacter.h"
-
 
 // Sets default values
 ALyraWeaponActor::ALyraWeaponActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
+	bNetUseOwnerRelevancy = true;
 
 	USceneComponent* SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("SceneComponent"));
 	RootComponent = SceneComponent;
@@ -32,17 +33,30 @@ ALyraWeaponActor::ALyraWeaponActor()
 
 	TppMesh->SetOwnerNoSee(true);}
 
+	
+
 void ALyraWeaponActor::OnEquipped(FName AttachSocket, FTransform AttachTransform)
 {
 	// AttachMeshToPawn(WeaponAttachSocket, WeaponAttachTransform);
 }
 
 
-
 void ALyraWeaponActor::OnUnequipped()
 {
 
 }
+
+void ALyraWeaponActor::OnRep_Owner()
+{
+	Super::OnRep_Owner();
+	
+	if (GetOwner())
+	{
+		OnEquippedClient();
+	}
+	
+}
+
 
 void ALyraWeaponActor::OnEquippedClient()
 {
