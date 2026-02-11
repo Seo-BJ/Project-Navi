@@ -72,6 +72,7 @@
 */
 
 #include "LyraReplicationGraph.h"
+#include "LyraReplicationGraphNodes.h"
 
 #include "Net/UnrealNetwork.h"
 #include "Engine/LevelStreaming.h"
@@ -296,7 +297,7 @@ void ULyraReplicationGraph::InitClassReplicationInfo(FClassReplicationInfo& Info
 	if (Spatialize)
 	{
 		Info.SetCullDistanceSquared(CDO->GetNetCullDistanceSquared());
-		UE_LOG(LogLyraRepGraph, Log, TEXT("Setting cull distance for %s to %f (%f)"), *Class->GetName(), Info.GetCullDistanceSquared(), Info.GetCullDistance());
+		UE_LOG(LogLyraRepGraph, Display, TEXT("Setting cull distance for %s to %f (%f)"), *Class->GetName(), Info.GetCullDistanceSquared(), Info.GetCullDistance());
 	}
 
 	Info.ReplicationPeriodFrame = GetReplicationPeriodFrameForFrequency(CDO->GetNetUpdateFrequency());
@@ -307,7 +308,7 @@ void ULyraReplicationGraph::InitClassReplicationInfo(FClassReplicationInfo& Info
 		NativeClass = NativeClass->GetSuperClass();
 	}
 
-	UE_LOG(LogLyraRepGraph, Log, TEXT("Setting replication period for %s (%s) to %d frames (%.2f)"), *Class->GetName(), *NativeClass->GetName(), Info.ReplicationPeriodFrame, CDO->GetNetUpdateFrequency());
+	UE_LOG(LogLyraRepGraph, Display, TEXT("Setting replication period for %s (%s) to %d frames (%.2f)"), *Class->GetName(), *NativeClass->GetName(), Info.ReplicationPeriodFrame, CDO->GetNetUpdateFrequency());
 }
 
 bool ULyraReplicationGraph::ConditionalInitClassReplicationInfo(UClass* ReplicatedClass, FClassReplicationInfo& ClassInfo)
@@ -341,7 +342,7 @@ void ULyraReplicationGraph::RegisterClassReplicationInfo(UClass* ReplicatedClass
 	if (ConditionalInitClassReplicationInfo(ReplicatedClass, ClassInfo))
 	{
 		GlobalActorReplicationInfoMap.SetClassInfo(ReplicatedClass, ClassInfo);
-		UE_LOG(LogLyraRepGraph, Log, TEXT("Setting %s - %.2f"), *GetNameSafe(ReplicatedClass), ClassInfo.GetCullDistance());
+		UE_LOG(LogLyraRepGraph, Display, TEXT("Setting %s - %.2f"), *GetNameSafe(ReplicatedClass), ClassInfo.GetCullDistance());
 	}
 }
 
@@ -405,7 +406,7 @@ void ULyraReplicationGraph::InitGlobalActorClassSettings()
 		{
 			if (UClass* StaticActorClass = ActorClassSettings.GetStaticActorClass())
 			{
-				UE_LOG(LogLyraRepGraph, Log, TEXT("ActorClassSettings -- AddClassRepInfo - %s :: %i"), *StaticActorClass->GetName(), int(ActorClassSettings.ClassNodeMapping));
+				UE_LOG(LogLyraRepGraph, Display, TEXT("ActorClassSettings -- AddClassRepInfo - %s :: %i"), *StaticActorClass->GetName(), int(ActorClassSettings.ClassNodeMapping));
 				AddClassRepInfo(StaticActorClass, ActorClassSettings.ClassNodeMapping);
 			}
 		}
@@ -501,8 +502,8 @@ void ULyraReplicationGraph::InitGlobalActorClassSettings()
 	}
 
 	// Print out what we came up with
-	UE_LOG(LogLyraRepGraph, Log, TEXT(""));
-	UE_LOG(LogLyraRepGraph, Log, TEXT("Class Routing Map: "));
+	UE_LOG(LogLyraRepGraph, Display, TEXT(""));
+	UE_LOG(LogLyraRepGraph, Display, TEXT("Class Routing Map: "));
 	for (auto ClassMapIt = ClassRepNodePolicies.CreateIterator(); ClassMapIt; ++ClassMapIt)
 	{
 		UClass* Class = CastChecked<UClass>(ClassMapIt.Key().ResolveObjectPtr());
@@ -517,17 +518,17 @@ void ULyraReplicationGraph::InitGlobalActorClassSettings()
 			continue;
 		}
 
-		UE_LOG(LogLyraRepGraph, Log, TEXT("  %s (%s) -> %s"), *Class->GetName(), *GetNameSafe(ParentNativeClass), *StaticEnum<EClassRepNodeMapping>()->GetNameStringByValue((int64)Mapping));
+		UE_LOG(LogLyraRepGraph, Display, TEXT("  %s (%s) -> %s"), *Class->GetName(), *GetNameSafe(ParentNativeClass), *StaticEnum<EClassRepNodeMapping>()->GetNameStringByValue((int64)Mapping));
 	}
 
-	UE_LOG(LogLyraRepGraph, Log, TEXT(""));
-	UE_LOG(LogLyraRepGraph, Log, TEXT("Class Settings Map: "));
+	UE_LOG(LogLyraRepGraph, Display, TEXT(""));
+	UE_LOG(LogLyraRepGraph, Display, TEXT("Class Settings Map: "));
 	FClassReplicationInfo DefaultValues;
 	for (auto ClassRepInfoIt = GlobalActorReplicationInfoMap.CreateClassMapIterator(); ClassRepInfoIt; ++ClassRepInfoIt)
 	{
 		UClass* Class = CastChecked<UClass>(ClassRepInfoIt.Key().ResolveObjectPtr());
 		const FClassReplicationInfo& ClassInfo = ClassRepInfoIt.Value();
-		UE_LOG(LogLyraRepGraph, Log, TEXT("  %s (%s) -> %s"), *Class->GetName(), *GetNameSafe(GetParentNativeClass(Class)), *ClassInfo.BuildDebugStringDelta());
+		UE_LOG(LogLyraRepGraph, Display, TEXT("  %s (%s) -> %s"), *Class->GetName(), *GetNameSafe(GetParentNativeClass(Class)), *ClassInfo.BuildDebugStringDelta());
 	}
 
 
@@ -550,7 +551,7 @@ void ULyraReplicationGraph::InitGlobalActorClassSettings()
 		{
 			if (UClass* StaticActorClass = ActorClassSettings.GetStaticActorClass())
 			{
-				UE_LOG(LogLyraRepGraph, Log, TEXT("ActorClassSettings -- RPC_Multicast_OpenChannelForClass - %s"), *StaticActorClass->GetName());
+				UE_LOG(LogLyraRepGraph, Display, TEXT("ActorClassSettings -- RPC_Multicast_OpenChannelForClass - %s"), *StaticActorClass->GetName());
 				RPC_Multicast_OpenChannelForClass.Set(StaticActorClass, ActorClassSettings.bRPC_Multicast_OpenChannelForClass);
 			}
 		}
@@ -677,9 +678,16 @@ void ULyraReplicationGraph::RouteAddNetworkActorToNodes(const FNewReplicatedActo
 			if (ULyraConnectionManager* ConnectionManager = GetLyraConnectionManagerFromActor(ActorInfo.GetActor()))
 			{
 				ConnectionManager->TeamConnectionNode->NotifyAddNetworkActor(ActorInfo);
+				if (APawn* Pawn = Cast<APawn>(ActorInfo.GetActor()))
+				{
+					ConnectionManager->Pawn = Pawn;
+				}
 			}
-
-				
+			else if(ActorInfo.Actor->GetNetOwner())
+			{
+				// Add to PendingConnectionActors if the net connection is not ready yet
+				PendingConnectionActors.AddUnique(ActorInfo.GetActor());
+			}
 			break;
 		}
 
@@ -796,6 +804,8 @@ void ULyraReplicationGraph::SetTeamForPlayerController(APlayerController* Player
 
 void ULyraReplicationGraph::HandlePendingActorsAndTeamRequests()
 {
+	SCOPE_CYCLE_COUNTER(STAT_LyraRepGraph_HandlePendingRequests);
+
 	// Setup all pending team requests
 	if(PendingTeamRequests.Num() > 0)
 	{
@@ -813,16 +823,25 @@ void ULyraReplicationGraph::HandlePendingActorsAndTeamRequests()
 	// Set up all pending connections
 	if (PendingConnectionActors.Num() > 0)
 	{
-		TArray<AActor*> PendingActors = MoveTemp(PendingConnectionActors);
+		TArray<TObjectPtr<AActor>> PendingActors = MoveTemp(PendingConnectionActors);
+		TArray<TObjectPtr<AActor>> StillPending;
 
-		for (AActor* Actor : PendingActors)
+		for (TObjectPtr<AActor> Actor : PendingActors)
 		{
 			if (IsValid(Actor))
 			{
-				FGlobalActorReplicationInfo& GlobalInfo = GlobalActorReplicationInfoMap.Get(Actor);
-				RouteAddNetworkActorToNodes(FNewReplicatedActorInfo(Actor), GlobalInfo);
+				if (ULyraConnectionManager* ConnectionManager = GetLyraConnectionManagerFromActor(Actor))
+				{
+					FGlobalActorReplicationInfo& GlobalInfo = GlobalActorReplicationInfoMap.Get(Actor);
+					RouteAddNetworkActorToNodes(FNewReplicatedActorInfo(Actor), GlobalInfo);
+				}
+				else
+				{
+					StillPending.Add(Actor);
+				}
 			}
 		}
+		PendingConnectionActors = MoveTemp(StillPending);
 	}
 }
 
@@ -909,261 +928,6 @@ int32 ULyraReplicationGraph::GetTeamID(const UNetReplicationGraphConnection* Rep
 		}
 	}
     return INDEX_NONE;
-}
-
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void ULyraReplicationGraphNode_AlwaysRelevant_ForConnection::ResetGameWorldState()
-{
-	ReplicationActorList.Reset();
-	AlwaysRelevantStreamingLevelsNeedingReplication.Empty();
-}
-
-void ULyraReplicationGraphNode_AlwaysRelevant_ForConnection::GatherActorListsForConnection(const FConnectionGatherActorListParameters& Params)
-{
-	ULyraReplicationGraph* LyraGraph = CastChecked<ULyraReplicationGraph>(GetOuter());
-
-	ReplicationActorList.Reset();
-
-	for (const FNetViewer& CurViewer : Params.Viewers)
-	{
-		ReplicationActorList.ConditionalAdd(CurViewer.InViewer);
-		ReplicationActorList.ConditionalAdd(CurViewer.ViewTarget);
-
-		if (ALyraPlayerController* PC = Cast<ALyraPlayerController>(CurViewer.InViewer))
-		{
-			// 50% throttling of PlayerStates.
-			const bool bReplicatePS = (Params.ConnectionManager.ConnectionOrderNum % 2) == (Params.ReplicationFrameNum % 2);
-			if (bReplicatePS)
-			{
-				// Always return the player state to the owning player. Simulated proxy player states are handled by ULyraReplicationGraphNode_PlayerStateFrequencyLimiter
-				if (APlayerState* PS = PC->PlayerState)
-				{
-					if (!bInitializedPlayerState)
-					{
-						bInitializedPlayerState = true;
-						FConnectionReplicationActorInfo& ConnectionActorInfo = Params.ConnectionManager.ActorInfoMap.FindOrAdd(PS);
-						ConnectionActorInfo.ReplicationPeriodFrame = 1;
-					}
-
-					ReplicationActorList.ConditionalAdd(PS);
-				}
-			}
-
-			FCachedAlwaysRelevantActorInfo& LastData = PastRelevantActorMap.FindOrAdd(CurViewer.Connection);
-
-			if (ALyraCharacter* Pawn = Cast<ALyraCharacter>(PC->GetPawn()))
-			{
-				UpdateCachedRelevantActor(Params, Pawn, LastData.LastViewer);
-
-				if (Pawn != CurViewer.ViewTarget)
-				{
-					ReplicationActorList.ConditionalAdd(Pawn);
-				}
-			}
-
-			if (ALyraCharacter* ViewTargetPawn = Cast<ALyraCharacter>(CurViewer.ViewTarget))
-			{
-				UpdateCachedRelevantActor(Params, ViewTargetPawn, LastData.LastViewTarget);
-			}
-		}
-	}
-
-	CleanupCachedRelevantActors(PastRelevantActorMap);
-
-	// Always relevant streaming level actors.
-	FPerConnectionActorInfoMap& ConnectionActorInfoMap = Params.ConnectionManager.ActorInfoMap;
-	
-	TMap<FName, FActorRepListRefView>& AlwaysRelevantStreamingLevelActors = LyraGraph->AlwaysRelevantStreamingLevelActors;
-
-	for (int32 Idx=AlwaysRelevantStreamingLevelsNeedingReplication.Num()-1; Idx >= 0; --Idx)
-	{
-		const FName& StreamingLevel = AlwaysRelevantStreamingLevelsNeedingReplication[Idx];
-
-		FActorRepListRefView* Ptr = AlwaysRelevantStreamingLevelActors.Find(StreamingLevel);
-		if (Ptr == nullptr)
-		{
-			// No always relevant lists for that level
-			UE_CLOG(Lyra::RepGraph::DisplayClientLevelStreaming > 0, LogLyraRepGraph, Display, TEXT("CLIENTSTREAMING Removing %s from AlwaysRelevantStreamingLevelActors because FActorRepListRefView is null. %s "), *StreamingLevel.ToString(),  *Params.ConnectionManager.GetName());
-			AlwaysRelevantStreamingLevelsNeedingReplication.RemoveAtSwap(Idx, EAllowShrinking::No);
-			continue;
-		}
-
-		FActorRepListRefView& RepList = *Ptr;
-
-		if (RepList.Num() > 0)
-		{
-			bool bAllDormant = true;
-			for (FActorRepListType Actor : RepList)
-			{
-				FConnectionReplicationActorInfo& ConnectionActorInfo = ConnectionActorInfoMap.FindOrAdd(Actor);
-				if (ConnectionActorInfo.bDormantOnConnection == false)
-				{
-					bAllDormant = false;
-					break;
-				}
-			}
-
-			if (bAllDormant)
-			{
-				UE_CLOG(Lyra::RepGraph::DisplayClientLevelStreaming > 0, LogLyraRepGraph, Display, TEXT("CLIENTSTREAMING All AlwaysRelevant Actors Dormant on StreamingLevel %s for %s. Removing list."), *StreamingLevel.ToString(), *Params.ConnectionManager.GetName());
-				AlwaysRelevantStreamingLevelsNeedingReplication.RemoveAtSwap(Idx, EAllowShrinking::No);
-			}
-			else
-			{
-				UE_CLOG(Lyra::RepGraph::DisplayClientLevelStreaming > 0, LogLyraRepGraph, Display, TEXT("CLIENTSTREAMING Adding always Actors on StreamingLevel %s for %s because it has at least one non dormant actor"), *StreamingLevel.ToString(), *Params.ConnectionManager.GetName());
-				Params.OutGatheredReplicationLists.AddReplicationActorList(RepList);
-			}
-		}
-		else
-		{
-			UE_LOG(LogLyraRepGraph, Warning, TEXT("ULyraReplicationGraphNode_AlwaysRelevant_ForConnection::GatherActorListsForConnection - empty RepList %s"), *Params.ConnectionManager.GetName());
-		}
-
-	}
-
-#if WITH_GAMEPLAY_DEBUGGER
-	if (GameplayDebugger)
-	{
-		ReplicationActorList.ConditionalAdd(GameplayDebugger);
-	}
-#endif
-
-	Params.OutGatheredReplicationLists.AddReplicationActorList(ReplicationActorList);
-}
-
-void ULyraReplicationGraphNode_AlwaysRelevant_ForConnection::OnClientLevelVisibilityAdd(FName LevelName, UWorld* StreamingWorld)
-{
-	UE_CLOG(Lyra::RepGraph::DisplayClientLevelStreaming > 0, LogLyraRepGraph, Display, TEXT("CLIENTSTREAMING ::OnClientLevelVisibilityAdd - %s"), *LevelName.ToString());
-	AlwaysRelevantStreamingLevelsNeedingReplication.Add(LevelName);
-}
-
-void ULyraReplicationGraphNode_AlwaysRelevant_ForConnection::OnClientLevelVisibilityRemove(FName LevelName)
-{
-	UE_CLOG(Lyra::RepGraph::DisplayClientLevelStreaming > 0, LogLyraRepGraph, Display, TEXT("CLIENTSTREAMING ::OnClientLevelVisibilityRemove - %s"), *LevelName.ToString());
-	AlwaysRelevantStreamingLevelsNeedingReplication.Remove(LevelName);
-}
-
-void ULyraReplicationGraphNode_AlwaysRelevant_ForConnection::LogNode(FReplicationGraphDebugInfo& DebugInfo, const FString& NodeName) const
-{
-	DebugInfo.Log(NodeName);
-	DebugInfo.PushIndent();
-	LogActorRepList(DebugInfo, NodeName, ReplicationActorList);
-
-	for (const FName& LevelName : AlwaysRelevantStreamingLevelsNeedingReplication)
-	{
-		ULyraReplicationGraph* LyraGraph = CastChecked<ULyraReplicationGraph>(GetOuter());
-		if (FActorRepListRefView* RepList = LyraGraph->AlwaysRelevantStreamingLevelActors.Find(LevelName))
-		{
-			LogActorRepList(DebugInfo, FString::Printf(TEXT("AlwaysRelevant StreamingLevel List: %s"), *LevelName.ToString()), *RepList);
-		}
-	}
-
-	DebugInfo.PopIndent();
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-ULyraReplicationGraphNode_PlayerStateFrequencyLimiter::ULyraReplicationGraphNode_PlayerStateFrequencyLimiter()
-{
-	bRequiresPrepareForReplicationCall = true;
-}
-
-void ULyraReplicationGraphNode_PlayerStateFrequencyLimiter::PrepareForReplication()
-{
-	ReplicationActorLists.Reset();
-	ForceNetUpdateReplicationActorList.Reset();
-
-	ReplicationActorLists.AddDefaulted();
-	FActorRepListRefView* CurrentList = &ReplicationActorLists[0];
-
-	// We rebuild our lists of player states each frame. This is not as efficient as it could be but its the simplest way
-	// to handle players disconnecting and keeping the lists compact. If the lists were persistent we would need to defrag them as players left.
-
-	for (TActorIterator<APlayerState> It(GetWorld()); It; ++It)
-	{
-		APlayerState* PS = *It;
-		if (IsActorValidForReplicationGather(PS) == false)
-		{
-			continue;
-		}
-
-		if (CurrentList->Num() >= TargetActorsPerFrame)
-		{
-			ReplicationActorLists.AddDefaulted();
-			CurrentList = &ReplicationActorLists.Last(); 
-		}
-		
-		CurrentList->Add(PS);
-	}	
-}
-
-void ULyraReplicationGraphNode_PlayerStateFrequencyLimiter::GatherActorListsForConnection(const FConnectionGatherActorListParameters& Params)
-{
-	const int32 ListIdx = Params.ReplicationFrameNum % ReplicationActorLists.Num();
-	Params.OutGatheredReplicationLists.AddReplicationActorList(ReplicationActorLists[ListIdx]);
-
-	if (ForceNetUpdateReplicationActorList.Num() > 0)
-	{
-		Params.OutGatheredReplicationLists.AddReplicationActorList(ForceNetUpdateReplicationActorList);
-	}	
-}
-
-void ULyraReplicationGraphNode_PlayerStateFrequencyLimiter::LogNode(FReplicationGraphDebugInfo& DebugInfo, const FString& NodeName) const
-{
-	DebugInfo.Log(NodeName);
-	DebugInfo.PushIndent();	
-
-	int32 i=0;
-	for (const FActorRepListRefView& List : ReplicationActorLists)
-	{
-		LogActorRepList(DebugInfo, FString::Printf(TEXT("Bucket[%d]"), i++), List);
-	}
-
-	DebugInfo.PopIndent();
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-UReplicationGraphNode_AlwaysRelevant_WithPending::UReplicationGraphNode_AlwaysRelevant_WithPending()
-{
-	bRequiresPrepareForReplicationCall = true;
-}
-
-void UReplicationGraphNode_AlwaysRelevant_WithPending::PrepareForReplication()
-{
-	ULyraReplicationGraph* ReplicationGraph = Cast<ULyraReplicationGraph>(GetOuter());
-	ReplicationGraph->HandlePendingActorsAndTeamRequests();
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void ULyraReplicationGraphNode_AlwaysRelevant_ForTeam::GatherActorListsForConnection(const FConnectionGatherActorListParameters& Params)
-{
-	ULyraReplicationGraph* ReplicationGraph = CastChecked<ULyraReplicationGraph>(GetOuter());
-	const ULyraConnectionManager* ConnectionManager = Cast<ULyraConnectionManager>(&Params.ConnectionManager);
-	
-	// Get all other team members with the same team ID from ReplicationGraph->TeamConnectionListMap
-	if (ReplicationGraph && ConnectionManager && ConnectionManager->Team != -1)
-	{
-		if (TArray<ULyraConnectionManager*>* TeamConnections = ReplicationGraph->TeamConnectionListMap.GetConnectionArrayForTeam(ConnectionManager->Team))
-		{
-			for (const ULyraConnectionManager* TeamMember : *TeamConnections)
-			{
-				TeamMember->TeamConnectionNode->GatherActorListsForConnectionDefault(Params);
-			}
-		}
-	}
-	else
-	{
-		Super::GatherActorListsForConnection(Params);
-	}
-}
-
-void ULyraReplicationGraphNode_AlwaysRelevant_ForTeam::GatherActorListsForConnectionDefault(const FConnectionGatherActorListParameters& Params)
-{
-	Super::GatherActorListsForConnection(Params);
 }
 
 

@@ -188,11 +188,11 @@ bool ULyraLagCompensationComponent_BoxComponent::PerformHitCheck(const TArray<UB
 		if (Box)
 		{
 			Box->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-			Box->SetCollisionResponseToChannel(LagCompensation_TraceChannel_HitBox, ECollisionResponse::ECR_Block);
+			Box->SetCollisionResponseToChannel(Lyra_TraceChannel_LagCompensation_HitBox, ECollisionResponse::ECR_Block);
 		}
 	}
 
-	bool bHit = GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, LagCompensation_TraceChannel_HitBox, Params);
+	bool bHit = GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, Lyra_TraceChannel_LagCompensation_HitBox, Params);
 
 	// Trace 후 콜리전 다시 끄기 (ResetHitBoxes에서 어차피 복구되지만, 안전을 위해)
 	for (UBoxComponent* Box : BoxesToCheck)
@@ -200,7 +200,7 @@ bool ULyraLagCompensationComponent_BoxComponent::PerformHitCheck(const TArray<UB
 		if (Box)
 		{
 			Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			Box->SetCollisionResponseToChannel(LagCompensation_TraceChannel_HitBox, ECollisionResponse::ECR_Ignore);
+			Box->SetCollisionResponseToChannel(Lyra_TraceChannel_LagCompensation_HitBox, ECollisionResponse::ECR_Ignore);
 		}
 	}
 

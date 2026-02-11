@@ -17,6 +17,7 @@
 #include "System/LyraSignificanceManager.h"
 #include "TimerManager.h"
 #include "Components/BoxComponent.h"
+#include "Components/SphereComponent.h"
 #include "LagCompensation/LyraLagCompensationComponent.h"
 #include "LagCompensation/LyraLagCompensationComponent_SkeletalMesh.h"
 #include "Physics/LyraCollisionChannels.h"
@@ -80,6 +81,9 @@ ALyraCharacter::ALyraCharacter(const FObjectInitializer& ObjectInitializer)
 	FirstPersonMesh->SetupAttachment(CameraComponent);
 	FirstPersonMesh->SetOnlyOwnerSee(true);
 
+	BoundingBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoundingBoxComponent"));
+	BoundingBoxComponent->SetupAttachment(CapsuleComp);
+	
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;

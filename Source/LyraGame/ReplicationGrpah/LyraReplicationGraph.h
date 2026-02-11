@@ -9,8 +9,19 @@
 
 class ULyraConnectionManager;
 class AGameplayDebuggerCategoryReplicator;
+class ULyraReplicationGraphNode_AlwaysRelevant_ForConnection;
+class ULyraReplicationGraphNode_AlwaysRelevant_ForTeam;
+class UReplicationGraphNode_AlwaysRelevant_WithPending;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogLyraRepGraph, Display, All);
+
+DECLARE_STATS_GROUP(TEXT("Lyra Replication Graph"), STATGROUP_LyraRepGraph, STATCAT_Advanced);
+DECLARE_CYCLE_STAT(TEXT("RepGraph: Gather Non-Team Visibility"), STAT_LyraRepGraph_GatherNonTeamVisibility, STATGROUP_LyraRepGraph);
+DECLARE_CYCLE_STAT(TEXT("RepGraph: Prepare PlayerStates"), STAT_LyraRepGraph_PreparePlayerStates, STATGROUP_LyraRepGraph);
+DECLARE_CYCLE_STAT(TEXT("RepGraph: Handle Pending Requests"), STAT_LyraRepGraph_HandlePendingRequests, STATGROUP_LyraRepGraph);
+DECLARE_CYCLE_STAT(TEXT("RepGraph: AlwaysRelevantNode Gather"), STAT_LyraRepGraph_AlwaysRelevantNode_Gather, STATGROUP_LyraRepGraph);
+DECLARE_CYCLE_STAT(TEXT("RepGraph: Get Trace Targets"), STAT_LyraRepGraph_GetTraceTargets, STATGROUP_LyraRepGraph);
+DECLARE_CYCLE_STAT(TEXT("RepGraph: Physical Visibility Trace"), STAT_LyraRepGraph_PhysicalTrace, STATGROUP_LyraRepGraph);
 
 /** Lyra 레플리케이션 그래프 구현체입니다. 상세 노트는 LyraReplicationGraph.cpp를 참조하세요! */
 UCLASS(transient, config=Engine)
@@ -92,82 +103,3 @@ public:
 	
 };
 
-UCLASS()
-class ULyraReplicationGraphNode_AlwaysRelevant_ForConnection : public UReplicationGraphNode_AlwaysRelevant_ForConnection
-{
-	GENERATED_BODY()
-
-public:
-	virtual void NotifyAddNetworkActor(const FNewReplicatedActorInfo& Actor) override { }
-	virtual bool NotifyRemoveNetworkActor(const FNewReplicatedActorInfo& ActorInfo, bool bWarnIfNotFound=true) override { return false; }
-	virtual void NotifyResetAllNetworkActors() override { }
-
-	virtual void GatherActorListsForConnection(const FConnectionGatherActorListParameters& Params) override;
-
-	virtual void LogNode(FReplicationGraphDebugInfo& DebugInfo, const FString& NodeName) const override;
-
-	void OnClientLevelVisibilityAdd(FName LevelName, UWorld* StreamingWorld);
-	void OnClientLevelVisibilityRemove(FName LevelName);
-
-	void ResetGameWorldState();
-
-#if WITH_GAMEPLAY_DEBUGGER
-	AGameplayDebuggerCategoryReplicator* GameplayDebugger = nullptr;
-#endif
-
-private:
-	TArray<FName, TInlineAllocator<64> > AlwaysRelevantStreamingLevelsNeedingReplication;
-
-	bool bInitializedPlayerState = false;
-};
-
-/** 
-	빈도 제한 방식으로 PlayerState 레플리케이션을 처리하기 위한 특화된 노드입니다. 
-	모든 PlayerState를 추적하지만 매 프레임 그 중 일부만 레플리케이션 드라이버에 반환합니다. 
-	이는 대규모 접속 환경을 위한 최적화이며 필수 사항은 아닙니다.
-*/
-UCLASS()
-class ULyraReplicationGraphNode_PlayerStateFrequencyLimiter : public UReplicationGraphNode
-{
-	GENERATED_BODY()
-
-	ULyraReplicationGraphNode_PlayerStateFrequencyLimiter();
-
-	virtual void NotifyAddNetworkActor(const FNewReplicatedActorInfo& Actor) override { }
-	virtual bool NotifyRemoveNetworkActor(const FNewReplicatedActorInfo& ActorInfo, bool bWarnIfNotFound=true) override { return false; }
-	virtual bool NotifyActorRenamed(const FRenamedReplicatedActorInfo& Actor, bool bWarnIfNotFound=true) override { return false; }
-
-	virtual void GatherActorListsForConnection(const FConnectionGatherActorListParameters& Params) override;
-
-	virtual void PrepareForReplication() override;
-
-	virtual void LogNode(FReplicationGraphDebugInfo& DebugInfo, const FString& NodeName) const override;
-
-	/** 프레임당 레플리케이션 드라이버에 반환할 타겟 액터 수입니다. ForceNetUpdate는 무시하지 않습니다. */
-	int32 TargetActorsPerFrame = 2;
-
-private:
-	
-	TArray<FActorRepListRefView> ReplicationActorLists;
-	FActorRepListRefView ForceNetUpdateReplicationActorList;
-};
-
-UCLASS()
-class UReplicationGraphNode_AlwaysRelevant_WithPending : public UReplicationGraphNode_ActorList
-{
-	GENERATED_BODY()
-
-public:
-	UReplicationGraphNode_AlwaysRelevant_WithPending();
-	virtual void PrepareForReplication() override;
-};
-
-
-UCLASS()
-class ULyraReplicationGraphNode_AlwaysRelevant_ForTeam : public UReplicationGraphNode_ActorList
-{
-	GENERATED_BODY()
-	
-	virtual void GatherActorListsForConnection(const FConnectionGatherActorListParameters& Params) override;
-	virtual void GatherActorListsForConnectionDefault(const FConnectionGatherActorListParameters& Params);
-};

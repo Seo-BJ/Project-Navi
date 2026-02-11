@@ -59,6 +59,14 @@ public:
 	UPROPERTY(EditAnywhere, Category = DynamicSpatialFrequency, meta = (ConsoleVariable = "Lyra.RepGraph.DynamicActorFrequencyBuckets"))
 	int32 DynamicActorFrequencyBuckets = 3;
 
+	/** 가시성 체크에 사용할 트레이스 채널입니다. */
+	UPROPERTY(config, EditAnywhere, Category = ReplicationGraph)
+	TEnumAsByte<ECollisionChannel> VisibleConnectionTraceChannel;
+
+	/** 미래 예측 가시성 체크 모델을 활성화할지 여부입니다. */
+	UPROPERTY(config, EditAnywhere, Category = ReplicationGraph)
+	bool bEnablePredictiveVisibility = true;
+
 	// 특정 클래스들을 위한 커스텀 설정 배열입니다.
 	UPROPERTY(config, EditAnywhere, Category = ReplicationGraph)
 	TArray<FRepGraphActorClassSettings> ClassSettings;

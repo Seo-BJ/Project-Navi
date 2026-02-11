@@ -162,7 +162,7 @@ ECollisionChannel ULyraGameplayAbility_RangedWeapon::DetermineTraceChannel(FColl
 {
 	if (bTraceForServerSideRewind)
 	{
-		return LagCompensation_TraceChannel_HitBox;
+		return Lyra_TraceChannel_LagCompensation_HitBox;
 	}
 	else
 	{

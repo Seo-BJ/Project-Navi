@@ -9,4 +9,5 @@ ULyraReplicationGraphSettings::ULyraReplicationGraphSettings()
 {
 	CategoryName = TEXT("Game");
 	DefaultReplicationGraphClass = ULyraReplicationGraph::StaticClass();
+	VisibleConnectionTraceChannel = ECC_GameTraceChannel1;
 }
