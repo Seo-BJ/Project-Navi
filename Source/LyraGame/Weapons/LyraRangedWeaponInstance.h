@@ -45,11 +45,13 @@ public:
 		return CurrentSpreadAngle;
 	}
 
+	/** 현재 탄퍼짐 승수를 반환합니다. 초탄 정확도가 활성화된 경우 0을 반환하여 탄퍼짐을 완전히 제거합니다 */
 	float GetCalculatedSpreadAngleMultiplier() const
 	{
 		return bHasFirstShotAccuracy ? 0.0f : CurrentSpreadAngleMultiplier;
 	}
 
+	/** 현재 초탄 정확도(First Shot Accuracy)가 활성화되어 있는지 여부를 반환합니다 */
 	bool HasFirstShotAccuracy() const
 	{
 		return bHasFirstShotAccuracy;
@@ -253,9 +255,13 @@ public:
 	//~End of ILyraAbilitySourceInterface interface
 
 private:
+	/** HeatToSpreadCurve의 Y축 범위로부터 최소/최대 탄퍼짐 각도를 계산합니다 */
 	void ComputeSpreadRange(float& MinSpread, float& MaxSpread);
+
+	/** 세 커브(HeatToHeatPerShot, HeatToCoolDown, HeatToSpread)의 X축 범위 합집합으로 열 범위를 계산합니다 */
 	void ComputeHeatRange(float& MinHeat, float& MaxHeat);
 
+	/** 새 열 값을 허용 범위 내로 클램핑합니다 */
 	inline float ClampHeat(float NewHeat)
 	{
 		float MinHeat;
@@ -265,32 +271,45 @@ private:
 		return FMath::Clamp(NewHeat, MinHeat, MaxHeat);
 	}
 
-	// Updates the spread and returns true if the spread is at minimum
+	/** 탄퍼짐(Heat) 냉각을 처리합니다. 탄퍼짐이 최솟값이면 true를 반환합니다 */
 	bool UpdateSpread(float DeltaSeconds);
 
-	// Updates the multipliers and returns true if they are at minimum
+	/** 이동/자세/조준 상태에 따른 탄퍼짐 승수를 갱신합니다. 모든 승수가 최솟값이면 true를 반환합니다 */
 	bool UpdateMultipliers(float DeltaSeconds);
 	
 public:
+	/** 발사 시작: bIsFiring을 true로 설정하고 목표 반동에 무작위 값을 누적합니다 */
 	void StartRecoil();
+
+	/** 발사 중지: bIsFiring을 false로 설정하고 마우스 입력 기반 반동 보정을 적용합니다 */
 	void StopRecoil();
 
 private:
+	/** 매 프레임 현재 반동을 목표 반동으로 보간하고 컨트롤러 회전에 반영합니다 */
 	void UpdateRecoil(float DeltaTime);
 
+	/** 사격 중 누적된 마우스 입력으로 반동을 부분 상쇄합니다 (Compensation 비율만큼 적용) */
 	void ApplyInputCompensation();
 
+	/**
+	 * 반동 값과 보정 값의 방향이 반대일 때, 반동 감소 배율(0~1)을 계산합니다.
+	 * 같은 방향이거나 반동이 0이면 1.0(보정 없음)을 반환합니다.
+	 */
 	float GetInputCompensationMultiplier(float RecoilValue, float CompensationValue) const;
 
 	UPROPERTY()
 	TObjectPtr<ACharacter> OwnerCharacter;
 
+	// 이번 사격 세션에서 도달해야 할 목표 반동 (수평 X, 수직 Y)
 	FVector2D TargetRecoil;
-    
+
+	// RecoilSmoothing 속도로 TargetRecoil에 보간 중인 현재 반동
 	FVector2D CurrentRecoil;
-    
+
+	// 사격 중 누적된 마우스 입력 (ApplyInputCompensation에서 반동 보정에 사용 후 초기화)
 	FVector2D InputCompensation;
-    
+
+	// 현재 사격 중 여부 (true면 반동 증가, false면 Damping으로 반동 복귀)
 	bool bIsFiring;
 
 	// Cached pointer to the weapon stats
