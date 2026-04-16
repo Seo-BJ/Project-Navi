@@ -13,14 +13,14 @@ UCommonSession_HostSessionRequest* UNaviHostingRequestSubsystem::CreateCombinedH
 	const UObject* WorldContextObject, const UNaviExperienceDefinition* ExperienceDefinition,
 	const UNaviMapDefinition* MapDefinition)
 {
-    if (!WorldContextObject || !ExperienceDefinition || !MapDefinition)
+    if (!IsValid(WorldContextObject) || !IsValid(ExperienceDefinition) || !IsValid(MapDefinition))
     {
-        UE_LOG(LogTemp, Warning, TEXT("CreateCombinedHostingRequest: 유효하지 않은 입력값입니다 (WorldContext, ExperienceDefinition 또는 MapDefinition이 null)."));
+        UE_LOG(LogTemp, Warning, TEXT("CreateCombinedHostingRequest: 유효하지 않은 입력값입니다 (WorldContext, ExperienceDefinition 또는 MapDefinition이 null이거나 무효)."));
         return nullptr;
     }
 
 	const FString ExperienceName = ExperienceDefinition->ExperienceID.PrimaryAssetName.ToString();
-	const FString UserFacingExperienceName = GetPrimaryAssetId().PrimaryAssetName.ToString();
+	const FString UserFacingExperienceName = ExperienceDefinition->ExperienceID.PrimaryAssetName.ToString();
 
 	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull);
 	UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
@@ -72,8 +72,18 @@ FString UNaviHostingRequestSubsystem::GetTravelURL(UCommonSession_HostSessionReq
 void UNaviHostingRequestSubsystem::ServerTravelWithSavedDefinitions(const UObject* WorldContextObject)
 {
 	UCommonSession_HostSessionRequest* Request = CreateCombinedHostingRequest(WorldContextObject, SavedExperienceDefinition, SavedMapDefinition);
+	if (!Request)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ServerTravelWithSavedDefinitions: Request 생성 실패. SavedExperienceDefinition/SavedMapDefinition이 저장되었는지 확인하세요."));
+		return;
+	}
+
 	FString URL = GetTravelURL(Request);
-	WorldContextObject->GetWorld()->ServerTravel(URL);
+
+	if (UWorld* World = WorldContextObject ? WorldContextObject->GetWorld() : nullptr)
+	{
+		World->ServerTravel(URL);
+	}
 }
 
 void UNaviHostingRequestSubsystem::SaveSelectedMapAndExperienceDefinition(UNaviExperienceDefinition* ExperienceDefinition, UNaviMapDefinition* MapDefinition)

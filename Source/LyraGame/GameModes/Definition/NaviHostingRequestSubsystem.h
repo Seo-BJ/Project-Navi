@@ -45,7 +45,10 @@ public:
 
 private:
 
+	UPROPERTY()
 	TObjectPtr<UNaviExperienceDefinition> SavedExperienceDefinition;
+
+	UPROPERTY()
 	TObjectPtr<UNaviMapDefinition> SavedMapDefinition;
 
 	
