@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "GameModes/LyraExperienceDefinition.h"
 #include "NaviTotalUserBoard.generated.h"
 
 class UNaviTeamUserBoard;
@@ -44,6 +45,7 @@ public:
 protected:
 	
 	virtual void NativeOnInitialized() override;
+	void OnExperienceLoaded(const ULyraExperienceDefinition* LyraExperienceDefinition);
 	virtual void NativeConstruct() override;
 
 	UFUNCTION()

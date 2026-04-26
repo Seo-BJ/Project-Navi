@@ -10,6 +10,7 @@
 #include "Lobby/LobbyState.h"
 
 #include "NaviUserInfoRow.h"
+#include "GameModes/LyraExperienceManagerComponent.h"
 
 #include "Player/LyraPlayerState.h"
 
@@ -32,11 +33,22 @@ void UNaviTotalUserBoard::NativeOnInitialized()
     }
 }
 
+
 void UNaviTotalUserBoard::NativeConstruct()
 {
     Super::NativeConstruct();
+    
     ANaviLobbyGameState* NaviLobbyGameState = GetWorld()->GetGameState<ANaviLobbyGameState>();
-    if (!IsValid(NaviLobbyGameState)) return;
+    check(NaviLobbyGameState);
+    
+    ULyraExperienceManagerComponent* ExperienceComponent = NaviLobbyGameState->FindComponentByClass<ULyraExperienceManagerComponent>();
+    check(ExperienceComponent);
+    
+    ExperienceComponent->CallOrRegister_OnExperienceLoaded_LowPriority(FOnLyraExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
+}
+
+void UNaviTotalUserBoard::OnExperienceLoaded(const ULyraExperienceDefinition* LyraExperienceDefinition)
+{
     AddExistingPlayers();
 }
 
@@ -54,10 +66,14 @@ void UNaviTotalUserBoard::AddExistingPlayers()
     TArray<APlayerState*> PlayerStates = GameState->PlayerArray;
     for (APlayerState* PlayerState : PlayerStates)
     {
-        ALyraPlayerState* LayraPlayerState = CastChecked<ALyraPlayerState>(PlayerState);
-        FString UserName = LayraPlayerState->GetPlayerUserName();
-        int32 TeamId = LayraPlayerState->GetTeamId();
-        AddUserInfoRow(TeamId, UserName);
+        ALyraPlayerState* LyraPlayerState = CastChecked<ALyraPlayerState>(PlayerState);
+        if (IsValid(LyraPlayerState))
+        {
+            FString UserName = LyraPlayerState->GetPlayerUserName();
+            int32 TeamId = LyraPlayerState->GetTeamId();
+            AddUserInfoRow(TeamId, UserName);
+        }
+
     }
 }
 void UNaviTotalUserBoard::OnPlayerRemoved(const FLobbyPlayerInfo& PlayerInfo)

@@ -250,7 +250,7 @@ void ULyraTeamCreationComponent::ServerSetPlayerTeam(ALyraPlayerState* PlayerSta
             *PlayerStateToSet->GetPlayerName(), CurrentTeamId.GetId(), CurrentIndexInTeam, TargetTeamId.GetId());
 
         AGameStateBase* GameState = GetGameStateChecked<AGameStateBase>(); 
-        if (CurrentTeamId != FGenericTeamId::NoTeam && CurrentIndexInTeam != -1)
+    	if (CurrentTeamId != FGenericTeamId::NoTeam && CurrentIndexInTeam != -1)
         {
             TArray<ALyraPlayerState*> PlayersInOriginalTeam; 
             for (APlayerState* PS : GameState->PlayerArray)
@@ -288,6 +288,10 @@ void ULyraTeamCreationComponent::ServerSetPlayerTeam(ALyraPlayerState* PlayerSta
                  }
             }
         }
+    	else
+    	{
+    		
+    	}
 
         int32 NewIndexInTargetTeam = -1;
         if (TargetTeamId != FGenericTeamId::NoTeam) 

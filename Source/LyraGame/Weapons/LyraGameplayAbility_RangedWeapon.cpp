@@ -17,6 +17,7 @@
 #include "Character/LyraCharacter.h"
 #include "LagCompensation/LyraLagCompensationComponent_BoxComponent.h"
 #include "LagCompensation/LyraLagCompensationComponent_SkeletalMesh.h"
+#include "LagCompensation/LyraLagCompensationSettings.h"
 #include "LagCompensation/LyraTimeSyncComponent.h"
 #include "Player/LyraPlayerController.h"
 
@@ -45,19 +46,6 @@ namespace LyraConsoleVariables
 		TEXT("When bullet hit debug drawing is enabled (see DrawBulletHitDuration), how big should the hit radius be? (in cm)"),
 		ECVF_Default);
 
-	static bool bDrawMeshLagCompensation = false;
-	static FAutoConsoleVariableRef CVarbDrawMeshLagCompensation(
-		TEXT("lyra.Weapon.DrawMeshLagCompensation"),
-		bDrawMeshLagCompensation,
-		TEXT("Should we do debug drawing for mesh lag compensation?"),
-		ECVF_Default);
-
-	static float DrawMeshLagCompensationDuration = 3.0f;
-	static FAutoConsoleVariableRef CVarDrawMeshLagCompensationDuration(
-		TEXT("lyra.Weapon.DrawMeshLagCompensationDuration"),
-		DrawMeshLagCompensationDuration,
-		TEXT("Should we do debug drawing for mesh lag compensation (if above zero, sets how long (in seconds)"),
-		ECVF_Default);
 }
 
 // Weapon fire will be blocked/canceled if the player has this tag
@@ -531,21 +519,22 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 				bool bOverallHitSuccess = false; // 이번 발사가 최소 1회 유효한 Hit가 발생했는지
 				TArray<uint8> HitReplaces; // 대체된 Hit 배열
 
-				if (bUseServerSideRewind)
+				if (GetDefault<ULyraLagCompensationSettings>()->bUseLagCompensation)
 				{
-					ALyraCharacter* AttackerCharacter = GetLyraCharacterFromActorInfo();
-					ULyraLagCompensationComponent* LagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraLagCompensationComponent>() : nullptr;
 					for (uint8 i = 0; (i < LocalTargetDataHandle.Num()) && (i < 255); ++i)
 					{
 						if (FLyraGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<FLyraGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
 						{
 							const float LocalHitTime = SingleTargetHit->HitTime;
 							const FHitResult& LocalHitResult = SingleTargetHit->HitResult;
-							
+
+							AActor* TargetActor = LocalHitResult.GetActor();
+							ULyraLagCompensationComponent* LagComp = IsValid(TargetActor) ? TargetActor->GetComponentByClass<ULyraLagCompensationComponent>() : nullptr;
+
 							FServerSideRewindResult RewindResult;
 							if (IsValid(LagComp))
 							{
-								RewindResult = LagComp->ServerSideRewind(LocalHitResult.GetActor(), LocalHitResult.TraceStart, LocalHitResult.ImpactPoint, LocalHitTime);
+								RewindResult = LagComp->ServerSideRewind(TargetActor, LocalHitResult.TraceStart, LocalHitResult.ImpactPoint, LocalHitTime);
 							}
 #if ENABLE_DRAW_DEBUG
 							UE_LOG(LogTemp, Warning, TEXT("  Hit[%d]: Actor=%s, bConfirmed=%d, bHeadshot=%d"), i, LocalHitResult.GetActor() ? *LocalHitResult.GetActor()->GetName() : TEXT("NULL"), RewindResult.bHitConfirmed, RewindResult.bHeadShot);
@@ -700,7 +689,7 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 			NewTargetData->HitResult = FoundHit;
 			NewTargetData->CartridgeID = CartridgeID;
 			
-			if (bUseServerSideRewind)
+			if (GetDefault<ULyraLagCompensationSettings>()->bUseLagCompensation)
 			{
 				ALyraPlayerController* LyraPC = GetLyraPlayerControllerFromActorInfo();
 				if (IsValid(LyraPC))
@@ -724,15 +713,17 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 						const float HitTime = GetWorld()->GetTimeSeconds();
 						NewTargetData->HitTime = HitTime;
 					}
-					if (LyraConsoleVariables::bDrawMeshLagCompensation)
+					if (GetDefault<ULyraLagCompensationDeveloperSettings>()->bDrawMeshLagCompensation)
 					{
-						ALyraCharacter* AttackerCharacter = GetLyraCharacterFromActorInfo();
-						ULyraLagCompensationComponent_SkeletalMesh* MeshLagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraLagCompensationComponent_SkeletalMesh>() : nullptr;
-						ULyraLagCompensationComponent_BoxComponent* BoxLagComp = (IsValid(AttackerCharacter)) ? AttackerCharacter->GetComponentByClass<ULyraLagCompensationComponent_BoxComponent>() : nullptr;
+						AActor* TargetActor = FoundHit.GetActor();
+						ULyraLagCompensationComponent_SkeletalMesh* MeshLagComp = IsValid(TargetActor) ? TargetActor->GetComponentByClass<ULyraLagCompensationComponent_SkeletalMesh>() : nullptr;
 
-						FMeshFramePackage LocalFramePackage;
-						MeshLagComp->CacheCurrentFrame(FoundHit.GetActor(), LocalFramePackage);
-						MeshLagComp->DrawDebugPose(LocalFramePackage, FColor::White);
+						if (IsValid(MeshLagComp))
+						{
+							FMeshFramePackage LocalFramePackage;
+							MeshLagComp->CacheCurrentFrame(TargetActor, LocalFramePackage);
+							MeshLagComp->DrawDebugPose(LocalFramePackage, FColor::White);
+						}
 					}
 				}
 			}

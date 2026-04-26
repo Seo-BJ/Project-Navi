@@ -35,12 +35,4 @@ public:
 	// When bullet hit debug drawing is enabled (see DrawBulletHitDuration), how big should the hit radius be? (in cm)
 	UPROPERTY(config, EditAnywhere, Category = General, meta = (ConsoleVariable = "lyra.Weapon.DrawBulletHitRadius", ForceUnits=cm))
 	float DrawBulletHitRadius;
-
-	// Should we do debug drawing for mesh lag compensation?
-	UPROPERTY(config, EditAnywhere, Category = General, meta = (ConsoleVariable = "lyra.Weapon.DrawMeshLagCompensation"))
-	bool bDrawMeshLagCompensation;
-
-	// Should we do debug drawing for mesh lag compensation (if above zero, sets how long (in seconds)
-	UPROPERTY(config, EditAnywhere, Category = General, meta = (ConsoleVariable = "lyra.Weapon.DrawMeshLagCompensationDuration", ForceUnits=s))
-	float DrawMeshLagCompensationDuration;
 };

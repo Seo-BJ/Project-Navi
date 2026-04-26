@@ -92,9 +92,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Lyra|Ability")
 	bool bProjectileWeapon = false;
 	
-	UPROPERTY(EditDefaultsOnly, Category="Lyra|Ability")
-	bool bUseServerSideRewind = true;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Lyra|Ability")
 	int32 BulletsPerCartridge = 1;
 	

@@ -256,6 +256,7 @@ void ALyraPlayerState::SetGenericTeamId(const FGenericTeamId& NewTeamID)
 		MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, MyTeamID, this);
 		MyTeamID = NewTeamID;
 		ConditionalBroadcastTeamChanged(this, OldTeamID, NewTeamID);
+		//ForceNetUpdate(); // 다음 프레임 복제 강제
 	}
 	else
 	{
@@ -329,33 +330,25 @@ void ALyraPlayerState::OnRep_MyTeamID(FGenericTeamId OldTeamID)
     {
         UE_LOG(LogLyraTeams, Warning, TEXT("[%s] OnTeamChanged_BP is NOT BOUND when trying to broadcast BP delegate!"), *PlayerName);
     }
-
-    // --- 실제 블루프린트 델리게이트 호출 (기존 코드 유지) ---
+	
     OnTeamChanged_BP.Broadcast(this, OldTeamID, MyTeamID);
-
-
-    // ===========================================================
-    // === 블루프린트 로직을 C++ 코드로 변환하여 추가한 부분 ===
-    // ===========================================================
+	
     UE_LOG(LogLyraTeams, Log, TEXT("[%s] Preparing to broadcast Gameplay Message for team change."), *PlayerName);
 
     // 1. Gameplay Message Subsystem 가져오기 (유효성 검사 포함)
 	UGameplayMessageSubsystem* MessageSubsystem = &UGameplayMessageSubsystem::Get(this);
 	if (MessageSubsystem)
     {
-        // 2. 메시지 채널 태그 가져오기 (LyraGameplayTags 사용 권장)
-        FGameplayTag ChannelTag = LyraGameplayTags::Lyra_Team_Changed; // <-- *** LyraGameplayTags에서 정확한 태그 이름 확인! ***
+        FGameplayTag ChannelTag = LyraGameplayTags::Lyra_Team_Changed; 
         if (ChannelTag.IsValid())
         {
             // 3. 보낼 메시지 구조체 생성 및 데이터 채우기
             //    *** 아래 FLyraTeamChangeMessage를 실제 구조체 타입으로 변경해야 합니다! ***
             FLyraTeamChangeMessage MessagePayload;
-
-            MessagePayload.PlayerState = this;          // PlayerState 인스턴스
-            MessagePayload.OldTeamId = OldTeamIdInt;    // 이전 팀 ID (이미 int32로 변환됨)
-            MessagePayload.NewTeamId = CurrentTeamIdInt; // 새 팀 ID (이미 int32로 변환됨)
-
-            // 4. 메시지 브로드캐스트
+            MessagePayload.PlayerState = this;         
+            MessagePayload.OldTeamId = OldTeamIdInt;    
+            MessagePayload.NewTeamId = CurrentTeamIdInt; 
+        	
             MessageSubsystem->BroadcastMessage(ChannelTag, MessagePayload);
 
             UE_LOG(LogLyraTeams, Log, TEXT("[%s] Broadcasted Gameplay Message on channel %s. Old: %d, New: %d"),

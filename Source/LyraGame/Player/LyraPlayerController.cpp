@@ -569,6 +569,8 @@ void ALyraPlayerController::ServerRequestSetIndexInTeam_Implementation(int32 New
 	
 	ALyraPlayerState* LyraPlayerState = GetPlayerState<ALyraPlayerState>();
 	check(LyraPlayerState);
+
+	// TeamComponent->ServerSetPlayerIndexInTeam(LyraPlayerState, NewTeamID);
 #endif	
 }
 
