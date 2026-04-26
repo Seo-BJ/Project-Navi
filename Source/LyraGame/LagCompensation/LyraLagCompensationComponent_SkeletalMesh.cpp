@@ -2,7 +2,7 @@
 
 
 #include "LyraLagCompensationComponent_SkeletalMesh.h"
-#include "Weapons/LyraWeaponDebugSettings.h"
+#include "LyraLagCompensationSettings.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Character.h"
 #include "DrawDebugHelpers.h"
@@ -15,19 +15,15 @@
 // 프로파일링 그룹 정의
 DECLARE_STATS_GROUP(TEXT("Lyra Lag Compensation"), STATGROUP_LyraLag, STATCAT_Advanced);
 
-// 세부 항목 정의 (CPU 연산 시간 측정용)
 DECLARE_CYCLE_STAT(TEXT("LagComp - UpdateHistory"), STAT_LyraLag_UpdateHistory, STATGROUP_LyraLag);
+DECLARE_CYCLE_STAT(TEXT("LagComp - HistorySearch"), STAT_LyraLag_HistorySearch, STATGROUP_LyraLag);
 DECLARE_CYCLE_STAT(TEXT("LagComp - PerformCollision"), STAT_LyraLag_PerformCollision, STATGROUP_LyraLag);
 DECLARE_CYCLE_STAT(TEXT("LagComp - Interpolate"), STAT_LyraLag_Interpolate, STATGROUP_LyraLag);
 DECLARE_CYCLE_STAT(TEXT("LagComp - CacheFrame"), STAT_LyraLag_CacheFrame, STATGROUP_LyraLag);
 DECLARE_CYCLE_STAT(TEXT("LagComp - Rewind"), STAT_LyraLag_Rewind, STATGROUP_LyraLag);
 
-// 메모리 카운터 (선택 사항: 배열 크기 추적용)
 DECLARE_DWORD_COUNTER_STAT(TEXT("LagComp - History Frames"), STAT_LyraLag_HistoryCount, STATGROUP_LyraLag);
-
-// 기존 로그 카테고리 재사용 또는 새로 정의 (여기선 재사용 가정하거나 임시 정의)
-// DEFINE_LOG_CATEGORY(LogLagCompensation); 
-// 만약 링크 에러나면 별도 카테고리 정의 필요
+DECLARE_MEMORY_STAT(TEXT("LagComp - History Memory"), STAT_LyraLag_HistoryMemory, STATGROUP_LyraLag);
 
 ULyraLagCompensationComponent_SkeletalMesh::ULyraLagCompensationComponent_SkeletalMesh()
 {
@@ -60,19 +56,24 @@ void ULyraLagCompensationComponent_SkeletalMesh::UpdateFrameHistory()
 
 	FMeshFramePackage ThisFrame;
 	CacheCurrentFrame(GetOwner(), ThisFrame);
-	
-	FrameHistory.AddHead(ThisFrame);
 
-	// 메모리 관련 통계 업데이트 (현재 저장된 프레임 수)
-	INC_DWORD_STAT_BY(STAT_LyraLag_HistoryCount, FrameHistory.Num());
+	FrameHistory.EmplaceFirst(MoveTemp(ThisFrame));
 
-	// 오래된 데이터 삭제
-	float HistoryLength = FrameHistory.GetHead()->GetValue().Time - FrameHistory.GetTail()->GetValue().Time;
-	while (HistoryLength > MaxRecordTime)
+	if (FrameHistory.Num() >= 2)
 	{
-		FrameHistory.RemoveNode(FrameHistory.GetTail());
-		HistoryLength = FrameHistory.GetHead()->GetValue().Time - FrameHistory.GetTail()->GetValue().Time;
+		float HistoryLength = FrameHistory.First().Time - FrameHistory.Last().Time;
+		while (HistoryLength > MaxRecordTime && FrameHistory.Num() >= 2)
+		{
+			FrameHistory.PopLast();
+			HistoryLength = FrameHistory.First().Time - FrameHistory.Last().Time;
+		}
 	}
+
+	const int32 HistoryCount = FrameHistory.Num();
+	const SIZE_T HistoryMemory = FrameHistory.GetAllocatedSize();
+
+	INC_DWORD_STAT_BY(STAT_LyraLag_HistoryCount, HistoryCount);
+	SET_MEMORY_STAT(STAT_LyraLag_HistoryMemory, HistoryMemory);
 }
 
 void ULyraLagCompensationComponent_SkeletalMesh::CacheCurrentFrame(AActor* HitActor, FMeshFramePackage& OutPackage)
@@ -112,47 +113,52 @@ FServerSideRewindResult ULyraLagCompensationComponent_SkeletalMesh::ServerSideRe
 	if (!IsValid(HitActor)) return FServerSideRewindResult();
 
 	// 1. 적절한 과거 프레임 찾기 (보간 포함)
-	FMeshFramePackage FrameToCheck = GetHitTimeFrame(HitActor, HitTime);
-	
+	FMeshFramePackage FrameToCheck = GetHitTimeFrame(HitTime);
+
 	// 2. 판정 수행
 	return ConfirmHit(FrameToCheck, HitActor, TraceStart, HitLocation);
 }
 
-FMeshFramePackage ULyraLagCompensationComponent_SkeletalMesh::GetHitTimeFrame(const AActor* HitActor, float HitTime)
+FMeshFramePackage ULyraLagCompensationComponent_SkeletalMesh::GetHitTimeFrame(float HitTime)
 {
-	// HitActor에 붙은 컴포넌트를 가져와야 함 (자신의 History가 아니라 타겟의 History를 봐야 하므로)
-	// 하지만 현재 구조상 ServerSideRewind는 공격자의 컴포넌트에서 호출됨.
-	// 따라서 타겟 Actor의 ULyraMeshLagCompensationComponent를 찾아야 함.
-	
-	ULyraLagCompensationComponent_SkeletalMesh* TargetComp = HitActor->FindComponentByClass<ULyraLagCompensationComponent_SkeletalMesh>();
-	if (!TargetComp || TargetComp->FrameHistory.Num() == 0)
+	SCOPE_CYCLE_COUNTER(STAT_LyraLag_HistorySearch);
+
+	// 이 컴포넌트는 피격자(owner)에 부착되어 있으므로 자신의 FrameHistory에서 검색.
+
+	const TDeque<FMeshFramePackage>& History = this->FrameHistory;
+	if (History.Num() == 0)
 	{
 		return FMeshFramePackage();
 	}
 
-	const TDoubleLinkedList<FMeshFramePackage>& History = TargetComp->FrameHistory;
-	const float OldestTime = History.GetTail()->GetValue().Time;
-	const float NewestTime = History.GetHead()->GetValue().Time;
+	const float OldestTime = History.Last().Time;
+	const float NewestTime = History.First().Time;
 
-	// 범위 밖 처리
-	if (OldestTime > HitTime) return FMeshFramePackage();
-	if (NewestTime <= HitTime) return History.GetHead()->GetValue();
-
-	// 탐색 (최신 -> 과거)
-	auto* Node = History.GetHead();
-	while (Node->GetNextNode() && Node->GetNextNode()->GetValue().Time > HitTime)
+	if (OldestTime > HitTime)
 	{
-		Node = Node->GetNextNode();
+		return FMeshFramePackage();
 	}
-	// Node: HitTime보다 미래인 프레임 중 가장 오래된 것 (Younger)
-	// Node->Next: HitTime보다 과거인 프레임 (Older)
-
-	if (Node->GetNextNode())
+	if (NewestTime <= HitTime)
 	{
-		return InterpolateFrame(Node->GetNextNode()->GetValue(), Node->GetValue(), HitTime);
+		return History.First();
 	}
-	
-	return History.GetTail()->GetValue();
+
+	// 탐색 (최신 -> 과거): 인덱스 0(First) 부터 인덱스 증가 방향(Last 쪽)으로
+	const int32 Count = History.Num();
+	int32 YoungerIdx = 0;
+	while (YoungerIdx + 1 < Count && History[YoungerIdx + 1].Time > HitTime)
+	{
+		++YoungerIdx;
+	}
+
+	// YoungerIdx: HitTime보다 미래인 프레임 중 가장 오래된 것
+	// YoungerIdx+1: HitTime보다 과거인 프레임
+	if (YoungerIdx + 1 < Count)
+	{
+		return InterpolateFrame(History[YoungerIdx + 1], History[YoungerIdx], HitTime);
+	}
+
+	return History.Last();
 }
 
 FMeshFramePackage ULyraLagCompensationComponent_SkeletalMesh::InterpolateFrame(const FMeshFramePackage& Older, const FMeshFramePackage& Younger, float HitTime)
@@ -185,21 +191,28 @@ FMeshFramePackage ULyraLagCompensationComponent_SkeletalMesh::InterpolateFrame(c
 
 FServerSideRewindResult ULyraLagCompensationComponent_SkeletalMesh::ConfirmHit(const FMeshFramePackage& FrameToCheck, AActor* HitActor, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation)
 {
-	const ULyraWeaponDebugSettings* WeaponDebugSettings = GetDefault<ULyraWeaponDebugSettings>();
-	const bool bDrawDebug = WeaponDebugSettings->bDrawMeshLagCompensation;
-	
-#if ENABLE_DRAW_DEBUG
-	UE_LOG(LogTemp, Warning, TEXT("[MeshLagComp] ConfirmHit ENTERED (bDrawDebug: %s)"), bDrawDebug ? TEXT("TRUE") : TEXT("FALSE"));
-#endif
+	const ULyraLagCompensationDeveloperSettings* LagCompSettings = GetDefault<ULyraLagCompensationDeveloperSettings>();
+	const bool bDrawDebug = LagCompSettings->bDrawMeshLagCompensation;
+
 	const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;
 	FHitResult OutHit;
-	
-	bool bHit = PerformPhysicsAssetCollision(HitActor, FrameToCheck, TraceStart, TraceEnd, OutHit);
+
+	// 1단계: head 본만 검사 → 맞으면 헤드샷 확정
+	static const TSet<FName> HeadFilter = { FName("head") };
+	bool bHit = PerformPhysicsAssetCollision(HitActor, FrameToCheck, TraceStart, TraceEnd, HeadFilter, OutHit);
+	bool bHeadShot = bHit;
+
+	// 2단계: 못 맞췄으면 전체 본 검사 → 맞으면 바디샷
+	if (!bHit)
+	{
+		static const TSet<FName> EmptyFilter;
+		bHit = PerformPhysicsAssetCollision(HitActor, FrameToCheck, TraceStart, TraceEnd, EmptyFilter, OutHit);
+	}
 
 	if (bDrawDebug)
 	{
 		VisualizeConfirmHit(TraceStart, TraceEnd, bHit, OutHit, HitActor);
-		
+
 		// 1. 되감기 된 판정용 포즈 시각화 (성공: 초록, 실패: 빨강)
 		DrawDebugPose(FrameToCheck, bHit ? FColor::Green : FColor::Red);
 
@@ -209,175 +222,135 @@ FServerSideRewindResult ULyraLagCompensationComponent_SkeletalMesh::ConfirmHit(c
 		DrawDebugPose(CurrentFrame, FColor::Blue);
 	}
 
-	return FServerSideRewindResult { bHit, (bHit && OutHit.BoneName == FName("head")) };
+	return FServerSideRewindResult { bHit, bHeadShot };
 }
 
 bool ULyraLagCompensationComponent_SkeletalMesh::PerformPhysicsAssetCollision(const TObjectPtr<AActor> HitActor,
-	const FMeshFramePackage& Frame, const FVector& TraceStart, const FVector& TraceEnd, FHitResult& OutHit)
+	const FMeshFramePackage& Frame, const FVector& TraceStart, const FVector& TraceEnd, const TSet<FName>& BoneFilter, FHitResult& OutHit) const
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(LyraLag_PerformCollision);
 	SCOPE_CYCLE_COUNTER(STAT_LyraLag_PerformCollision);
 
-	if (!IsValid(HitActor))
-	{
-		return false;
-	}
+	if (!IsValid(HitActor)) return false;
 
-	// 스켈레탈 메시 컴포넌트 가져오기
 	USkeletalMeshComponent* SkeletalMeshComp = GetSkeletalMesh(HitActor);
-	if (!IsValid(SkeletalMeshComp) || !SkeletalMeshComp->GetSkeletalMeshAsset())
-	{
-		return false;
-	}
+	if (!IsValid(SkeletalMeshComp) || !SkeletalMeshComp->GetSkeletalMeshAsset()) return false;
 
-	// 피직스 애셋 가져오기
 	UPhysicsAsset* PhysicsAsset = SkeletalMeshComp->GetPhysicsAsset();
-	if (!IsValid(PhysicsAsset))
+	if (!IsValid(PhysicsAsset)) return false;
+
+	const float TraceLength = (TraceEnd - TraceStart).Size();
+	if (TraceLength <= KINDA_SMALL_NUMBER) return false;
+
+	// hit 발견 시 OutHit를 채우고 즉시 true 반환하기 위한 헬퍼.
+	// closest 비교 없이 첫 hit으로 종료. ServerSideRewind는 "맞췄는가" 만 필요.
+	auto FillHitAndReturn = [&](const FVector& ImpactPoint, const FVector& Normal, float Distance, FName BoneName) -> bool
 	{
-		return false;
-	}
-	
-#if ENABLE_DRAW_DEBUG
-	// 디버그 로그
-	if (const bool bDrawDebug = GetDefault<ULyraWeaponDebugSettings>()->bDrawMeshLagCompensation)
-	{
-		UE_LOG(LogTemp, Log, TEXT("[MeshLagComp] PerformPhysicsAssetCollision: BoneCount=%d, Start=%s, End=%s"), 
-			Frame.BoneTransforms.Num(), *TraceStart.ToString(), *TraceEnd.ToString());
-	}
-
-#endif
-
-	bool bHit = false;
-	float ClosestHitDistance = FLT_MAX;
-	FHitResult ClosestHit;
-
-	FVector TraceDir = (TraceEnd - TraceStart).GetSafeNormal();
-	float TraceLength = (TraceEnd - TraceStart).Size();
+		OutHit.Location = ImpactPoint;
+		OutHit.ImpactPoint = ImpactPoint;
+		OutHit.Normal = Normal;
+		OutHit.ImpactNormal = Normal;
+		OutHit.Distance = Distance;
+		OutHit.BoneName = BoneName;
+		OutHit.Component = SkeletalMeshComp;
+		return true;
+	};
 
 	for (const USkeletalBodySetup* BodySetup : PhysicsAsset->SkeletalBodySetups)
 	{
 		if (!IsValid(BodySetup)) continue;
+		if (BoneFilter.Num() > 0 && !BoneFilter.Contains(BodySetup->BoneName)) continue;
 
-		int32 BoneIndex = SkeletalMeshComp->GetBoneIndex(BodySetup->BoneName);
+		const int32 BoneIndex = SkeletalMeshComp->GetBoneIndex(BodySetup->BoneName);
 		if (BoneIndex == INDEX_NONE || !Frame.BoneTransforms.IsValidIndex(BoneIndex)) continue;
 
-		FTransform BoneWorldTransform = Frame.BoneTransforms[BoneIndex] * Frame.MeshTransform;
+		const FTransform BoneWorldTransform = Frame.BoneTransforms[BoneIndex] * Frame.MeshTransform;
 
-		// 1. 구체(Sphere) 충돌 검사 - 더 엄격한 선분 체크
+		// 1. Sphere
 		for (const FKSphereElem& SphereElem : BodySetup->AggGeom.SphereElems)
 		{
-			FVector SphereCenter = BoneWorldTransform.TransformPosition(SphereElem.Center);
-			float SphereRadius = SphereElem.Radius * BoneWorldTransform.GetScale3D().GetMax();
+			const FVector SphereCenter = BoneWorldTransform.TransformPosition(SphereElem.Center);
+			const float SphereRadius = SphereElem.Radius * BoneWorldTransform.GetScale3D().GetMax();
+			const FVector ClosestPoint = FMath::ClosestPointOnSegment(SphereCenter, TraceStart, TraceEnd);
 
-			// 선분 상의 가장 가까운 점 찾기
-			FVector ClosestPoint = FMath::ClosestPointOnSegment(SphereCenter, TraceStart, TraceEnd);
-			float DistanceSq = FVector::DistSquared(SphereCenter, ClosestPoint);
-
-			if (DistanceSq <= FMath::Square(SphereRadius))
+			if (FVector::DistSquared(SphereCenter, ClosestPoint) <= FMath::Square(SphereRadius))
 			{
-				float T = FVector::DotProduct(ClosestPoint - TraceStart, TraceDir);
-				float Offset = FMath::Sqrt(FMath::Square(SphereRadius) - DistanceSq);
-				float HitT = T - Offset; // 실제 표면 거리
-
-				if (HitT >= 0 && HitT <= TraceLength && HitT < ClosestHitDistance)
-				{
-					ClosestHitDistance = HitT;
-					ClosestHit.Location = TraceStart + TraceDir * HitT;
-					ClosestHit.ImpactPoint = ClosestHit.Location;
-					ClosestHit.Normal = (ClosestHit.Location - SphereCenter).GetSafeNormal();
-					ClosestHit.ImpactNormal = ClosestHit.Normal;
-					ClosestHit.Distance = HitT;
-					ClosestHit.BoneName = BodySetup->BoneName;
-					ClosestHit.Component = SkeletalMeshComp;
-					bHit = true;
-				}
+				const float Distance = FVector::Dist(TraceStart, ClosestPoint);
+				return FillHitAndReturn(ClosestPoint, (ClosestPoint - SphereCenter).GetSafeNormal(), Distance, BodySetup->BoneName);
 			}
 		}
 
-		// 2. 박스(Box) 충돌 검사
+		// 2. Box
 		for (const FKBoxElem& BoxElem : BodySetup->AggGeom.BoxElems)
 		{
 			FTransform BoxTransform(BoxElem.Rotation, BoxElem.Center);
 			BoxTransform = BoxTransform * BoneWorldTransform;
-            
-			FVector BoxExtent = FVector(BoxElem.X, BoxElem.Y, BoxElem.Z) * 0.5f * BoxTransform.GetScale3D();
-			
-			FVector LocalStart = BoxTransform.InverseTransformPosition(TraceStart);
-			FVector LocalEnd = BoxTransform.InverseTransformPosition(TraceEnd);
-			FBox LocalBox(-BoxExtent, BoxExtent);
+
+			const FVector BoxExtent = FVector(BoxElem.X, BoxElem.Y, BoxElem.Z) * 0.5f * BoxTransform.GetScale3D();
+			const FVector LocalStart = BoxTransform.InverseTransformPosition(TraceStart);
+			const FVector LocalEnd = BoxTransform.InverseTransformPosition(TraceEnd);
+			const FBox LocalBox(-BoxExtent, BoxExtent);
 
 			float HitT;
-			FVector HitLocation, HitNormal;
-
-			// LineBoxIntersection이 더 가볍고 정확할 수 있음
-			if (FMath::LineExtentBoxIntersection(LocalBox, LocalStart, LocalEnd, FVector::ZeroVector, HitLocation, HitNormal, HitT))
+			FVector HitLocal, HitNormalLocal;
+			if (FMath::LineExtentBoxIntersection(LocalBox, LocalStart, LocalEnd, FVector::ZeroVector, HitLocal, HitNormalLocal, HitT))
 			{
-				float WorldDistance = HitT * TraceLength;
-				if (WorldDistance < ClosestHitDistance)
-				{
-					ClosestHitDistance = WorldDistance;
-					ClosestHit.Distance = WorldDistance;
-					ClosestHit.Location = BoxTransform.TransformPosition(HitLocation);
-					ClosestHit.ImpactPoint = ClosestHit.Location;
-					ClosestHit.Normal = BoxTransform.TransformVector(HitNormal).GetSafeNormal();
-					ClosestHit.ImpactNormal = ClosestHit.Normal;
-					ClosestHit.BoneName = BodySetup->BoneName;
-					ClosestHit.Component = SkeletalMeshComp;
-					bHit = true;
-				}
+				const FVector WorldImpact = BoxTransform.TransformPosition(HitLocal);
+				const FVector WorldNormal = BoxTransform.TransformVector(HitNormalLocal).GetSafeNormal();
+				return FillHitAndReturn(WorldImpact, WorldNormal, HitT * TraceLength, BodySetup->BoneName);
 			}
 		}
 
-		// 3. 캡슐(Sphyl) 충돌 검사
+		// 3. Sphyl: 두 선분(trace ↔ capsule 축) 최단거리 < Radius 이면 hit
 		for (const FKSphylElem& SphylElem : BodySetup->AggGeom.SphylElems)
 		{
 			FTransform CapsuleTransform(SphylElem.Rotation, SphylElem.Center);
 			CapsuleTransform = CapsuleTransform * BoneWorldTransform;
-    
-			FVector Scale = CapsuleTransform.GetScale3D();
-			float Radius = SphylElem.Radius * FMath::Max(Scale.X, Scale.Y);
-			float HalfHeight = SphylElem.Length * 0.5f * Scale.Z;
-    
-			FVector UpDirection = CapsuleTransform.GetUnitAxis(EAxis::Z);
-			FVector CapsuleTop = CapsuleTransform.GetLocation() + UpDirection * HalfHeight;
-			FVector CapsuleBottom = CapsuleTransform.GetLocation() - UpDirection * HalfHeight;
-    
+
+			const FVector Scale = CapsuleTransform.GetScale3D();
+			const float Radius = SphylElem.Radius * FMath::Max(Scale.X, Scale.Y);
+			const float HalfHeight = SphylElem.Length * 0.5f * Scale.Z;
+
+			const FVector UpDir = CapsuleTransform.GetUnitAxis(EAxis::Z);
+			const FVector CapsuleTop = CapsuleTransform.GetLocation() + UpDir * HalfHeight;
+			const FVector CapsuleBottom = CapsuleTransform.GetLocation() - UpDir * HalfHeight;
+
 			FVector ClosestPointOnLine, ClosestPointOnCapsule;
 			FMath::SegmentDistToSegmentSafe(TraceStart, TraceEnd, CapsuleBottom, CapsuleTop, ClosestPointOnLine, ClosestPointOnCapsule);
-    
-			float DistanceSq = FVector::DistSquared(ClosestPointOnLine, ClosestPointOnCapsule);
-    
-			if (DistanceSq <= FMath::Square(Radius))
+
+			if (FVector::DistSquared(ClosestPointOnLine, ClosestPointOnCapsule) <= FMath::Square(Radius))
 			{
-				float HitDistance = FVector::Dist(ClosestPointOnLine, TraceStart);
-				if (HitDistance < ClosestHitDistance)
+				FVector SurfaceNormal = (ClosestPointOnLine - ClosestPointOnCapsule).GetSafeNormal();
+				if (SurfaceNormal.IsNearlyZero())
 				{
-					ClosestHitDistance = HitDistance;
-					ClosestHit.Location = ClosestPointOnLine;
-					ClosestHit.ImpactPoint = ClosestPointOnLine;
-					ClosestHit.Normal = (ClosestPointOnLine - ClosestPointOnCapsule).GetSafeNormal();
-					ClosestHit.ImpactNormal = ClosestHit.Normal;
-					ClosestHit.Distance = HitDistance;
-					ClosestHit.BoneName = BodySetup->BoneName;
-					ClosestHit.Component = SkeletalMeshComp;
-					bHit = true;
+					SurfaceNormal = -((TraceEnd - TraceStart).GetSafeNormal());
 				}
+				const FVector ImpactPointOnSurface = ClosestPointOnCapsule + SurfaceNormal * Radius;
+				const float Distance = FVector::Dist(TraceStart, ImpactPointOnSurface);
+
+#if ENABLE_DRAW_DEBUG
+				// [임시] 원래 점(선분 위, 내부일 수 있음) vs 보정된 표면점 비교
+				const float DebugDuration = 5.0f;
+				DrawDebugSphere(GetWorld(), ClosestPointOnLine, 3.0f, 12, FColor::Yellow, false, DebugDuration, 0, 0.5f); // 보정 전 (선분 위)
+				DrawDebugPoint(GetWorld(), ClosestPointOnCapsule, 8.0f, FColor::Cyan, false, DebugDuration);    // 캡슐 중심선 위
+				DrawDebugSphere(GetWorld(), ImpactPointOnSurface, 3.0f, 12, FColor::Green, false, DebugDuration, 0, 0.5f); // 보정 후 (표면)
+				DrawDebugLine(GetWorld(), ClosestPointOnLine, ImpactPointOnSurface, FColor::White, false, DebugDuration, 0, 1.0f);
+				DrawDebugDirectionalArrow(GetWorld(), ImpactPointOnSurface, ImpactPointOnSurface + SurfaceNormal * 20.0f,
+					15.0f, FColor::Magenta, false, DebugDuration, 0, 1.5f);
+#endif
+
+				return FillHitAndReturn(ImpactPointOnSurface, SurfaceNormal, Distance, BodySetup->BoneName);
 			}
 		}
 	}
 
-	if (bHit)
-	{
-		OutHit = ClosestHit;
-	}
-
-	return bHit;
+	return false;
 }
 
 #if ENABLE_DRAW_DEBUG
-void ULyraLagCompensationComponent_SkeletalMesh::VisualizeConfirmHit(const FVector& Start, const FVector& End, bool bSuccess, const FHitResult& HitResult, AActor* HitActor)
+void ULyraLagCompensationComponent_SkeletalMesh::VisualizeConfirmHit(const FVector& Start, const FVector& End, bool bSuccess, const FHitResult& HitResult, const AActor* HitActor) const
 {
-	const float DrawDebugDuration = GetDefault<ULyraWeaponDebugSettings>()->DrawMeshLagCompensationDuration;
+	const float DrawDebugDuration = GetDefault<ULyraLagCompensationDeveloperSettings>()->DrawMeshLagCompensationDuration;
 
 	if (bSuccess)
 	{
@@ -402,7 +375,7 @@ void ULyraLagCompensationComponent_SkeletalMesh::DrawDebugPose(const FMeshFrameP
 	UPhysicsAsset* PhysicsAsset = SkeletalMeshComp->GetPhysicsAsset();
 	if (!IsValid(PhysicsAsset)) return;
 	
-	const ULyraWeaponDebugSettings* Settings = GetDefault<ULyraWeaponDebugSettings>();
+	const ULyraLagCompensationDeveloperSettings* Settings = GetDefault<ULyraLagCompensationDeveloperSettings>();
 	const float LifeTime = IsValid(Settings) ? Settings->DrawMeshLagCompensationDuration : 5.0f;
 	
 	for (const USkeletalBodySetup* BodySetup : PhysicsAsset->SkeletalBodySetups)
@@ -423,8 +396,7 @@ void ULyraLagCompensationComponent_SkeletalMesh::DrawDebugPose(const FMeshFrameP
 
 			float Radius = SphylElem.Radius * CapsuleTransform.GetScale3D().GetMax();
 			float HalfHeight = SphylElem.Length * 0.5f * CapsuleTransform.GetScale3D().Z;
-
-			// 요청하신 형식대로 DrawDebugCapsule 호출 (전체 높이 = HalfHeight + Radius)
+			
 			DrawDebugCapsule(GetWorld(), CapsuleTransform.GetLocation(), HalfHeight + Radius, Radius, CapsuleTransform.GetRotation(), Color, false, LifeTime, 0, 0.5f);
 		}
 

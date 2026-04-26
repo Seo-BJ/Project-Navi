@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Containers/Deque.h"
 #include "LagCompensation/LyraLagCompensationComponent.h"
 #include "LyraLagCompensationComponent_BoxComponent.generated.h"
 
@@ -21,10 +22,10 @@ struct FBoxInformation
 
 	UPROPERTY()
 	FVector Location = FVector::ZeroVector;
-	
+
 	UPROPERTY()
 	FRotator Rotation = FRotator::ZeroRotator;
-	
+
 	UPROPERTY()
 	FVector BoxExtent = FVector::ZeroVector;
 };
@@ -37,10 +38,10 @@ struct FFramePackage
 
 	UPROPERTY()
 	float Time = 0.0f;
-	
+
 	UPROPERTY()
 	TObjectPtr<AActor> HitActor = nullptr;
-	
+
 	UPROPERTY()
 	TMap<FName, FBoxInformation> HitBoxInfo;
 };
@@ -49,7 +50,7 @@ struct FFramePackage
  * Server-side rewind를 통해 랙 보상(Lag Compensation)을 처리하는 컴포넌트
  * 이 컴포넌트의 Owner Actor의 Box Collision들의 위치들을 서버에서 저장
  * LyraGameplayAbility_RangedWeapon을 통해 사격시 사격 시간으로 서버 시간을 되감아 피격 판정을 수행
- * 
+ *
  * HitActor는 ILagCompensationTarget를 구현해야함
  */
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -57,11 +58,9 @@ class LYRAGAME_API ULyraLagCompensationComponent_BoxComponent : public ULyraLagC
 {
 	GENERATED_BODY()
 
-public:	
-	friend class ABlasterCharacter;
-
+public:
 	ULyraLagCompensationComponent_BoxComponent();
-	
+
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	/**
@@ -88,9 +87,9 @@ private:
 
 	// Actor의 히트박스 들을 저장
 	void SaveFramePackage(FFramePackage& Package);
-	
-	// HitTime을 기준으로 Hit 판정에 사용할 프레임 반환
-	FFramePackage GetHitTimeFrame(AActor* HitActor, float HitTime);
+
+	// HitTime을 기준으로 Hit 판정에 사용할 프레임 반환 (owner의 FrameHistory에서 검색)
+	FFramePackage GetHitTimeFrame(float HitTime);
 	/**
 	 * 되감기가 완료된 상태에서 실제 Hit 판정을 위한 Trace를 수행
 	 * @param FrameToCheck 되감기 목표 시점의 프레임
@@ -101,7 +100,7 @@ private:
 		const FVector_NetQuantize& TraceStart,
 		const FVector_NetQuantize& HitLocation
 		);
-	
+
 	//두 프레임 사이 특정 시간(HitTime)에 위치 할 프레임을 선형 보간하여 계산
 	FFramePackage InterpolateBetweenTwoFrames(
 		const FFramePackage& OlderFrame,
@@ -114,7 +113,7 @@ private:
 		const FFramePackage& FirstNewestFrame,
 		float HitTime
 	);
-	
+
 	// 현재 Actor의 모든 히트박스 정보를 OutFramePackage에 저장
 	void CacheCurrentFrame(AActor* HitActor, FFramePackage& OutFramePackage);
 	// Actor의 히트박스들을 특정 FramePackage의 위치로 되감음
@@ -124,9 +123,9 @@ private:
 
 	// 되감기 중 Actor의 메인 Mesh Collision을 활성화 상태 설정
 	void SetMeshCollisionEnabledType(AActor* HitActor, ECollisionEnabled::Type CollsionEnabled);
-	
+
 	// 내부 헬퍼: 특정 박스들에 대해 Trace 수행
-	bool PerformHitCheck(const TArray<UBoxComponent*>& BoxesToCheck, const FVector& Start, const FVector& End, const FCollisionQueryParams& Params, FHitResult& OutHit);
+	bool PerformHitCheck(const TArray<UBoxComponent*>& BoxesToCheck, const FVector& Start, const FVector& End, const FCollisionQueryParams& Params, FHitResult& OutHit) const;
 
 #if ENABLE_DRAW_DEBUG
 	// 내부 헬퍼: ConfirmHit 결과 시각화
@@ -134,11 +133,12 @@ private:
 
 	// Draw Debug 함수
 	void DrawDebugFramePackage(const FFramePackage& FramePackage) const;
-	void DrawDebugHitResult(FHitResult HitResult, bool bConfirmHit) const;
+	void DrawDebugHitResult(const FHitResult& HitResult, bool bConfirmHit) const;
 #endif
 
 	// 서버가 관리하는 엑터의 과거 프레임 데이터
-	TDoubleLinkedList<FFramePackage> FrameHistory;
+	// TDeque 의미: First()=최신(Front), Last()=과거(Back), 인덱스 0=First 방향
+	TDeque<FFramePackage> FrameHistory;
 
 	UPROPERTY(EditAnywhere)
 	bool bDrawFrameHistory = false;
@@ -153,6 +153,6 @@ private:
 	// 디버그 히트박스를 유지할 시간
 	UPROPERTY(EditAnywhere)
 	float DrawDebugHitBoxTime = 4.0f;
-	
+
 	int32 TickCounter = 0;
 };

@@ -90,3 +90,6 @@ Plugins/GameFeatures/*/Intermediate/*
 /Content/Shooter_VFXPack
 /Content/DedicatedServers/Data
 /Plugins/Inventory
+/Source/.claude
+/OpenSSLBinaries
+Navi.uproject.DotSettings.user

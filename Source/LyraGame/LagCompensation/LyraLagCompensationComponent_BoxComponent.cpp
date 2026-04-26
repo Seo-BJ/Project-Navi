@@ -13,6 +13,19 @@
 
 DEFINE_LOG_CATEGORY(LogLagCompensation);
 
+// 프로파일링 그룹 (BoxComponent 전용)
+DECLARE_STATS_GROUP(TEXT("Lyra Lag Compensation Box"), STATGROUP_LyraLagBox, STATCAT_Advanced);
+
+DECLARE_CYCLE_STAT(TEXT("LagCompBox - UpdateHistory"), STAT_LyraLagBox_UpdateHistory, STATGROUP_LyraLagBox);
+DECLARE_CYCLE_STAT(TEXT("LagCompBox - HistorySearch"), STAT_LyraLagBox_HistorySearch, STATGROUP_LyraLagBox);
+DECLARE_CYCLE_STAT(TEXT("LagCompBox - Interpolate"), STAT_LyraLagBox_Interpolate, STATGROUP_LyraLagBox);
+DECLARE_CYCLE_STAT(TEXT("LagCompBox - CacheFrame"), STAT_LyraLagBox_CacheFrame, STATGROUP_LyraLagBox);
+DECLARE_CYCLE_STAT(TEXT("LagCompBox - Rewind"), STAT_LyraLagBox_Rewind, STATGROUP_LyraLagBox);
+DECLARE_CYCLE_STAT(TEXT("LagCompBox - ConfirmHit"), STAT_LyraLagBox_ConfirmHit, STATGROUP_LyraLagBox);
+
+DECLARE_DWORD_COUNTER_STAT(TEXT("LagCompBox - History Frames"), STAT_LyraLagBox_HistoryCount, STATGROUP_LyraLagBox);
+DECLARE_MEMORY_STAT(TEXT("LagCompBox - History Memory"), STAT_LyraLagBox_HistoryMemory, STATGROUP_LyraLagBox);
+
 
 ULyraLagCompensationComponent_BoxComponent::ULyraLagCompensationComponent_BoxComponent()
 {
@@ -24,7 +37,7 @@ void ULyraLagCompensationComponent_BoxComponent::TickComponent(float DeltaTime, 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	if (!GetOwner()->HasAuthority()) return;
-	
+
 #if ENABLE_DRAW_DEBUG
 	if (bDrawFrameHistory)
 	{
@@ -33,8 +46,7 @@ void ULyraLagCompensationComponent_BoxComponent::TickComponent(float DeltaTime, 
 		{
 			if (FrameHistory.Num() > 0)
 			{
-				const FFramePackage& CurrentFrame = FrameHistory.GetHead()->GetValue();
-				DrawDebugFramePackage(CurrentFrame);
+				DrawDebugFramePackage(FrameHistory.First());
 			}
 		}
 	}
@@ -43,44 +55,51 @@ void ULyraLagCompensationComponent_BoxComponent::TickComponent(float DeltaTime, 
 
 void ULyraLagCompensationComponent_BoxComponent::UpdateFrameHistory()
 {
-	if (FrameHistory.Num() <= 1)
+	TRACE_CPUPROFILER_EVENT_SCOPE(LyraLagBox_UpdateHistory);
+	SCOPE_CYCLE_COUNTER(STAT_LyraLagBox_UpdateHistory);
+
+	FFramePackage ThisFrame;
+	SaveFramePackage(ThisFrame);
+
+	FrameHistory.EmplaceFirst(MoveTemp(ThisFrame));
+
+	if (FrameHistory.Num() >= 2)
 	{
-		FFramePackage ThisFrame;
-		SaveFramePackage(ThisFrame);
-		FrameHistory.AddHead(ThisFrame);
-	}
-	else
-	{
-		float HistoryLength = FrameHistory.GetHead()->GetValue().Time - FrameHistory.GetTail()->GetValue().Time;
-		while (HistoryLength > MaxRecordTime)
+		float HistoryLength = FrameHistory.First().Time - FrameHistory.Last().Time;
+		while (HistoryLength > MaxRecordTime && FrameHistory.Num() >= 2)
 		{
-			FrameHistory.RemoveNode(FrameHistory.GetTail());
-			HistoryLength = FrameHistory.GetHead()->GetValue().Time - FrameHistory.GetTail()->GetValue().Time;
+			FrameHistory.PopLast();
+			HistoryLength = FrameHistory.First().Time - FrameHistory.Last().Time;
 		}
-		FFramePackage ThisFrame;
-		SaveFramePackage(ThisFrame);
-		FrameHistory.AddHead(ThisFrame);
 	}
+
+	const int32 HistoryCount = FrameHistory.Num();
+	const SIZE_T HistoryMemory = FrameHistory.GetAllocatedSize();
+
+	INC_DWORD_STAT_BY(STAT_LyraLagBox_HistoryCount, HistoryCount);
+	SET_MEMORY_STAT(STAT_LyraLagBox_HistoryMemory, HistoryMemory);
 }
 
 void ULyraLagCompensationComponent_BoxComponent::SaveFramePackage(FFramePackage& Package)
 {
+	SCOPE_CYCLE_COUNTER(STAT_LyraLagBox_CacheFrame);
+
 	AActor* OwnerActor = GetOwner();
 	if (IsValid(OwnerActor))
 	{
 		ILagCompensationTarget* Target = Cast<ILagCompensationTarget>(OwnerActor);
 		if (!Target) return;
-		
+
 		Package.HitActor = OwnerActor;
 		Package.Time = GetWorld()->GetTimeSeconds(); // 서버 시간
-		
+
 		for (auto& BoxPair : Target->GetHitCollisionBoxes())
 		{
 			FBoxInformation BoxInfo;
 			BoxInfo.Location = BoxPair.Value->GetComponentLocation();
 			BoxInfo.Rotation = BoxPair.Value->GetComponentRotation();
 			BoxInfo.BoxExtent = BoxPair.Value->GetScaledBoxExtent();
-			
+
 			Package.HitBoxInfo.Add(BoxPair.Key, BoxInfo);
 		}
 	}
@@ -88,9 +107,13 @@ void ULyraLagCompensationComponent_BoxComponent::SaveFramePackage(FFramePackage&
 
 FServerSideRewindResult ULyraLagCompensationComponent_BoxComponent::ServerSideRewind(AActor* HitActor, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(LyraLagBox_ServerSideRewind);
+	SCOPE_CYCLE_COUNTER(STAT_LyraLagBox_Rewind);
+
 	if (IsValid(HitActor))
 	{
-		FFramePackage FrameToCheck = GetHitTimeFrame(HitActor, HitTime);
+		FFramePackage FrameToCheck = GetHitTimeFrame(HitTime);
+		FrameToCheck.HitActor = HitActor;
 		return ConfirmHit(FrameToCheck, HitActor, TraceStart, HitLocation);
 	}
 	return FServerSideRewindResult();
@@ -98,27 +121,26 @@ FServerSideRewindResult ULyraLagCompensationComponent_BoxComponent::ServerSideRe
 
 FServerSideRewindResult ULyraLagCompensationComponent_BoxComponent::ConfirmHit(const FFramePackage& FrameToCheck, AActor* HitActor, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation)
 {
+	SCOPE_CYCLE_COUNTER(STAT_LyraLagBox_ConfirmHit);
+
 	// 1. 유효성 검사
-	if (!IsValid(HitActor)) return FServerSideRewindResult(); 
+	if (!IsValid(HitActor)) return FServerSideRewindResult();
 	ILagCompensationTarget* Target = Cast<ILagCompensationTarget>(HitActor);
 	UWorld* World = GetWorld();
 	if (!Target || !World) return FServerSideRewindResult();
-	
+
 	// 2. 현재 상태 저장
-	FFramePackage CurrentFrame; 
+	FFramePackage CurrentFrame;
 	CacheCurrentFrame(HitActor, CurrentFrame);
 
 	// 3. 엑터 상태 되감기 (Rewind)
-	RewindFrame(HitActor, FrameToCheck); 
-	SetMeshCollisionEnabledType(HitActor, ECollisionEnabled::NoCollision); 
+	RewindFrame(HitActor, FrameToCheck);
+	SetMeshCollisionEnabledType(HitActor, ECollisionEnabled::NoCollision);
 
 	// 4. Trace 설정
-	AActor* Attacker = GetOwner();
+	// 주의: GetOwner()는 피격자(HitActor)임. 발사자 정보는 이 시점에 보유하지 않음.
+	// HitBox 채널만으로 trace하므로 자기 자신의 캡슐/메시는 SetMeshCollisionEnabledType로 이미 비활성화됨.
 	FCollisionQueryParams TraceParams;
-	if (Attacker)
-	{
-		TraceParams.AddIgnoredActor(Attacker);
-	}
 	const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;
 
 #if ENABLE_DRAW_DEBUG
@@ -137,12 +159,12 @@ FServerSideRewindResult ULyraLagCompensationComponent_BoxComponent::ConfirmHit(c
 	// 5. 헤드샷 우선 판정
 	const TMap<FName, TObjectPtr<UBoxComponent>>& HitBoxes = Target->GetHitCollisionBoxes();
 	const TObjectPtr<UBoxComponent>* FoundBoxPtr = HitBoxes.Find(FName("head"));
-	
+
 	if (FoundBoxPtr && *FoundBoxPtr)
 	{
 		TArray<UBoxComponent*> HeadBoxes;
 		HeadBoxes.Add(*FoundBoxPtr);
-		
+
 		if (PerformHitCheck(HeadBoxes, TraceStart, TraceEnd, TraceParams, ConfirmHitResult))
 		{
 			bHitSuccess = true;
@@ -175,13 +197,13 @@ FServerSideRewindResult ULyraLagCompensationComponent_BoxComponent::ConfirmHit(c
 #endif
 
 	// 8. 상태 복원
-	ResetHitBoxes(HitActor, CurrentFrame); 
-	SetMeshCollisionEnabledType(HitActor, ECollisionEnabled::QueryAndPhysics); 
+	ResetHitBoxes(HitActor, CurrentFrame);
+	SetMeshCollisionEnabledType(HitActor, ECollisionEnabled::QueryAndPhysics);
 
 	return FServerSideRewindResult{ bHitSuccess, bHeadShot };
 }
 
-bool ULyraLagCompensationComponent_BoxComponent::PerformHitCheck(const TArray<UBoxComponent*>& BoxesToCheck, const FVector& Start, const FVector& End, const FCollisionQueryParams& Params, FHitResult& OutHit)
+bool ULyraLagCompensationComponent_BoxComponent::PerformHitCheck(const TArray<UBoxComponent*>& BoxesToCheck, const FVector& Start, const FVector& End, const FCollisionQueryParams& Params, FHitResult& OutHit) const
 {
 	for (UBoxComponent* Box : BoxesToCheck)
 	{
@@ -218,7 +240,7 @@ void ULyraLagCompensationComponent_BoxComponent::VisualizeConfirmHit(const FVect
 	else
 	{
 		UE_LOG(LogLagCompensation, Warning, TEXT("ConfirmHit FAILED. TraceStart: %s, Actor: %s"), *Start.ToString(), *HitActor->GetName());
-		
+
 		ILagCompensationTarget* Target = Cast<ILagCompensationTarget>(HitActor);
 		if (Target)
 		{
@@ -234,73 +256,80 @@ void ULyraLagCompensationComponent_BoxComponent::VisualizeConfirmHit(const FVect
 }
 #endif
 
-FFramePackage ULyraLagCompensationComponent_BoxComponent::GetHitTimeFrame(AActor* HitActor, float HitTime)
+FFramePackage ULyraLagCompensationComponent_BoxComponent::GetHitTimeFrame(float HitTime)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(TEXT("LagCompensation::HistorySearch"));
-	// 1. 유효성 검사
-	if (!IsValid(HitActor)) return FFramePackage();
-	ULyraLagCompensationComponent_BoxComponent* HitLagCompensation = HitActor->GetComponentByClass<ULyraLagCompensationComponent_BoxComponent>();
-	
-	if ((!IsValid(HitLagCompensation)) || (HitLagCompensation->FrameHistory.GetHead() == nullptr)|| (HitLagCompensation->FrameHistory.GetTail() == nullptr))
+	SCOPE_CYCLE_COUNTER(STAT_LyraLagBox_HistorySearch);
+
+	// 이 컴포넌트는 피격자(owner)에 부착되어 있으므로 자신의 FrameHistory에서 검색.
+
+	FFramePackage FrameToCheck;
+
+	const TDeque<FFramePackage>& History = this->FrameHistory;
+	if (History.Num() == 0)
 	{
 		return FFramePackage();
 	}
 
+	const float OldestHistoryTime = History.Last().Time;
+	const float NewestHistoryTime = History.First().Time;
 
-	// 피격된 캐릭터의 프레임 기록을 가져옴
-	const float OldestHistoryTime = HitLagCompensation->FrameHistory.GetTail()->GetValue().Time;
-	const float NewestHistoryTime = HitLagCompensation->FrameHistory.GetHead()->GetValue().Time;
-	
-	if (OldestHistoryTime > HitTime) // Case 1: 요청된 시간이 기록 범위를 벗어남 (너무 과거의 요청)
+	if (OldestHistoryTime > HitTime)
 	{
-		return FFramePackage(); 
+		return FFramePackage();
 	}
-	if (FMath::IsNearlyEqual(OldestHistoryTime, HitTime)) // Case2: 요청된 시간이 가장 오래된 기록과 같음
+	if (FMath::IsNearlyEqual(OldestHistoryTime, HitTime))
 	{
-		return HitLagCompensation->FrameHistory.GetTail()->GetValue(); 
-	} 
-	if (FMath::IsNearlyEqual(NewestHistoryTime, HitTime)) // Case 3: 요청 시간이 가장 최신 기록과 같음
-	{
-		return HitLagCompensation->FrameHistory.GetHead()->GetValue(); 
+		return History.Last();
 	}
-	
-	FFramePackage FrameToCheck;
-	if (NewestHistoryTime < HitTime) // Case 4: HitTime이 근소하게 최신 기록보다 큼
+	if (FMath::IsNearlyEqual(NewestHistoryTime, HitTime))
 	{
-		FrameToCheck = ExtrapolateByTwoFrames(
-			HitLagCompensation->FrameHistory.GetHead()->GetNextNode()->GetValue(),
-			HitLagCompensation->FrameHistory.GetHead()->GetValue(), HitTime
-		);
+		return History.First();
 	}
-	else // Case 5: HitTime이 기록 사이에 존재
+
+	if (NewestHistoryTime < HitTime) // Case 4: 외삽
 	{
-		TDoubleLinkedList<FFramePackage>::TDoubleLinkedListNode* Younger = HitLagCompensation->FrameHistory.GetHead();
-		TDoubleLinkedList<FFramePackage>::TDoubleLinkedListNode* Older = Younger;
-		while (Older->GetValue().Time > HitTime)
+		if (History.Num() >= 2)
 		{
-			if (Older->GetNextNode() == nullptr) break;
-			Older = Older->GetNextNode();
-			if (Older->GetValue().Time > HitTime)
-			{
-				Younger = Older;
-			}
-		}
-		// 이 루프가 끝나면 Older->Time < HitTime < Younger->Time 상태가 됨
-		if (Older->GetValue().Time == HitTime) // 정확히 일치하는 프레임 발견
-		{
-			FrameToCheck = Older->GetValue();
+			FrameToCheck = ExtrapolateByTwoFrames(History[1], History[0], HitTime);
 		}
 		else
 		{
-			FrameToCheck = InterpolateBetweenTwoFrames(Older->GetValue(), Younger->GetValue(), HitTime);
+			FrameToCheck = History.First();
 		}
 	}
-	FrameToCheck.HitActor = HitActor;
+	else // Case 5: 보간
+	{
+		// 최신(인덱스 0=First) -> 과거(인덱스 증가=Last) 방향으로 선형 탐색
+		const int32 Count = History.Num();
+		int32 YoungerIdx = 0;
+		int32 OlderIdx = 0;
+		while (OlderIdx + 1 < Count && History[OlderIdx].Time > HitTime)
+		{
+			++OlderIdx;
+			if (History[OlderIdx].Time > HitTime)
+			{
+				YoungerIdx = OlderIdx;
+			}
+		}
+
+		if (History[OlderIdx].Time == HitTime)
+		{
+			FrameToCheck = History[OlderIdx];
+		}
+		else
+		{
+			FrameToCheck = InterpolateBetweenTwoFrames(History[OlderIdx], History[YoungerIdx], HitTime);
+		}
+	}
+
 	return FrameToCheck;
 }
 
 FFramePackage ULyraLagCompensationComponent_BoxComponent::InterpolateBetweenTwoFrames(const FFramePackage& OlderFrame, const FFramePackage& YoungerFrame, float HitTime)
 {
+	SCOPE_CYCLE_COUNTER(STAT_LyraLagBox_Interpolate);
+
 	const float DeltaTime = YoungerFrame.Time - OlderFrame.Time;
 	const float InterpolateFraction = FMath::Clamp((HitTime - OlderFrame.Time) / DeltaTime, 0, 1);
 	FFramePackage InterpFramePackage;
@@ -312,11 +341,11 @@ FFramePackage ULyraLagCompensationComponent_BoxComponent::InterpolateBetweenTwoF
 		const FBoxInformation* OlderBoxPtr = OlderFrame.HitBoxInfo.Find(BoxInfoName);
 		if (!OlderBoxPtr)
 		{
-			continue; 
+			continue;
 		}
-	    const FBoxInformation& OlderBox = *OlderBoxPtr;		
+	    const FBoxInformation& OlderBox = *OlderBoxPtr;
 		const FBoxInformation& YoungerBox = YoungerFrame.HitBoxInfo[BoxInfoName];
-			
+
 		FBoxInformation InterpBoxInfo;
 		InterpBoxInfo.Location = FMath::Lerp(OlderBox.Location, YoungerBox.Location, InterpolateFraction);
 
@@ -336,32 +365,32 @@ FFramePackage ULyraLagCompensationComponent_BoxComponent::ExtrapolateByTwoFrames
 	const FFramePackage& FirstNewestFrame, float HitTime)
 {
 	FFramePackage ExtrapolateFramePackage;
-	ExtrapolateFramePackage.Time = HitTime; 
+	ExtrapolateFramePackage.Time = HitTime;
 
 	const float ExtrapolationTime = HitTime - SecondNewestFrame.Time;
 	const float DeltaTime = FirstNewestFrame.Time - SecondNewestFrame.Time;
-	
+
 	if (FMath::IsNearlyZero(DeltaTime))
 	{
 		return FirstNewestFrame;
 	}
-	
+
 	for (auto& FirstPair : FirstNewestFrame.HitBoxInfo)
 	{
 		const FName& BoxInfoName = FirstPair.Key;
 		const FBoxInformation* SecondBoxPtr = SecondNewestFrame.HitBoxInfo.Find(BoxInfoName);
 		if (!SecondBoxPtr)
 		{
-			continue; 
+			continue;
 		}
-		const FBoxInformation& SecondHitBox = *SecondBoxPtr;		
+		const FBoxInformation& SecondHitBox = *SecondBoxPtr;
 		const FBoxInformation& FirstHitBox = FirstPair.Value;
-		
+
 		const FVector DeltaLocation = FirstHitBox.Location - SecondHitBox.Location;
 		const FVector ExtrapolatedLocation = SecondHitBox.Location + (ExtrapolationTime/DeltaTime) * DeltaLocation;
 		const FRotator DeltaRotation = (FirstHitBox.Rotation - SecondHitBox.Rotation).GetNormalized();
 		const FRotator ExtrapolatedRotation = SecondHitBox.Rotation + (ExtrapolationTime/DeltaTime) * DeltaRotation;
-       
+
 		FBoxInformation ExtrapolatedBoxInfo;
 		ExtrapolatedBoxInfo.Location = ExtrapolatedLocation;
 		ExtrapolatedBoxInfo.Rotation = ExtrapolatedRotation;
@@ -369,16 +398,18 @@ FFramePackage ULyraLagCompensationComponent_BoxComponent::ExtrapolateByTwoFrames
 
 		ExtrapolateFramePackage.HitBoxInfo.Add(BoxInfoName, ExtrapolatedBoxInfo);
 	}
-    
+
 	return ExtrapolateFramePackage;
 }
 
 void ULyraLagCompensationComponent_BoxComponent::CacheCurrentFrame(AActor* HitActor, FFramePackage& OutFramePackage)
 {
+	SCOPE_CYCLE_COUNTER(STAT_LyraLagBox_CacheFrame);
+
 	if (HitActor == nullptr) return;
 	ILagCompensationTarget* Target = Cast<ILagCompensationTarget>(HitActor);
 	if (!Target) return;
-	
+
 	for (auto& HitBoxPair : Target->GetHitCollisionBoxes())
 	{
 		if (HitBoxPair.Value != nullptr)
@@ -387,7 +418,7 @@ void ULyraLagCompensationComponent_BoxComponent::CacheCurrentFrame(AActor* HitAc
 			BoxInfo.Location = HitBoxPair.Value->GetComponentLocation();
 			BoxInfo.Rotation = HitBoxPair.Value->GetComponentRotation();
 			BoxInfo.BoxExtent = HitBoxPair.Value->GetScaledBoxExtent();
-			
+
 			OutFramePackage.HitBoxInfo.Add(HitBoxPair.Key, BoxInfo);
 		}
 	}
@@ -398,7 +429,7 @@ void ULyraLagCompensationComponent_BoxComponent::RewindFrame(AActor* HitActor, c
 	if (HitActor == nullptr) return;
 	ILagCompensationTarget* Target = Cast<ILagCompensationTarget>(HitActor);
 	if (!Target) return;
-	
+
 	for (auto& HitBoxPair : Target->GetHitCollisionBoxes())
 	{
 		if (HitBoxPair.Value != nullptr)
@@ -419,7 +450,7 @@ void ULyraLagCompensationComponent_BoxComponent::ResetHitBoxes(AActor* HitActor,
 	if (HitActor == nullptr) return;
 	ILagCompensationTarget* Target = Cast<ILagCompensationTarget>(HitActor);
 	if (!Target) return;
-	
+
 	for (auto& HitBoxPair : Target->GetHitCollisionBoxes())
 	{
 		if (HitBoxPair.Value != nullptr)
@@ -458,7 +489,7 @@ void ULyraLagCompensationComponent_BoxComponent::DrawDebugFramePackage(const FFr
 	}
 }
 
-void ULyraLagCompensationComponent_BoxComponent::DrawDebugHitResult(FHitResult HitResult, bool bConfirmHit) const
+void ULyraLagCompensationComponent_BoxComponent::DrawDebugHitResult(const FHitResult& HitResult, bool bConfirmHit) const
 {
 	if (HitResult.Component.IsValid())
 	{

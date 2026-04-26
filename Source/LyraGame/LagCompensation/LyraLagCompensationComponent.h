@@ -16,7 +16,7 @@ struct FServerSideRewindResult
 
 	UPROPERTY()
 	bool bHitConfirmed = false;
-	
+
 	UPROPERTY()
 	bool bHeadShot = false;
 };
@@ -24,12 +24,12 @@ struct FServerSideRewindResult
 /**
  * 렉 보상(Lag Compensation) 기능을 제공하는 컴포넌트의 베이스 클래스
  */
-UCLASS(Abstract, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
+UCLASS(Abstract, ClassGroup=(Custom))
 class LYRAGAME_API ULyraLagCompensationComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-public:	
+public:
 	ULyraLagCompensationComponent();
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

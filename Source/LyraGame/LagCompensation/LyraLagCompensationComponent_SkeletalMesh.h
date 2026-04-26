@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Containers/Deque.h"
 #include "LagCompensation/LyraLagCompensationComponent.h"
 #include "LyraLagCompensationComponent_SkeletalMesh.generated.h"
 
@@ -74,8 +75,8 @@ protected:
 	// 프레임 히스토리 업데이트 (Tick에서 호출)
 	virtual void UpdateFrameHistory() override;
 
-	// 특정 시간의 프레임 패키지 찾기 (보간 포함)
-	FMeshFramePackage GetHitTimeFrame(const AActor* HitActor, float HitTime);
+	// 특정 시간의 프레임 패키지 찾기 (보간 포함, owner의 FrameHistory에서 검색)
+	FMeshFramePackage GetHitTimeFrame(float HitTime);
 
 	// 두 프레임 사이의 포즈 보간
 	FMeshFramePackage InterpolateFrame(const FMeshFramePackage& Older, const FMeshFramePackage& Younger, float HitTime);
@@ -93,18 +94,21 @@ protected:
 
 private:
 
+	// 지정된 본 이름 집합의 primitive에 대해서만 hit 검사. 한 번이라도 닿으면 true 즉시 반환.
+	// BoneFilter가 비어 있으면 모든 본 검사.
 	bool PerformPhysicsAssetCollision(
 	    const TObjectPtr<AActor> HitActor,
 	    const FMeshFramePackage& Frame,
 	    const FVector& TraceStart,
 	    const FVector& TraceEnd,
-	    FHitResult& OutHit);
+	    const TSet<FName>& BoneFilter,
+	    FHitResult& OutHit) const;
 
 #if ENABLE_DRAW_DEBUG
 	// --- 내부 헬퍼 ---
 	
 	// 판정 결과 시각화
-	void VisualizeConfirmHit(const FVector& Start, const FVector& End, bool bSuccess, const FHitResult& HitResult, AActor* HitActor);
+	void VisualizeConfirmHit(const FVector& Start, const FVector& End, bool bSuccess, const FHitResult& HitResult, const AActor* HitActor) const;
 
 	// 디버그용: 저장된 포즈를 시각화 (선택 사항)
 	void DrawDebugPose(const FMeshFramePackage& Package, FColor Color) const;
@@ -112,7 +116,8 @@ private:
 
 	// --- 데이터 ---
 
-	// 프레임 히스토리 (최신 -> 과거 순)
-	TDoubleLinkedList<FMeshFramePackage> FrameHistory;
+	// 프레임 히스토리.
+	// TDeque 의미: First()=최신(Front), Last()=과거(Back), 인덱스 0=First 방향
+	TDeque<FMeshFramePackage> FrameHistory;
 
 };
