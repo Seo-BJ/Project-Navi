@@ -89,9 +89,6 @@ protected:
 		}
 	};
 	
-	UPROPERTY(EditDefaultsOnly, Category="Lyra|Ability")
-	bool bProjectileWeapon = false;
-	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Lyra|Ability")
 	int32 BulletsPerCartridge = 1;
 	

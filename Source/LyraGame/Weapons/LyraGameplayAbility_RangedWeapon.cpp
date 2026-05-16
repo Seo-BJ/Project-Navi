@@ -15,11 +15,14 @@
 
 #include "TimerManager.h"
 #include "Character/LyraCharacter.h"
-#include "LagCompensation/LyraLagCompensationComponent_BoxComponent.h"
-#include "LagCompensation/LyraLagCompensationComponent_SkeletalMesh.h"
 #include "LagCompensation/LyraLagCompensationSettings.h"
+#include "LagCompensation/SnapShot/LyraSnapShotComponent.h"
+#include "LagCompensation/ServerSideRewind/LyraServerSideRewindComponent.h"
+#include "LagCompensation/ServerSideRewind/LyraRewindCsvLogger.h"
 #include "LagCompensation/LyraTimeSyncComponent.h"
 #include "Player/LyraPlayerController.h"
+#include "GameFramework/GameStateBase.h"
+#include "GameFramework/PlayerState.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraGameplayAbility_RangedWeapon)
 
@@ -512,122 +515,119 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 		}
 
 #if WITH_SERVER_CODE
-		if (!bProjectileWeapon)
+		
+		if (AController* Controller = GetControllerFromActorInfo(); IsValid(Controller) &&  Controller->GetLocalRole() == ROLE_Authority)
 		{
-			if (AController* Controller = GetControllerFromActorInfo(); IsValid(Controller) &&  Controller->GetLocalRole() == ROLE_Authority)
+			bool bOverallHitSuccess = false; // 이번 발사가 최소 1회 유효한 Hit가 발생했는지
+			TArray<uint8> HitReplaces; // 대체된 Hit 배열
+
+			if (GetDefault<ULyraLagCompensationSettings>()->bUseLagCompensation)
 			{
-				bool bOverallHitSuccess = false; // 이번 발사가 최소 1회 유효한 Hit가 발생했는지
-				TArray<uint8> HitReplaces; // 대체된 Hit 배열
+				TRACE_CPUPROFILER_EVENT_SCOPE(ServerRewind_HitValidationLoop);
 
-				if (GetDefault<ULyraLagCompensationSettings>()->bUseLagCompensation)
+				for (uint8 i = 0; (i < LocalTargetDataHandle.Num()) && (i < 255); ++i)
 				{
-					for (uint8 i = 0; (i < LocalTargetDataHandle.Num()) && (i < 255); ++i)
+					if (FLyraGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<FLyraGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
 					{
-						if (FLyraGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<FLyraGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
+						const float LocalHitTime = SingleTargetHit->HitTime;
+						const FHitResult& LocalHitResult = SingleTargetHit->HitResult;
+
+						AActor* TargetActor = LocalHitResult.GetActor();
+						ULyraServerSideRewindComponent* ServerSideRewind = IsValid(TargetActor) ? TargetActor->GetComponentByClass<ULyraServerSideRewindComponent>() : nullptr;
+
+						FServerSideRewindResult RewindResult;
+						if (IsValid(ServerSideRewind))
 						{
-							const float LocalHitTime = SingleTargetHit->HitTime;
-							const FHitResult& LocalHitResult = SingleTargetHit->HitResult;
+							RewindResult = ServerSideRewind->ServerSideRewind(TargetActor, LocalHitResult.TraceStart, LocalHitResult.ImpactPoint, LocalHitTime);
+						}
+						
+						if (SingleTargetHit->bHitReplaced)
+						{
+							HitReplaces.Add(i);
+						}
 
-							AActor* TargetActor = LocalHitResult.GetActor();
-							ULyraLagCompensationComponent* LagComp = IsValid(TargetActor) ? TargetActor->GetComponentByClass<ULyraLagCompensationComponent>() : nullptr;
-
-							FServerSideRewindResult RewindResult;
-							if (IsValid(LagComp))
+						if (RewindResult.bHitConfirmed)
+						{
+							// 동일하다면, 이 피격은 유효하다고 간주
+							bOverallHitSuccess = true;
+						}
+					}
+				}
+			}
+			else
+			{
+				// 클라이언트가 보낸 모든 피격 데이터를 하나씩 검증
+				for (uint8 i = 0; i < LocalTargetDataHandle.Num(); ++i)
+				{
+					if (const FGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<const FGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
+					{
+						const FHitResult& ClientHitResult = SingleTargetHit->HitResult;
+						if (AActor* ClientHitActor = ClientHitResult.GetActor())
+						{
+							// 서버가 '현재 시간' 기준으로 직접 트레이스를 수행
+							FHitResult ServerHitResult;
+							FCollisionQueryParams TraceParams;
+							const FVector TraceEnd = ClientHitResult.TraceStart + (ClientHitResult.Location - ClientHitResult.TraceStart) * 1.25f; // 클라이언트가 쏜 위치보다 약간 더 길게 트레이스 설정
+							TraceParams.AddIgnoredActor(GetAvatarActorFromActorInfo()); // 자기 자신 외에 피격 대상의 캡슐도 무시하고 히트박스만 보도록로 검사
+							GetWorld()->LineTraceSingleByChannel(ServerHitResult, ClientHitResult.TraceStart, TraceEnd, Lyra_TraceChannel_Weapon, TraceParams);
+							
+							// 서버의 트레이스 결과와 클라이언트가 맞췄다고 주장하는 액터가 동일한지 확인
+							if (ServerHitResult.bBlockingHit && (ServerHitResult.GetActor() == ClientHitActor))
 							{
-								RewindResult = LagComp->ServerSideRewind(TargetActor, LocalHitResult.TraceStart, LocalHitResult.ImpactPoint, LocalHitTime);
+								// 동일하다면, 이 피격은 유효하다고 간주
+								bOverallHitSuccess = true;
 							}
-#if ENABLE_DRAW_DEBUG
-							UE_LOG(LogTemp, Warning, TEXT("  Hit[%d]: Actor=%s, bConfirmed=%d, bHeadshot=%d"), i, LocalHitResult.GetActor() ? *LocalHitResult.GetActor()->GetName() : TEXT("NULL"), RewindResult.bHitConfirmed, RewindResult.bHeadShot);
-#endif
+
 							// @Todo: 서버 권위적인 로직을 통해 Hit Replaced 시스템을 사용
 							if (SingleTargetHit->bHitReplaced)
 							{
 								HitReplaces.Add(i);
 							}
-
-							if (RewindResult.bHitConfirmed)
-							{
-								// 동일하다면, 이 피격은 유효하다고 간주
-								bOverallHitSuccess = true;
-							}
 						}
 					}
 				}
-				else
+			}
+
+			// 검증 결과를 바탕으로 클라이언트에 통보
+
+			if (ULyraWeaponStateComponent* WeaponStateComponent = Controller->FindComponentByClass<ULyraWeaponStateComponent>())
+			{
+				WeaponStateComponent->ClientConfirmTargetData(LocalTargetDataHandle.UniqueId, bOverallHitSuccess, HitReplaces);
+			}
+			
+			// 서버 사이드 리와인드 Hit 결과 확인. Ammo 확인. 
+			if (CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
+			{
+				ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
+				check(WeaponData);
+				WeaponData->AddSpread();
+				WeaponData->StartRecoil();
+				if (bOverallHitSuccess)
 				{
-					// 클라이언트가 보낸 모든 피격 데이터를 하나씩 검증
+					// Handle interaction with ILyraWeaponInteractable
 					for (uint8 i = 0; i < LocalTargetDataHandle.Num(); ++i)
 					{
-						if (const FGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<const FGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
+						if (const FLyraGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<const FLyraGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
 						{
-							const FHitResult& ClientHitResult = SingleTargetHit->HitResult;
-							if (AActor* ClientHitActor = ClientHitResult.GetActor())
+							if (AActor* HitActor = SingleTargetHit->HitResult.GetActor())
 							{
-								// 서버가 '현재 시간' 기준으로 직접 트레이스를 수행
-								FHitResult ServerHitResult;
-								FCollisionQueryParams TraceParams;
-								const FVector TraceEnd = ClientHitResult.TraceStart + (ClientHitResult.Location - ClientHitResult.TraceStart) * 1.25f; // 클라이언트가 쏜 위치보다 약간 더 길게 트레이스 설정
-								TraceParams.AddIgnoredActor(GetAvatarActorFromActorInfo()); // 자기 자신 외에 피격 대상의 캡슐도 무시하고 히트박스만 보도록로 검사
-								GetWorld()->LineTraceSingleByChannel(ServerHitResult, ClientHitResult.TraceStart, TraceEnd, Lyra_TraceChannel_Weapon, TraceParams);
-								
-								// 서버의 트레이스 결과와 클라이언트가 맞췄다고 주장하는 액터가 동일한지 확인
-								if (ServerHitResult.bBlockingHit && (ServerHitResult.GetActor() == ClientHitActor))
+								if (ILyraWeaponInteractable* Interactable = Cast<ILyraWeaponInteractable>(HitActor))
 								{
-									// 동일하다면, 이 피격은 유효하다고 간주
-									bOverallHitSuccess = true;
-								}
-
-								// @Todo: 서버 권위적인 로직을 통해 Hit Replaced 시스템을 사용
-								if (SingleTargetHit->bHitReplaced)
-								{
-									HitReplaces.Add(i);
+									// 순수 가상 함수를 직접 호출합니다.
+									Interactable->OnWeaponHit(SingleTargetHit->HitResult, GetAvatarActorFromActorInfo());
 								}
 							}
 						}
 					}
-				}
 
-				// 검증 결과를 바탕으로 클라이언트에 통보
-
-				if (ULyraWeaponStateComponent* WeaponStateComponent = Controller->FindComponentByClass<ULyraWeaponStateComponent>())
-				{
-					WeaponStateComponent->ClientConfirmTargetData(LocalTargetDataHandle.UniqueId, bOverallHitSuccess, HitReplaces);
+					OnRangedWeaponTargetDataReady(LocalTargetDataHandle); 
 				}
-				
-				// 서버 사이드 리와인드 Hit 결과 확인. Ammo 확인. 
-				if (CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
-				{
-					ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
-					check(WeaponData);
-					WeaponData->AddSpread();
-					WeaponData->StartRecoil();
-					if (bOverallHitSuccess)
-					{
-						// Handle interaction with ILyraWeaponInteractable
-						for (uint8 i = 0; i < LocalTargetDataHandle.Num(); ++i)
-						{
-							if (const FLyraGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<const FLyraGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
-							{
-								if (AActor* HitActor = SingleTargetHit->HitResult.GetActor())
-								{
-									if (ILyraWeaponInteractable* Interactable = Cast<ILyraWeaponInteractable>(HitActor))
-									{
-										// 순수 가상 함수를 직접 호출합니다.
-										Interactable->OnWeaponHit(SingleTargetHit->HitResult, GetAvatarActorFromActorInfo());
-									}
-								}
-							}
-						}
-
-						OnRangedWeaponTargetDataReady(LocalTargetDataHandle); 
-					}
-				}
-				else
-				{
-					K2_EndAbility();
-				}
-				
 			}
+			else
+			{
+				K2_EndAbility();
+			}
+			
 		}
 #endif //WITH_SERVER_CODE
 		
@@ -649,7 +649,6 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 				{
 					K2_EndAbility();
 				}
-	
 			}
 		}
 	}
@@ -699,13 +698,7 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 					{
 						const float CurrentServerTime = TimeSyncComponent->GetServerTime();
 						const float SingleTripTime = TimeSyncComponent->GetSingleTripTime();
-				
 						const float HitTime = CurrentServerTime - SingleTripTime - InterpDelay;
-
-#if ENABLE_DRAW_DEBUG
-						UE_LOG(LogTemp, Log, TEXT("[LagComp] ServerTimeNow: %f, HitTime: %f, Gap: %f (PingOffset: %f + Interp: %f)"), 
-							CurrentServerTime, HitTime, CurrentServerTime - HitTime, SingleTripTime, InterpDelay);
-#endif
 						NewTargetData->HitTime = HitTime;
 					}
 					else
@@ -713,18 +706,18 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 						const float HitTime = GetWorld()->GetTimeSeconds();
 						NewTargetData->HitTime = HitTime;
 					}
+#if ENABLE_DRAW_DEBUG
 					if (GetDefault<ULyraLagCompensationDeveloperSettings>()->bDrawMeshLagCompensation)
 					{
 						AActor* TargetActor = FoundHit.GetActor();
-						ULyraLagCompensationComponent_SkeletalMesh* MeshLagComp = IsValid(TargetActor) ? TargetActor->GetComponentByClass<ULyraLagCompensationComponent_SkeletalMesh>() : nullptr;
-
-						if (IsValid(MeshLagComp))
+						ALyraCharacter* TargetCharacter = Cast<ALyraCharacter>(TargetActor);
+						ULyraSnapShotComponent* SnapShotComponent = IsValid(TargetCharacter) ? TargetCharacter->GetComponentByClass<ULyraSnapShotComponent>() : nullptr;
+						if (IsValid(SnapShotComponent))
 						{
-							FMeshFramePackage LocalFramePackage;
-							MeshLagComp->CacheCurrentFrame(TargetActor, LocalFramePackage);
-							MeshLagComp->DrawDebugPose(LocalFramePackage, FColor::White);
+							SnapShotComponent->DrawCurrentPhysicsAssetPose(TargetCharacter, FColor::White);
 						}
 					}
+#endif
 				}
 			}
 
@@ -733,7 +726,7 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 	}
 	
 	// Send hit marker information
-	if (!bProjectileWeapon && (WeaponStateComponent != nullptr))
+	if (IsValid(WeaponStateComponent))
 	{
 		WeaponStateComponent->AddUnconfirmedServerSideHitMarkers(TargetData, FoundHits);
 	}

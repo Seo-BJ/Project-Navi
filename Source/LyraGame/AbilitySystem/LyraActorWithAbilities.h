@@ -11,6 +11,8 @@ class ULyraHealthSet;
 class ULyraCombatSet;
 class UBoxComponent;
 class UGameplayEffect;
+class ULyraServerSideRewindComponent;
+class ULyraSnapShotComponent;
 
 UCLASS()
 class LYRAGAME_API ALyraActorWithAbilities : public AActor, public IAbilitySystemInterface, public ILagCompensationTarget
@@ -41,6 +43,12 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lag Compensation")
+	TObjectPtr<ULyraServerSideRewindComponent> ServerSideRewindComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lag Compensation")
+	TObjectPtr<ULyraSnapShotComponent> LyraSnapShotComponent;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lyra|Ability System")
 	TObjectPtr<ULyraAbilitySystemComponent> AbilitySystemComponent;

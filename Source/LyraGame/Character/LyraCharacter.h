@@ -29,9 +29,9 @@ struct FFrame;
 struct FGameplayTag;
 struct FGameplayTagContainer;
 class UBoxComponent;
-class ULyraLagCompensationComponent;
-class ULyraLagCompensationComponent_BoxComponent;
-class ULyraLagCompensationComponent_SkeletalMesh;
+class ULyraServerSideRewindComponent;
+class ULyraSnapShotComponent_SkeletalMesh;
+class ULyraSnapShotComponent_AnimNode;
 
 /**
  * FLyraReplicatedAcceleration: Compressed representation of acceleration
@@ -246,56 +246,15 @@ private:
 	void OnRep_MyTeamID(FGenericTeamId OldTeamID);
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<ULyraLagCompensationComponent> LyraLagCompensation;
+	TObjectPtr<ULyraServerSideRewindComponent> ServerSideRewindComponent;
 
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Meta = (AllowPrivateAccess = "true"))
+	//TObjectPtr<ULyraSnapShotComponent_SkeletalMesh> LyraSnapShotComponent_SkeletalMesh;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<ULyraSnapShotComponent_AnimNode> LyraSnapShotComponent_AnimNode;
+	
 	UPROPERTY()
 	TMap<FName, TObjectPtr<UBoxComponent>> HitCollisionBoxes;
 	
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UBoxComponent> head;
-
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UBoxComponent> Pelvis;
-	
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UBoxComponent> spine_02;
-	
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UBoxComponent> spine_03;
-
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UBoxComponent> UpperArm_L;
-	
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UBoxComponent> lowerarm_l;
-	
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UBoxComponent> Hand_L;
-
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UBoxComponent> UpperArm_R;
-	
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UBoxComponent> lowerarm_r;
-	
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UBoxComponent> Hand_R;
-	
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UBoxComponent> Thigh_L;
-	
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UBoxComponent> calf_l;
-	
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UBoxComponent> Foot_L;
-
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UBoxComponent> Thigh_R;
-	
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UBoxComponent> calf_r;
-	
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UBoxComponent> Foot_R;
 };

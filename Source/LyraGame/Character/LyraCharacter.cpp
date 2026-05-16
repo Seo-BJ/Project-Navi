@@ -6,6 +6,7 @@
 #include "Camera/LyraCameraComponent.h"
 #include "Character/LyraHealthComponent.h"
 #include "Character/LyraPawnExtensionComponent.h"
+#include "Character/LyraProfiledSkeletalMeshComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "LyraCharacterMovementComponent.h"
@@ -18,8 +19,9 @@
 #include "TimerManager.h"
 #include "Components/BoxComponent.h"
 #include "Components/SphereComponent.h"
-#include "LagCompensation/LyraLagCompensationComponent.h"
-#include "LagCompensation/LyraLagCompensationComponent_SkeletalMesh.h"
+#include "LagCompensation/SnapShot/LyraSnapShotComponent_SkeletalMesh.h"
+#include "LagCompensation/ServerSideRewind/LyraServerSideRewindComponent.h"
+#include "LagCompensation/SnapShot/LyraSnapShotComponent_AnimNode.h"
 #include "Physics/LyraCollisionChannels.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraCharacter)
@@ -33,7 +35,9 @@ static FName NAME_LyraCharacterCollisionProfile_Capsule(TEXT("LyraPawnCapsule"))
 static FName NAME_LyraCharacterCollisionProfile_Mesh(TEXT("LyraPawnMesh"));
 
 ALyraCharacter::ALyraCharacter(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer.SetDefaultSubobjectClass<ULyraCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
+	: Super(ObjectInitializer
+		.SetDefaultSubobjectClass<ULyraCharacterMovementComponent>(ACharacter::CharacterMovementComponentName)
+		.SetDefaultSubobjectClass<ULyraProfiledSkeletalMeshComponent>(ACharacter::MeshComponentName))
 {
 	// Avoid ticking characters if possible.
 	PrimaryActorTick.bCanEverTick = false;
@@ -91,7 +95,9 @@ ALyraCharacter::ALyraCharacter(const FObjectInitializer& ObjectInitializer)
 	BaseEyeHeight = 80.0f;
 	CrouchedEyeHeight = 50.0f;
 	
-	LyraLagCompensation = CreateDefaultSubobject<ULyraLagCompensationComponent_SkeletalMesh>(TEXT("LyraLagCompensation"));
+	ServerSideRewindComponent = CreateDefaultSubobject<ULyraServerSideRewindComponent>(TEXT("ServerSideRewindComponent"));
+	//LyraSnapShotComponent_SkeletalMesh = CreateDefaultSubobject<ULyraSnapShotComponent_SkeletalMesh>(TEXT("LyraSnapShotComponent_SkeletalMesh"));
+	LyraSnapShotComponent_AnimNode = CreateDefaultSubobject<ULyraSnapShotComponent_AnimNode>(TEXT("LyraSnapShotComponent_AnimNode"));
 }
 
 void ALyraCharacter::PreInitializeComponents()

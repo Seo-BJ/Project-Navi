@@ -7,6 +7,7 @@
 #include "LyraPatrolPath.generated.h"
 
 class UStaticMeshComponent;
+class ULyraExperienceDefinition;
 
 UENUM(BlueprintType)
 enum class ELagCompensationTestMode : uint8
@@ -30,6 +31,9 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
+	void OnExperienceLoaded(const ULyraExperienceDefinition* Experience);
+	void SpawnConfiguredActor();
 
 	// 스폰할 액터 클래스 (TestCharacter 또는 TestActor)
 	UPROPERTY(EditInstanceOnly, Category = "Spawn Settings")

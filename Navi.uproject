@@ -348,6 +348,10 @@
 		{
 			"Name": "NaviShooterCore",
 			"Enabled": true
+		},
+		{
+			"Name": "AnimToTexture",
+			"Enabled": true
 		}
 	],
 	"EpicSampleNameHash": "451731683"

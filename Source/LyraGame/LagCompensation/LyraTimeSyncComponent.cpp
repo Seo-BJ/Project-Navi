@@ -4,6 +4,8 @@
 #include "LyraTimeSyncComponent.h"
 
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/GameStateBase.h"
+#include "GameFramework/PlayerState.h"
 #include "Engine/World.h"
 
 ULyraTimeSyncComponent::ULyraTimeSyncComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -57,9 +59,28 @@ void ULyraTimeSyncComponent::ClientReportServerTime_Implementation(float TimeOfC
 {
 	const float RoundTripTime = GetWorld()->GetTimeSeconds() - TimeOfClientRequest;
 	SingleTripTime = FMath::Max(0.f, RoundTripTime * 0.5f);
-	
+
 	const float CurrentServerTime = TimeServerReceivedClientRequest + SingleTripTime;
 	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
+
+	float EngineServerTime = 0.f;
+	if (AGameStateBase* GS = GetWorld()->GetGameState())
+	{
+		EngineServerTime = GS->GetServerWorldTimeSeconds();
+	}
+	float EngineSingleTrip = 0.f;
+	if (IsValid(OwnerController) && OwnerController->PlayerState)
+	{
+		EngineSingleTrip = OwnerController->PlayerState->GetPingInMilliseconds() / 2000.f;
+	}
+	const float SelfServerTime = GetWorld()->GetTimeSeconds() + ClientServerDelta;
+	// EngineServerTime은 리플 지연 때문에 이미 OneWay만큼 과거 → ServerNow로 비교하려면 EngineSingleTrip을 더해 origin을 맞춘다.
+	const float EngineServerTimeCorrected = EngineServerTime + EngineSingleTrip;
+	UE_LOG(LogTemp, Log,
+		TEXT("[TimeSyncCompare/Sync] RTT=%.4f | ServerNow self=%.4f engineCorr=%.4f diff=%.4f | OneWay self=%.4f engine=%.4f diff=%.4f"),
+		RoundTripTime,
+		SelfServerTime, EngineServerTimeCorrected, SelfServerTime - EngineServerTimeCorrected,
+		SingleTripTime, EngineSingleTrip, SingleTripTime - EngineSingleTrip);
 }
 
 float ULyraTimeSyncComponent::GetServerTime() const

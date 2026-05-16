@@ -5,6 +5,8 @@
 
 #include "LyraPatrolPath.h"
 #include "Components/StaticMeshComponent.h"
+#include "GameFramework/GameStateBase.h"
+#include "GameModes/LyraExperienceManagerComponent.h"
 #include "LyraLagCompensationTestCharacter.h"
 #include "LyraLagCompensationTestActor.h"
 
@@ -39,27 +41,53 @@ void ALyraPatrolPath::BeginPlay()
 	// 게임 시작 시 시각적 요소 숨김
 	SetActorHiddenInGame(true);
 
-	if (HasAuthority() && ActorClassToSpawn)
+	if (!HasAuthority() || !ActorClassToSpawn)
 	{
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		SpawnParams.Owner = this;
+		return;
+	}
 
-		FVector SpawnLocation = GetPoint1WorldLocation();
-		FRotator SpawnRotation = (GetPoint2WorldLocation() - SpawnLocation).Rotation();
+	AGameStateBase* GameState = GetWorld() ? GetWorld()->GetGameState() : nullptr;
+	ULyraExperienceManagerComponent* ExperienceComponent = GameState ? GameState->FindComponentByClass<ULyraExperienceManagerComponent>() : nullptr;
+	if (ExperienceComponent)
+	{
+		ExperienceComponent->CallOrRegister_OnExperienceLoaded(FOnLyraExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
+		return;
+	}
 
-		SpawnedActor = GetWorld()->SpawnActor<AActor>(ActorClassToSpawn, SpawnLocation, SpawnRotation, SpawnParams);
-		
-		if (SpawnedActor)
+	SpawnConfiguredActor();
+}
+
+void ALyraPatrolPath::OnExperienceLoaded(const ULyraExperienceDefinition* Experience)
+{
+	(void)Experience;
+	SpawnConfiguredActor();
+}
+
+void ALyraPatrolPath::SpawnConfiguredActor()
+{
+	if (!HasAuthority() || !ActorClassToSpawn || SpawnedActor)
+	{
+		return;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	SpawnParams.Owner = this;
+
+	const FVector SpawnLocation = GetPoint1WorldLocation();
+	const FRotator SpawnRotation = (GetPoint2WorldLocation() - SpawnLocation).Rotation();
+
+	SpawnedActor = GetWorld()->SpawnActor<AActor>(ActorClassToSpawn, SpawnLocation, SpawnRotation, SpawnParams);
+
+	if (SpawnedActor)
+	{
+		if (ALyraLagCompensationTestCharacter* TestChar = Cast<ALyraLagCompensationTestCharacter>(SpawnedActor))
 		{
-			if (ALyraLagCompensationTestCharacter* TestChar = Cast<ALyraLagCompensationTestCharacter>(SpawnedActor))
-			{
-				TestChar->InitializeTestCharacter(this, TestMode, MovementSpeed);
-			}
-			else if (ALyraLagCompensationTestActor* TestActor = Cast<ALyraLagCompensationTestActor>(SpawnedActor))
-			{
-				TestActor->InitializeTestActor(this, TestMode, MovementSpeed);
-			}
+			TestChar->InitializeTestCharacter(this, TestMode, MovementSpeed);
+		}
+		else if (ALyraLagCompensationTestActor* TestActor = Cast<ALyraLagCompensationTestActor>(SpawnedActor))
+		{
+			TestActor->InitializeTestActor(this, TestMode, MovementSpeed);
 		}
 	}
 }

@@ -138,9 +138,20 @@ void FTeamConnectionListMap::GetTraceTargetLocations(const APawn* SourcePawn, co
 		{
 			if (const ULyraTimeSyncComponent* TimeSyncComp = SourceController->FindComponentByClass<ULyraTimeSyncComponent>())
 			{
+				const float SelfSingleTrip = TimeSyncComp->GetSingleTripTime();
+
+				float EngineSingleTrip = 0.f;
+				if (const APlayerState* PS = SourceController->PlayerState)
+				{
+					EngineSingleTrip = PS->GetPingInMilliseconds() / 2000.f;
+				}
+				UE_LOG(LogTemp, Log,
+					TEXT("[TimeSyncCompare/RepGraph] SingleTrip self=%.4f engine=%.4f diff=%.4f"),
+					SelfSingleTrip, EngineSingleTrip, SelfSingleTrip - EngineSingleTrip);
+
 				// 공식: RTT (SingleTripTime * 2) + 서버 프레임 시간(DeltaSeconds) + 추가 여유분
 				// RTT를 사용함으로써 클라이언트의 움직임과 서버의 응답 시간을 모두 커버하는 공격적인 예측을 수행
-				LookAheadTime = (TimeSyncComp->GetSingleTripTime() * 2.0f) + DeltaSeconds + 0.02f; 
+				LookAheadTime = (SelfSingleTrip * 2.0f) + DeltaSeconds + 0.02f;
 			}
 		}
 
