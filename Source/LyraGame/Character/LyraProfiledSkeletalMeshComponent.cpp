@@ -4,15 +4,17 @@
 
 #include "Character/LyraCharacter.h"
 #include "GameFramework/Character.h"
-#include "LagCompensation/LyraLagCompProfiler.h"
+#include "Stats/Stats.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraProfiledSkeletalMeshComponent)
+
+DECLARE_STATS_GROUP(TEXT("Lyra Character Mesh"), STATGROUP_LyraCharacterMesh, STATCAT_Advanced);
+DECLARE_CYCLE_STAT(TEXT("LyraCharacterMeshTick"), STAT_LyraCharacterMeshTick, STATGROUP_LyraCharacterMesh);
 
 void ULyraProfiledSkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	AActor* Owner = GetOwner();
 	ACharacter* CharacterOwner = Cast<ACharacter>(Owner);
-	UWorld* World = GetWorld();
 
 	const bool bIsLyraCharacterMesh =
 		IsValid(Owner) &&
@@ -20,23 +22,12 @@ void ULyraProfiledSkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTi
 		CharacterOwner &&
 		CharacterOwner->GetMesh() == this;
 
-	const bool bShouldProfile = bIsLyraCharacterMesh && FLyraLagCompProfiler::Get().IsActiveForWorld(World);
-	const FString OwnerName = bShouldProfile ? GetNameSafe(Owner) : FString();
-	const FString ComponentName = bShouldProfile ? GetNameSafe(this) : FString();
-	const double StartSeconds = bShouldProfile ? FPlatformTime::Seconds() : 0.0;
+	if (bIsLyraCharacterMesh)
+	{
+		SCOPE_CYCLE_COUNTER(STAT_LyraCharacterMeshTick);
+		Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+		return;
+	}
 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	if (bShouldProfile)
-	{
-		const double DurationMicroseconds = (FPlatformTime::Seconds() - StartSeconds) * 1000000.0;
-		FLyraLagCompProfiler::Get().RecordDuration(
-			ELyraLagCompProfileMetric::LyraCharacterMeshTick,
-			World,
-			ELyraSnapShotMode::None,
-			DurationMicroseconds,
-			true,
-			OwnerName,
-			ComponentName);
-	}
 }

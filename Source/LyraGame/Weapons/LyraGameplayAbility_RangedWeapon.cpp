@@ -18,7 +18,6 @@
 #include "LagCompensation/LyraLagCompensationSettings.h"
 #include "LagCompensation/SnapShot/LyraSnapShotComponent.h"
 #include "LagCompensation/ServerSideRewind/LyraServerSideRewindComponent.h"
-#include "LagCompensation/ServerSideRewind/LyraRewindCsvLogger.h"
 #include "LagCompensation/LyraTimeSyncComponent.h"
 #include "Player/LyraPlayerController.h"
 #include "GameFramework/GameStateBase.h"

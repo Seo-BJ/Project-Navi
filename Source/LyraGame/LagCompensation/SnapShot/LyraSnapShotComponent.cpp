@@ -6,7 +6,6 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "DrawDebugHelpers.h"
 #include "LagCompensation/LyraLagCompensationSettings.h"
-#include "LagCompensation/LyraLagCompProfiler.h"
 #include "PhysicsEngine/BoxElem.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/SkeletalBodySetup.h"
@@ -25,18 +24,7 @@ void ULyraSnapShotComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	AActor* OwnerActor = GetOwner();
 	if (IsValid(OwnerActor) && OwnerActor->HasAuthority())
 	{
-		const double StartSeconds = FPlatformTime::Seconds();
 		UpdateSnapShotHistory();
-		const double DurationMicroseconds = (FPlatformTime::Seconds() - StartSeconds) * 1000000.0;
-
-		FLyraLagCompProfiler::Get().RecordDuration(
-			ELyraLagCompProfileMetric::SnapshotUpdate,
-			GetWorld(),
-			GetSnapShotMode(),
-			DurationMicroseconds,
-			true,
-			GetNameSafe(OwnerActor),
-			GetNameSafe(this));
 	}
 }
 

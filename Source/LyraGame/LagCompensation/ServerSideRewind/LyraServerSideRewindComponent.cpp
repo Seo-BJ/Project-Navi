@@ -9,7 +9,6 @@
 #include "GameFramework/Character.h"
 #include "LagCompensation/ILagCompensationTarget.h"
 #include "LagCompensation/LyraLagCompensationSettings.h"
-#include "LagCompensation/LyraLagCompProfiler.h"
 #include "LagCompensation/SnapShot/LyraSnapShotComponent.h"
 #include "LagCompensation/SnapShot/LyraSnapShotComponent_AnimNode.h"
 #include "LagCompensation/SnapShot/LyraSnapShotComponent_BoxComponent.h"
@@ -55,7 +54,6 @@ FServerSideRewindResult ULyraServerSideRewindComponent::ServerSideRewind(const F
 	TRACE_CPUPROFILER_EVENT_SCOPE(LyraSSR_Dispatch);
 	SCOPE_CYCLE_COUNTER(STAT_LyraSSR_Dispatch);
 
-	const double ProfileStartSeconds = FPlatformTime::Seconds();
 	FServerSideRewindResult Result;
 	ELyraSnapShotMode ResolvedMode = ELyraSnapShotMode::None;
 	ULyraSnapShotComponent* SnapShotComponent = nullptr;
@@ -82,17 +80,6 @@ FServerSideRewindResult ULyraServerSideRewindComponent::ServerSideRewind(const F
 			}
 		}
 	}
-
-	const double DurationMicroseconds = (FPlatformTime::Seconds() - ProfileStartSeconds) * 1000000.0;
-	FLyraLagCompProfiler::Get().RecordDuration(
-		ELyraLagCompProfileMetric::ServerSideRewind,
-		GetWorld(),
-		ResolvedMode,
-		DurationMicroseconds,
-		Result.bHitConfirmed,
-		GetNameSafe(TargetActor),
-		GetNameSafe(SnapShotComponent),
-		Result.bHeadShot ? FString(TEXT("HeadShot")) : FString());
 
 	return Result;
 }
