@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(where /R \"C:\\\\Program Files\\\\Epic Games\" AnimInstanceProxy.h)"
-    ]
-  }
-}
