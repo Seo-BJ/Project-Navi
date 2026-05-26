@@ -306,6 +306,52 @@ void CaptureSnapshotNodeIdentity(int32 NodeIndex, const FStructProperty* NodePro
 	OutIdentity.NodeStructName = NodeProperty && NodeProperty->Struct ? NodeProperty->Struct->GetFName() : NAME_None;
 }
 
+const TArray<FStructProperty*>* GetSSRAnimNodeProperties(UAnimInstance* AnimInstance)
+{
+	if (!IsValid(AnimInstance))
+	{
+		return nullptr;
+	}
+
+	const IAnimClassInterface* AnimClass = IAnimClassInterface::GetFromClass(AnimInstance->GetClass());
+	if (!AnimClass)
+	{
+		return nullptr;
+	}
+
+	return &AnimClass->GetAnimNodeProperties();
+}
+
+template <typename NodeType, typename PredicateType, typename CallbackType>
+bool ForEachSSRAnimNode(UAnimInstance* AnimInstance, PredicateType Predicate, CallbackType Callback)
+{
+	const TArray<FStructProperty*>* NodeProperties = GetSSRAnimNodeProperties(AnimInstance);
+	if (!NodeProperties)
+	{
+		return false;
+	}
+
+	for (int32 NodeIndex = 0; NodeIndex < NodeProperties->Num(); ++NodeIndex)
+	{
+		const FStructProperty* NodeProperty = (*NodeProperties)[NodeIndex];
+		if (!Predicate(NodeProperty))
+		{
+			continue;
+		}
+
+		const void* NodeMemory = NodeProperty->ContainerPtrToValuePtr<void>(AnimInstance);
+		const NodeType* Node = static_cast<const NodeType*>(NodeMemory);
+		if (!Node)
+		{
+			continue;
+		}
+
+		Callback(NodeIndex, NodeProperty, *Node);
+	}
+
+	return true;
+}
+
 void LogUnsupportedSSRNodeProperties(UAnimInstance* AnimInstance)
 {
 	if (!IsValid(AnimInstance))
@@ -2174,407 +2220,191 @@ bool ULyraSnapShotComponent_AnimNode::CaptureSequencePlayerSnapshots(UAnimInstan
 {
 	OutSnapshots.Reset();
 
-	if (!IsValid(AnimInstance))
-	{
-		return false;
-	}
-
-	const IAnimClassInterface* AnimClass = IAnimClassInterface::GetFromClass(AnimInstance->GetClass());
-	if (!AnimClass)
-	{
-		return false;
-	}
-
-	const TArray<FStructProperty*>& NodeProperties = AnimClass->GetAnimNodeProperties();
-	for (int32 NodeIndex = 0; NodeIndex < NodeProperties.Num(); ++NodeIndex)
-	{
-		const FStructProperty* NodeProperty = NodeProperties[NodeIndex];
-		if (!IsSequencePlayerNodeProperty(NodeProperty))
+	return ForEachSSRAnimNode<FAnimNode_SequencePlayerBase>(
+		AnimInstance,
+		IsSequencePlayerNodeProperty,
+		[&OutSnapshots](int32 NodeIndex, const FStructProperty* NodeProperty, const FAnimNode_SequencePlayerBase& SequencePlayer)
 		{
-			continue;
-		}
-
-		const void* NodeMemory = NodeProperty->ContainerPtrToValuePtr<void>(AnimInstance);
-		const FAnimNode_SequencePlayerBase* SequencePlayer = static_cast<const FAnimNode_SequencePlayerBase*>(NodeMemory);
-		if (!SequencePlayer)
-		{
-			continue;
-		}
-
-		FAnimSSRSequencePlayerSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
-		CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
-		Snapshot.SequenceAsset = SequencePlayer->GetSequence();
-		SequencePlayer->CaptureAssetPlayerState(Snapshot.AssetPlayerState);
-	}
-
-	return true;
+			FAnimSSRSequencePlayerSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
+			CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
+			Snapshot.SequenceAsset = SequencePlayer.GetSequence();
+			SequencePlayer.CaptureAssetPlayerState(Snapshot.AssetPlayerState);
+		});
 }
 
 bool ULyraSnapShotComponent_AnimNode::CaptureBlendSpacePlayerSnapshots(UAnimInstance* AnimInstance, TArray<FAnimSSRBlendSpacePlayerSnapshot>& OutSnapshots) const
 {
 	OutSnapshots.Reset();
 
-	if (!IsValid(AnimInstance))
-	{
-		return false;
-	}
-
-	const IAnimClassInterface* AnimClass = IAnimClassInterface::GetFromClass(AnimInstance->GetClass());
-	if (!AnimClass)
-	{
-		return false;
-	}
-
-	const TArray<FStructProperty*>& NodeProperties = AnimClass->GetAnimNodeProperties();
-	for (int32 NodeIndex = 0; NodeIndex < NodeProperties.Num(); ++NodeIndex)
-	{
-		const FStructProperty* NodeProperty = NodeProperties[NodeIndex];
-		if (!IsBlendSpacePlayerNodeProperty(NodeProperty))
+	return ForEachSSRAnimNode<FAnimNode_BlendSpacePlayerBase>(
+		AnimInstance,
+		IsBlendSpacePlayerNodeProperty,
+		[&OutSnapshots](int32 NodeIndex, const FStructProperty* NodeProperty, const FAnimNode_BlendSpacePlayerBase& BlendSpacePlayer)
 		{
-			continue;
-		}
-
-		const void* NodeMemory = NodeProperty->ContainerPtrToValuePtr<void>(AnimInstance);
-		const FAnimNode_BlendSpacePlayerBase* BlendSpacePlayer = static_cast<const FAnimNode_BlendSpacePlayerBase*>(NodeMemory);
-		if (!BlendSpacePlayer)
-		{
-			continue;
-		}
-
-		FAnimSSRBlendSpacePlayerSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
-		CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
-		Snapshot.BlendSpaceAsset = BlendSpacePlayer->GetBlendSpace();
-		BlendSpacePlayer->CaptureBlendSpacePlayerState(Snapshot.BlendSpacePlayerState);
-	}
-
-	return true;
+			FAnimSSRBlendSpacePlayerSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
+			CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
+			Snapshot.BlendSpaceAsset = BlendSpacePlayer.GetBlendSpace();
+			BlendSpacePlayer.CaptureBlendSpacePlayerState(Snapshot.BlendSpacePlayerState);
+		});
 }
 
 bool ULyraSnapShotComponent_AnimNode::CaptureRotationOffsetBlendSpaceSnapshots(UAnimInstance* AnimInstance, TArray<FAnimSSRRotationOffsetBlendSpaceSnapshot>& OutSnapshots) const
 {
 	OutSnapshots.Reset();
 
-	if (!IsValid(AnimInstance))
-	{
-		return false;
-	}
-
-	const IAnimClassInterface* AnimClass = IAnimClassInterface::GetFromClass(AnimInstance->GetClass());
-	if (!AnimClass)
-	{
-		return false;
-	}
-
-	const TArray<FStructProperty*>& NodeProperties = AnimClass->GetAnimNodeProperties();
-	for (int32 NodeIndex = 0; NodeIndex < NodeProperties.Num(); ++NodeIndex)
-	{
-		const FStructProperty* NodeProperty = NodeProperties[NodeIndex];
-		if (!IsRotationOffsetBlendSpaceNodeProperty(NodeProperty))
+	return ForEachSSRAnimNode<FAnimNode_RotationOffsetBlendSpace>(
+		AnimInstance,
+		IsRotationOffsetBlendSpaceNodeProperty,
+		[&OutSnapshots](int32 NodeIndex, const FStructProperty* NodeProperty, const FAnimNode_RotationOffsetBlendSpace& RotationOffsetBlendSpace)
 		{
-			continue;
-		}
-
-		const void* NodeMemory = NodeProperty->ContainerPtrToValuePtr<void>(AnimInstance);
-		const FAnimNode_RotationOffsetBlendSpace* RotationOffsetBlendSpace = static_cast<const FAnimNode_RotationOffsetBlendSpace*>(NodeMemory);
-		if (!RotationOffsetBlendSpace)
-		{
-			continue;
-		}
-
-		FAnimSSRRotationOffsetBlendSpaceSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
-		CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
-		Snapshot.BlendSpaceAsset = RotationOffsetBlendSpace->GetBlendSpace();
-		Snapshot.NodeConfigurationHash = HashRotationOffsetBlendSpaceConfiguration(*RotationOffsetBlendSpace);
-		RotationOffsetBlendSpace->CaptureRotationOffsetBlendSpaceState(Snapshot.RotationOffsetBlendSpaceState);
-	}
-
-	return true;
+			FAnimSSRRotationOffsetBlendSpaceSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
+			CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
+			Snapshot.BlendSpaceAsset = RotationOffsetBlendSpace.GetBlendSpace();
+			Snapshot.NodeConfigurationHash = HashRotationOffsetBlendSpaceConfiguration(RotationOffsetBlendSpace);
+			RotationOffsetBlendSpace.CaptureRotationOffsetBlendSpaceState(Snapshot.RotationOffsetBlendSpaceState);
+		});
 }
 
 bool ULyraSnapShotComponent_AnimNode::CaptureBlendListByBoolSnapshots(UAnimInstance* AnimInstance, TArray<FAnimSSRBlendListByBoolSnapshot>& OutSnapshots) const
 {
 	OutSnapshots.Reset();
 
-	if (!IsValid(AnimInstance))
-	{
-		return false;
-	}
-
-	const IAnimClassInterface* AnimClass = IAnimClassInterface::GetFromClass(AnimInstance->GetClass());
-	if (!AnimClass)
-	{
-		return false;
-	}
-
-	const TArray<FStructProperty*>& NodeProperties = AnimClass->GetAnimNodeProperties();
-	for (int32 NodeIndex = 0; NodeIndex < NodeProperties.Num(); ++NodeIndex)
-	{
-		const FStructProperty* NodeProperty = NodeProperties[NodeIndex];
-		if (!IsBlendListByBoolNodeProperty(NodeProperty))
+	return ForEachSSRAnimNode<FAnimNode_BlendListByBool>(
+		AnimInstance,
+		IsBlendListByBoolNodeProperty,
+		[&OutSnapshots](int32 NodeIndex, const FStructProperty* NodeProperty, const FAnimNode_BlendListByBool& BlendListByBool)
 		{
-			continue;
-		}
-
-		const void* NodeMemory = NodeProperty->ContainerPtrToValuePtr<void>(AnimInstance);
-		const FAnimNode_BlendListByBool* BlendListByBool = static_cast<const FAnimNode_BlendListByBool*>(NodeMemory);
-		if (!BlendListByBool)
-		{
-			continue;
-		}
-
-		FAnimSSRBlendListByBoolSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
-		CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
-		Snapshot.BlendPoseCount = BlendListByBool->GetBlendPoseCount();
-		Snapshot.BlendTimeCount = BlendListByBool->GetBlendTimes().Num();
-		Snapshot.NodeConfigurationHash = HashBlendListByBoolConfiguration(*BlendListByBool);
-		Snapshot.CustomBlendCurve = BlendListByBool->GetCustomBlendCurve();
-		Snapshot.BlendProfile = BlendListByBool->GetBlendProfile();
-		BlendListByBool->CaptureBlendListByBoolState(Snapshot.BlendListByBoolState);
-	}
-
-	return true;
+			FAnimSSRBlendListByBoolSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
+			CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
+			Snapshot.BlendPoseCount = BlendListByBool.GetBlendPoseCount();
+			Snapshot.BlendTimeCount = BlendListByBool.GetBlendTimes().Num();
+			Snapshot.NodeConfigurationHash = HashBlendListByBoolConfiguration(BlendListByBool);
+			Snapshot.CustomBlendCurve = BlendListByBool.GetCustomBlendCurve();
+			Snapshot.BlendProfile = BlendListByBool.GetBlendProfile();
+			BlendListByBool.CaptureBlendListByBoolState(Snapshot.BlendListByBoolState);
+		});
 }
 
 bool ULyraSnapShotComponent_AnimNode::CaptureStateMachineSnapshots(UAnimInstance* AnimInstance, TArray<FAnimSSRStateMachineSnapshot>& OutSnapshots) const
 {
 	OutSnapshots.Reset();
 
-	if (!IsValid(AnimInstance))
-	{
-		return false;
-	}
-
-	const IAnimClassInterface* AnimClass = IAnimClassInterface::GetFromClass(AnimInstance->GetClass());
-	if (!AnimClass)
-	{
-		return false;
-	}
-
-	const TArray<FStructProperty*>& NodeProperties = AnimClass->GetAnimNodeProperties();
-	for (int32 NodeIndex = 0; NodeIndex < NodeProperties.Num(); ++NodeIndex)
-	{
-		const FStructProperty* NodeProperty = NodeProperties[NodeIndex];
-		if (!IsStateMachineNodeProperty(NodeProperty))
+	return ForEachSSRAnimNode<FAnimNode_StateMachine>(
+		AnimInstance,
+		IsStateMachineNodeProperty,
+		[&OutSnapshots](int32 NodeIndex, const FStructProperty* NodeProperty, const FAnimNode_StateMachine& StateMachine)
 		{
-			continue;
-		}
+			const FBakedAnimationStateMachine* MachineDescription = StateMachine.GetMachineDescription();
 
-		const void* NodeMemory = NodeProperty->ContainerPtrToValuePtr<void>(AnimInstance);
-		const FAnimNode_StateMachine* StateMachine = static_cast<const FAnimNode_StateMachine*>(NodeMemory);
-		if (!StateMachine)
-		{
-			continue;
-		}
-
-		const FBakedAnimationStateMachine* MachineDescription = StateMachine->GetMachineDescription();
-
-		FAnimSSRStateMachineSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
-		CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
-		Snapshot.StateMachineIndexInClass = StateMachine->StateMachineIndexInClass;
-		Snapshot.MachineName = MachineDescription ? MachineDescription->MachineName : NAME_None;
-		Snapshot.StateCount = MachineDescription ? MachineDescription->States.Num() : 0;
-		Snapshot.TransitionCount = CountStateMachineTransitions(MachineDescription);
-		StateMachine->CaptureStateMachineState(Snapshot.StateMachineState);
-	}
-
-	return true;
+			FAnimSSRStateMachineSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
+			CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
+			Snapshot.StateMachineIndexInClass = StateMachine.StateMachineIndexInClass;
+			Snapshot.MachineName = MachineDescription ? MachineDescription->MachineName : NAME_None;
+			Snapshot.StateCount = MachineDescription ? MachineDescription->States.Num() : 0;
+			Snapshot.TransitionCount = CountStateMachineTransitions(MachineDescription);
+			StateMachine.CaptureStateMachineState(Snapshot.StateMachineState);
+		});
 }
 
 bool ULyraSnapShotComponent_AnimNode::CaptureLayeredBoneBlendSnapshots(UAnimInstance* AnimInstance, TArray<FAnimSSRLayeredBoneBlendSnapshot>& OutSnapshots) const
 {
 	OutSnapshots.Reset();
 
-	if (!IsValid(AnimInstance))
-	{
-		return false;
-	}
-
-	const IAnimClassInterface* AnimClass = IAnimClassInterface::GetFromClass(AnimInstance->GetClass());
-	if (!AnimClass)
-	{
-		return false;
-	}
-
-	const TArray<FStructProperty*>& NodeProperties = AnimClass->GetAnimNodeProperties();
-	for (int32 NodeIndex = 0; NodeIndex < NodeProperties.Num(); ++NodeIndex)
-	{
-		const FStructProperty* NodeProperty = NodeProperties[NodeIndex];
-		if (!IsLayeredBoneBlendNodeProperty(NodeProperty))
+	return ForEachSSRAnimNode<FAnimNode_LayeredBoneBlend>(
+		AnimInstance,
+		IsLayeredBoneBlendNodeProperty,
+		[&OutSnapshots](int32 NodeIndex, const FStructProperty* NodeProperty, const FAnimNode_LayeredBoneBlend& LayeredBoneBlend)
 		{
-			continue;
-		}
-
-		const void* NodeMemory = NodeProperty->ContainerPtrToValuePtr<void>(AnimInstance);
-		const FAnimNode_LayeredBoneBlend* LayeredBoneBlend = static_cast<const FAnimNode_LayeredBoneBlend*>(NodeMemory);
-		if (!LayeredBoneBlend)
-		{
-			continue;
-		}
-
-		FAnimSSRLayeredBoneBlendSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
-		CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
-		Snapshot.BlendMode = LayeredBoneBlend->BlendMode;
-		Snapshot.BlendPoseCount = LayeredBoneBlend->BlendPoses.Num();
-		Snapshot.BlendWeightCount = LayeredBoneBlend->BlendWeights.Num();
-		Snapshot.LayerSetupCount = LayeredBoneBlend->LayerSetup.Num();
-		Snapshot.BlendMaskCount = LayeredBoneBlend->BlendMasks.Num();
-		Snapshot.LayerConfigurationHash = HashLayeredBoneBlendConfiguration(*LayeredBoneBlend);
-		Snapshot.BlendMasks.Reserve(LayeredBoneBlend->BlendMasks.Num());
-		for (const TObjectPtr<UBlendProfile>& BlendMask : LayeredBoneBlend->BlendMasks)
-		{
-			Snapshot.BlendMasks.Add(BlendMask.Get());
-		}
-		LayeredBoneBlend->CaptureLayeredBoneBlendState(Snapshot.LayeredBoneBlendState);
-	}
-
-	return true;
+			FAnimSSRLayeredBoneBlendSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
+			CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
+			Snapshot.BlendMode = LayeredBoneBlend.BlendMode;
+			Snapshot.BlendPoseCount = LayeredBoneBlend.BlendPoses.Num();
+			Snapshot.BlendWeightCount = LayeredBoneBlend.BlendWeights.Num();
+			Snapshot.LayerSetupCount = LayeredBoneBlend.LayerSetup.Num();
+			Snapshot.BlendMaskCount = LayeredBoneBlend.BlendMasks.Num();
+			Snapshot.LayerConfigurationHash = HashLayeredBoneBlendConfiguration(LayeredBoneBlend);
+			Snapshot.BlendMasks.Reserve(LayeredBoneBlend.BlendMasks.Num());
+			for (const TObjectPtr<UBlendProfile>& BlendMask : LayeredBoneBlend.BlendMasks)
+			{
+				Snapshot.BlendMasks.Add(BlendMask.Get());
+			}
+			LayeredBoneBlend.CaptureLayeredBoneBlendState(Snapshot.LayeredBoneBlendState);
+		});
 }
 
 bool ULyraSnapShotComponent_AnimNode::CaptureCopyBoneSnapshots(UAnimInstance* AnimInstance, TArray<FAnimSSRCopyBoneSnapshot>& OutSnapshots) const
 {
 	OutSnapshots.Reset();
 
-	if (!IsValid(AnimInstance))
-	{
-		return false;
-	}
-
-	const IAnimClassInterface* AnimClass = IAnimClassInterface::GetFromClass(AnimInstance->GetClass());
-	if (!AnimClass)
-	{
-		return false;
-	}
-
-	const TArray<FStructProperty*>& NodeProperties = AnimClass->GetAnimNodeProperties();
-	for (int32 NodeIndex = 0; NodeIndex < NodeProperties.Num(); ++NodeIndex)
-	{
-		const FStructProperty* NodeProperty = NodeProperties[NodeIndex];
-		if (!IsCopyBoneNodeProperty(NodeProperty))
+	return ForEachSSRAnimNode<FAnimNode_CopyBone>(
+		AnimInstance,
+		IsCopyBoneNodeProperty,
+		[&OutSnapshots](int32 NodeIndex, const FStructProperty* NodeProperty, const FAnimNode_CopyBone& CopyBone)
 		{
-			continue;
-		}
-
-		const void* NodeMemory = NodeProperty->ContainerPtrToValuePtr<void>(AnimInstance);
-		const FAnimNode_CopyBone* CopyBone = static_cast<const FAnimNode_CopyBone*>(NodeMemory);
-		if (!CopyBone)
-		{
-			continue;
-		}
-
-		FAnimSSRCopyBoneSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
-		CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
-		Snapshot.SourceBoneName = CopyBone->SourceBone.BoneName;
-		Snapshot.TargetBoneName = CopyBone->TargetBone.BoneName;
-		Snapshot.ControlSpace = CopyBone->ControlSpace;
-		Snapshot.NodeConfigurationHash = HashCopyBoneConfiguration(*CopyBone);
-		CaptureSkeletalControlSnapshot(*CopyBone, Snapshot.SkeletalControlState);
-		Snapshot.bCopyTranslation = CopyBone->bCopyTranslation;
-		Snapshot.bCopyRotation = CopyBone->bCopyRotation;
-		Snapshot.bCopyScale = CopyBone->bCopyScale;
-	}
-
-	return true;
+			FAnimSSRCopyBoneSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
+			CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
+			Snapshot.SourceBoneName = CopyBone.SourceBone.BoneName;
+			Snapshot.TargetBoneName = CopyBone.TargetBone.BoneName;
+			Snapshot.ControlSpace = CopyBone.ControlSpace;
+			Snapshot.NodeConfigurationHash = HashCopyBoneConfiguration(CopyBone);
+			CaptureSkeletalControlSnapshot(CopyBone, Snapshot.SkeletalControlState);
+			Snapshot.bCopyTranslation = CopyBone.bCopyTranslation;
+			Snapshot.bCopyRotation = CopyBone.bCopyRotation;
+			Snapshot.bCopyScale = CopyBone.bCopyScale;
+		});
 }
 
 bool ULyraSnapShotComponent_AnimNode::CaptureTransformBoneSnapshots(UAnimInstance* AnimInstance, TArray<FAnimSSRTransformBoneSnapshot>& OutSnapshots) const
 {
 	OutSnapshots.Reset();
 
-	if (!IsValid(AnimInstance))
-	{
-		return false;
-	}
-
-	const IAnimClassInterface* AnimClass = IAnimClassInterface::GetFromClass(AnimInstance->GetClass());
-	if (!AnimClass)
-	{
-		return false;
-	}
-
-	const TArray<FStructProperty*>& NodeProperties = AnimClass->GetAnimNodeProperties();
-	for (int32 NodeIndex = 0; NodeIndex < NodeProperties.Num(); ++NodeIndex)
-	{
-		const FStructProperty* NodeProperty = NodeProperties[NodeIndex];
-		if (!IsTransformBoneNodeProperty(NodeProperty))
+	return ForEachSSRAnimNode<FAnimNode_ModifyBone>(
+		AnimInstance,
+		IsTransformBoneNodeProperty,
+		[&OutSnapshots](int32 NodeIndex, const FStructProperty* NodeProperty, const FAnimNode_ModifyBone& TransformBone)
 		{
-			continue;
-		}
-
-		const void* NodeMemory = NodeProperty->ContainerPtrToValuePtr<void>(AnimInstance);
-		const FAnimNode_ModifyBone* TransformBone = static_cast<const FAnimNode_ModifyBone*>(NodeMemory);
-		if (!TransformBone)
-		{
-			continue;
-		}
-
-		FAnimSSRTransformBoneSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
-		CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
-		Snapshot.BoneToModifyName = TransformBone->BoneToModify.BoneName;
-		Snapshot.TranslationMode = TransformBone->TranslationMode;
-		Snapshot.RotationMode = TransformBone->RotationMode;
-		Snapshot.ScaleMode = TransformBone->ScaleMode;
-		Snapshot.TranslationSpace = TransformBone->TranslationSpace;
-		Snapshot.RotationSpace = TransformBone->RotationSpace;
-		Snapshot.ScaleSpace = TransformBone->ScaleSpace;
-		Snapshot.NodeConfigurationHash = HashTransformBoneConfiguration(*TransformBone);
-		CaptureSkeletalControlSnapshot(*TransformBone, Snapshot.SkeletalControlState);
-		Snapshot.Translation = TransformBone->Translation;
-		Snapshot.Rotation = TransformBone->Rotation;
-		Snapshot.Scale = TransformBone->Scale;
-	}
-
-	return true;
+			FAnimSSRTransformBoneSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
+			CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
+			Snapshot.BoneToModifyName = TransformBone.BoneToModify.BoneName;
+			Snapshot.TranslationMode = TransformBone.TranslationMode;
+			Snapshot.RotationMode = TransformBone.RotationMode;
+			Snapshot.ScaleMode = TransformBone.ScaleMode;
+			Snapshot.TranslationSpace = TransformBone.TranslationSpace;
+			Snapshot.RotationSpace = TransformBone.RotationSpace;
+			Snapshot.ScaleSpace = TransformBone.ScaleSpace;
+			Snapshot.NodeConfigurationHash = HashTransformBoneConfiguration(TransformBone);
+			CaptureSkeletalControlSnapshot(TransformBone, Snapshot.SkeletalControlState);
+			Snapshot.Translation = TransformBone.Translation;
+			Snapshot.Rotation = TransformBone.Rotation;
+			Snapshot.Scale = TransformBone.Scale;
+		});
 }
 
 bool ULyraSnapShotComponent_AnimNode::CaptureTwoBoneIKSnapshots(UAnimInstance* AnimInstance, TArray<FAnimSSRTwoBoneIKSnapshot>& OutSnapshots) const
 {
 	OutSnapshots.Reset();
 
-	if (!IsValid(AnimInstance))
-	{
-		return false;
-	}
-
-	const IAnimClassInterface* AnimClass = IAnimClassInterface::GetFromClass(AnimInstance->GetClass());
-	if (!AnimClass)
-	{
-		return false;
-	}
-
-	const TArray<FStructProperty*>& NodeProperties = AnimClass->GetAnimNodeProperties();
-	for (int32 NodeIndex = 0; NodeIndex < NodeProperties.Num(); ++NodeIndex)
-	{
-		const FStructProperty* NodeProperty = NodeProperties[NodeIndex];
-		if (!IsTwoBoneIKNodeProperty(NodeProperty))
+	return ForEachSSRAnimNode<FAnimNode_TwoBoneIK>(
+		AnimInstance,
+		IsTwoBoneIKNodeProperty,
+		[&OutSnapshots](int32 NodeIndex, const FStructProperty* NodeProperty, const FAnimNode_TwoBoneIK& TwoBoneIK)
 		{
-			continue;
-		}
-
-		const void* NodeMemory = NodeProperty->ContainerPtrToValuePtr<void>(AnimInstance);
-		const FAnimNode_TwoBoneIK* TwoBoneIK = static_cast<const FAnimNode_TwoBoneIK*>(NodeMemory);
-		if (!TwoBoneIK)
-		{
-			continue;
-		}
-
-		FAnimSSRTwoBoneIKSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
-		CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
-		Snapshot.IKBoneName = TwoBoneIK->IKBone.BoneName;
-		Snapshot.EffectorTargetName = GetBoneSocketTargetSnapshotName(TwoBoneIK->EffectorTarget);
-		Snapshot.JointTargetName = GetBoneSocketTargetSnapshotName(TwoBoneIK->JointTarget);
-		Snapshot.bEffectorTargetUsesSocket = TwoBoneIK->EffectorTarget.bUseSocket;
-		Snapshot.bJointTargetUsesSocket = TwoBoneIK->JointTarget.bUseSocket;
-		Snapshot.EffectorLocationSpace = TwoBoneIK->EffectorLocationSpace;
-		Snapshot.JointTargetLocationSpace = TwoBoneIK->JointTargetLocationSpace;
-		Snapshot.bAllowStretching = TwoBoneIK->bAllowStretching;
-		Snapshot.bTakeRotationFromEffectorSpace = TwoBoneIK->bTakeRotationFromEffectorSpace;
-		Snapshot.bMaintainEffectorRelRot = TwoBoneIK->bMaintainEffectorRelRot;
-		Snapshot.bAllowTwist = TwoBoneIK->bAllowTwist;
-		Snapshot.NodeConfigurationHash = HashTwoBoneIKConfiguration(*TwoBoneIK);
-		TwoBoneIK->CaptureTwoBoneIKState(Snapshot.TwoBoneIKState);
-	}
-
-	return true;
+			FAnimSSRTwoBoneIKSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
+			CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
+			Snapshot.IKBoneName = TwoBoneIK.IKBone.BoneName;
+			Snapshot.EffectorTargetName = GetBoneSocketTargetSnapshotName(TwoBoneIK.EffectorTarget);
+			Snapshot.JointTargetName = GetBoneSocketTargetSnapshotName(TwoBoneIK.JointTarget);
+			Snapshot.bEffectorTargetUsesSocket = TwoBoneIK.EffectorTarget.bUseSocket;
+			Snapshot.bJointTargetUsesSocket = TwoBoneIK.JointTarget.bUseSocket;
+			Snapshot.EffectorLocationSpace = TwoBoneIK.EffectorLocationSpace;
+			Snapshot.JointTargetLocationSpace = TwoBoneIK.JointTargetLocationSpace;
+			Snapshot.bAllowStretching = TwoBoneIK.bAllowStretching;
+			Snapshot.bTakeRotationFromEffectorSpace = TwoBoneIK.bTakeRotationFromEffectorSpace;
+			Snapshot.bMaintainEffectorRelRot = TwoBoneIK.bMaintainEffectorRelRot;
+			Snapshot.bAllowTwist = TwoBoneIK.bAllowTwist;
+			Snapshot.NodeConfigurationHash = HashTwoBoneIKConfiguration(TwoBoneIK);
+			TwoBoneIK.CaptureTwoBoneIKState(Snapshot.TwoBoneIKState);
+		});
 }
 
 bool ULyraSnapShotComponent_AnimNode::ValidateSequencePlayerSnapshots(UAnimInstance* AnimInstance, const TArray<FAnimSSRSequencePlayerSnapshot>& Snapshots) const

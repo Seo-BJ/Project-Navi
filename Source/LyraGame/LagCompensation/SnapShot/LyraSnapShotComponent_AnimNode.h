@@ -396,6 +396,10 @@ private:
 	void LogNodeSnapshotSetValidationDetails(const FString& OwnerName, UAnimInstance* AnimInstance, const FAnimSSRNodeSnapshotSet& Snapshots) const;
 	bool RestoreNodeSnapshotSet(UAnimInstance* AnimInstance, const FAnimSSRNodeSnapshotSet& Snapshots) const;
 
+	/**
+	 * Capture 계열은 cpp 내부 공통 헬퍼로 AnimClass 조회와 node property 순회/캐스팅을 공유한다.
+	 * 각 함수는 해당 AnimNode 타입에서 snapshot에 저장할 값만 담당한다.
+	 */
 	bool CaptureSequencePlayerSnapshots(UAnimInstance* AnimInstance, TArray<FAnimSSRSequencePlayerSnapshot>& OutSnapshots) const;
 	bool CaptureBlendSpacePlayerSnapshots(UAnimInstance* AnimInstance, TArray<FAnimSSRBlendSpacePlayerSnapshot>& OutSnapshots) const;
 	bool CaptureRotationOffsetBlendSpaceSnapshots(UAnimInstance* AnimInstance, TArray<FAnimSSRRotationOffsetBlendSpaceSnapshot>& OutSnapshots) const;
