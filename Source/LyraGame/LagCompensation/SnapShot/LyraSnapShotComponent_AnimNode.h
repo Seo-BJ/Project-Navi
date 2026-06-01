@@ -34,7 +34,7 @@ struct FAnimSSRNodeIdentity
 	FName NodeStructName = NAME_None;
 };
 
-/** skeleton pose DrawDebug 옵션을 한 곳에 묶어 saved/server/client 설정 반복을 줄인다. */
+/** 스켈레톤 pose DrawDebug 옵션을 한 곳에 묶어 saved/server/client 설정 반복을 줄인다. */
 USTRUCT(BlueprintType)
 struct FAnimSSRDebugPoseDrawSettings
 {
@@ -95,7 +95,7 @@ struct FAnimSSRDebugPoseDrawSettings
 	float JointRadius = 2.0f;
 };
 
-/** bone controller 적용/비적용 비교 DrawDebug 전용 설정이다. */
+/** Bone Controller 적용/비적용 비교 DrawDebug 전용 설정이다. */
 USTRUCT(BlueprintType)
 struct FAnimSSRDebugComparisonDrawSettings
 {
@@ -118,7 +118,7 @@ struct FAnimSSRDebugComparisonDrawSettings
 	bool bDrawLabel = true;
 };
 
-/** Sequence Player node의 SSR snapshot이다. */
+/** Sequence Player 노드의 SSR 스냅샷이다. */
 struct FAnimSSRSequencePlayerSnapshot
 {
 	FAnimSSRNodeIdentity Identity;
@@ -126,7 +126,7 @@ struct FAnimSSRSequencePlayerSnapshot
 	FAnimNode_AssetPlayerStateSnapshot AssetPlayerState;
 };
 
-/** BlendSpace Player node의 SSR snapshot이다. */
+/** BlendSpace Player 노드의 SSR 스냅샷이다. */
 struct FAnimSSRBlendSpacePlayerSnapshot
 {
 	FAnimSSRNodeIdentity Identity;
@@ -134,7 +134,7 @@ struct FAnimSSRBlendSpacePlayerSnapshot
 	FAnimNode_BlendSpacePlayerStateSnapshot BlendSpacePlayerState;
 };
 
-/** RotationOffset BlendSpace node의 SSR snapshot이다. */
+/** RotationOffset BlendSpace 노드의 SSR 스냅샷이다. */
 struct FAnimSSRRotationOffsetBlendSpaceSnapshot
 {
 	FAnimSSRNodeIdentity Identity;
@@ -143,7 +143,7 @@ struct FAnimSSRRotationOffsetBlendSpaceSnapshot
 	FAnimNode_RotationOffsetBlendSpaceStateSnapshot RotationOffsetBlendSpaceState;
 };
 
-/** BlendListByBool node의 SSR snapshot이다. */
+/** BlendListByBool 노드의 SSR 스냅샷이다. */
 struct FAnimSSRBlendListByBoolSnapshot
 {
 	FAnimSSRNodeIdentity Identity;
@@ -155,7 +155,7 @@ struct FAnimSSRBlendListByBoolSnapshot
 	FAnimNode_BlendListByBoolStateSnapshot BlendListByBoolState;
 };
 
-/** StateMachine node의 SSR snapshot이다. */
+/** StateMachine 노드의 SSR 스냅샷이다. */
 struct FAnimSSRStateMachineSnapshot
 {
 	FAnimSSRNodeIdentity Identity;
@@ -166,7 +166,7 @@ struct FAnimSSRStateMachineSnapshot
 	FAnimNode_StateMachineStateSnapshot StateMachineState;
 };
 
-/** LayeredBoneBlend node의 SSR snapshot이다. */
+/** LayeredBoneBlend 노드의 SSR 스냅샷이다. */
 struct FAnimSSRLayeredBoneBlendSnapshot
 {
 	FAnimSSRNodeIdentity Identity;
@@ -180,13 +180,13 @@ struct FAnimSSRLayeredBoneBlendSnapshot
 	FAnimNode_LayeredBoneBlendStateSnapshot LayeredBoneBlendState;
 };
 
-/** SkeletalControl 계열 node가 공통으로 저장하는 update 결과다. */
+/** SkeletalControl 계열 노드가 공통으로 저장하는 업데이트 결과다. */
 struct FAnimSSRSkeletalControlSnapshot
 {
 	float ActualAlpha = 0.0f;
 };
 
-/** CopyBone node의 SSR snapshot이다. */
+/** CopyBone 노드의 SSR 스냅샷이다. */
 struct FAnimSSRCopyBoneSnapshot
 {
 	FAnimSSRNodeIdentity Identity;
@@ -200,7 +200,7 @@ struct FAnimSSRCopyBoneSnapshot
 	bool bCopyScale = false;
 };
 
-/** TransformBone node는 runtime에서 FAnimNode_ModifyBone으로 나타난다. */
+/** TransformBone 노드는 runtime에서 FAnimNode_ModifyBone으로 나타난다. */
 struct FAnimSSRTransformBoneSnapshot
 {
 	FAnimSSRNodeIdentity Identity;
@@ -218,7 +218,7 @@ struct FAnimSSRTransformBoneSnapshot
 	FVector Scale = FVector(1.0f);
 };
 
-/** TwoBoneIK node의 SSR snapshot이다. */
+/** TwoBoneIK 노드의 SSR 스냅샷이다. */
 struct FAnimSSRTwoBoneIKSnapshot
 {
 	FAnimSSRNodeIdentity Identity;
@@ -285,7 +285,7 @@ struct FAnimSSRRewindPose
 	TArray<FTransform> ComponentSpaceTransforms;
 };
 
-/** Saved AnimNode snapshot range used to evaluate an interpolated SSR pose. */
+/** 보간된 SSR pose를 평가할 때 사용하는 저장 snapshot range다. */
 struct FAnimSSRSnapshotRange
 {
 	const FAnimSSRFrameSnapshot* OlderFrame = nullptr;
@@ -314,15 +314,15 @@ public:
 
 	USkeletalMeshComponent* GetSkeletalMesh(AActor* InActor) const;
 	void CaptureCurrentSnapShot(AActor* HitActor, FAnimSSRFrameSnapshot& OutFrame);
-	/** Finds the nearest saved AnimNode snapshot for compatibility/debug callers. */
+
+	/** 호환성/디버그 호출을 위해 저장된 AnimNode snapshot 중 가장 가까운 frame을 찾는다. */
 	bool TryGetSnapShotAtTime(float HitTime, FAnimSSRFrameSnapshot& OutFrame) const;
 	bool EvaluateSnapShotPose(const FAnimSSRFrameSnapshot& Snapshot, FAnimSSRRewindPose& OutPose);
 
-	/** 현재 서버 시간에서 RewindSeconds만큼 과거 pose를 평가한다. */
 	/** 현재 서버 시간에서 RewindSeconds만큼 과거의 애님 노드 Snapshot pose를 평가한다. */
 	bool EvaluatePoseRewindSeconds(float RewindSeconds, FAnimSSRRewindPose& OutPose);
 
-	/** Evaluates AnimNode snapshots at TargetServerTime and interpolates final bone transforms between saved frames when possible. */
+	/** TargetServerTime의 AnimNode snapshot을 평가하고, 가능하면 저장 frame 사이의 bone transform을 보간한다. */
 	bool EvaluatePoseAtServerTime(double TargetServerTime, FAnimSSRRewindPose& OutPose);
 
 #if ENABLE_DRAW_DEBUG
@@ -336,7 +336,6 @@ public:
 protected:
 	virtual void UpdateSnapShotHistory() override;
 
-	/** 새 frame snapshot을 history 앞쪽에 저장하고 보관 기간을 넘은 과거 frame을 제거한다. */
 	/** 애님 노드 Snapshot을 history 앞쪽에 저장하고 보관 시간을 넘은 frame을 제거한다. */
 	void SaveSnapShotData(FAnimSSRFrameSnapshot Snapshot);
 
@@ -367,7 +366,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Server Side Rewind|Debug|Client Current")
 	FAnimSSRDebugPoseDrawSettings ClientCurrentDrawSettings = FAnimSSRDebugPoseDrawSettings(false, 10, 0.1f, FColor::Green, 1.0f, 0, true, 2.0f);
 
-	/** 최신 frame이 앞에 오도록 저장되는 SSR snapshot ring buffer다. */
 	/** 최신 frame이 앞쪽에 오도록 저장되는 AnimNode Snapshot history. */
 	TDeque<FAnimSSRFrameSnapshot> SnapShotHistory;
 
@@ -393,7 +391,12 @@ private:
 
 	bool CaptureNodeSnapshotSet(UAnimInstance* AnimInstance, FAnimSSRNodeSnapshotSet& OutSnapshots) const;
 	bool ValidateNodeSnapshotSet(UAnimInstance* AnimInstance, const FAnimSSRNodeSnapshotSet& Snapshots) const;
+
+	/** 저장된 node snapshot과 현재 AnimBP가 맞지 않을 때 상세 원인을 디버그 로그에 출력한다. */
 	void LogNodeSnapshotSetValidationDetails(const FString& OwnerName, UAnimInstance* AnimInstance, const FAnimSSRNodeSnapshotSet& Snapshots) const;
+
+	/** 현재 AnimBP에서 SSR이 지원하지 않는 node를 디버그 로그에 출력한다. */
+	void LogUnsupportedSSRNodeProperties(UAnimInstance* AnimInstance) const;
 	bool RestoreNodeSnapshotSet(UAnimInstance* AnimInstance, const FAnimSSRNodeSnapshotSet& Snapshots) const;
 
 	/**
@@ -435,10 +438,19 @@ private:
 	bool EvaluateSnapshotPose(USkeletalMeshComponent* Mesh, UAnimInstance* AnimInstance, const FAnimSSRFrameSnapshot& Snapshot, FAnimSSRRewindPose& OutPose) const;
 	bool InterpolateRewindPoses(const FAnimSSRRewindPose& OlderPose, const FAnimSSRRewindPose& YoungerPose, double TargetServerTime, float Alpha, FAnimSSRRewindPose& OutPose) const;
 
+	/** 저장된 snapshot pose를 설정된 주기에 맞춰 DrawDebug로 출력한다. */
 	void DrawSavedSnapshotPose(const FAnimSSRFrameSnapshot& Snapshot);
+
+	/** 서버 권한 world의 현재 mesh pose를 DrawDebug로 출력한다. */
 	void DrawServerCurrentMeshPose();
+
+	/** 클라이언트 또는 listen server 화면의 현재 mesh pose를 DrawDebug로 출력한다. */
 	void DrawClientCurrentMeshPose();
+
+	/** 전달된 mesh의 현재 component-space pose를 DrawDebug로 출력한다. */
 	void DrawCurrentMeshPose(USkeletalMeshComponent* Mesh, const FAnimSSRDebugPoseDrawSettings& DrawSettings) const;
+
+	/** 평가된 rewind pose를 DrawDebug skeleton 형태로 출력한다. */
 	void DrawRewindPose(
 		const USkeletalMesh* SkeletalMesh,
 		const FAnimSSRRewindPose& RewindPose,

@@ -352,36 +352,6 @@ bool ForEachSSRAnimNode(UAnimInstance* AnimInstance, PredicateType Predicate, Ca
 	return true;
 }
 
-void LogUnsupportedSSRNodeProperties(UAnimInstance* AnimInstance)
-{
-	if (!IsValid(AnimInstance))
-	{
-		return;
-	}
-
-	const IAnimClassInterface* AnimClass = IAnimClassInterface::GetFromClass(AnimInstance->GetClass());
-	if (!AnimClass)
-	{
-		return;
-	}
-
-	const TArray<FStructProperty*>& NodeProperties = AnimClass->GetAnimNodeProperties();
-	for (int32 NodeIndex = 0; NodeIndex < NodeProperties.Num(); ++NodeIndex)
-	{
-		const FStructProperty* NodeProperty = NodeProperties[NodeIndex];
-		if (!IsUnsupportedSSRNodeProperty(NodeProperty))
-		{
-			continue;
-		}
-
-		UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-			TEXT("SSR unsupported animation node skipped. AnimClass=%s nodeIndex=%d %s"),
-			*GetNameSafe(AnimInstance->GetClass()),
-			NodeIndex,
-			*DescribeAnimNodeProperty(NodeProperty));
-	}
-}
-
 bool ShouldDrawDebugPose(bool bRequested, const FAnimSSRDebugPoseDrawSettings& DrawSettings, uint64& Counter)
 {
 	if (!bRequested)
@@ -503,7 +473,7 @@ const IAnimClassInterface* GetAnimClassForSSRValidation(const FString& OwnerName
 	if (!IsValid(AnimInstance))
 	{
 		UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-			TEXT("[%s] SSR snapshot mismatch detail: %s validation failed: AnimInstance is null."),
+			TEXT("[%s] SSR 스냅샷 불일치 상세: %s 검증 실패: AnimInstance가 null입니다."),
 			*OwnerName,
 			NodeTypeName);
 		return nullptr;
@@ -513,7 +483,7 @@ const IAnimClassInterface* GetAnimClassForSSRValidation(const FString& OwnerName
 	if (!AnimClass)
 	{
 		UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-			TEXT("[%s] SSR snapshot mismatch detail: %s validation failed: AnimClassInterface is null. AnimClass=%s"),
+			TEXT("[%s] SSR 스냅샷 불일치 상세: %s 검증 실패: AnimClassInterface가 null입니다. AnimClass=%s"),
 			*OwnerName,
 			NodeTypeName,
 			*GetNameSafe(AnimInstance->GetClass()));
@@ -538,7 +508,7 @@ bool LogSequencePlayerSnapshotValidationDetails(const FString& OwnerName, UAnimI
 	{
 		bMatches = false;
 		UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-			TEXT("[%s] SSR snapshot mismatch detail: SequencePlayer count differs. snapshot=%d current=%d AnimClass=%s"),
+			TEXT("[%s] SSR 스냅샷 불일치 상세: SequencePlayer 개수가 다릅니다. snapshot=%d current=%d AnimClass=%s"),
 			*OwnerName,
 			Snapshots.Num(),
 			CurrentCount,
@@ -553,7 +523,7 @@ bool LogSequencePlayerSnapshotValidationDetails(const FString& OwnerName, UAnimI
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: SequencePlayer snapshot[%d] has invalid node index. %s currentNodeCount=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: SequencePlayer snapshot[%d]의 노드 인덱스가 유효하지 않습니다. %s currentNodeCount=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -566,7 +536,7 @@ bool LogSequencePlayerSnapshotValidationDetails(const FString& OwnerName, UAnimI
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: SequencePlayer snapshot[%d] points to unsupported node type. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: SequencePlayer snapshot[%d]가 지원하지 않는 노드 타입을 가리킵니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -578,7 +548,7 @@ bool LogSequencePlayerSnapshotValidationDetails(const FString& OwnerName, UAnimI
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: SequencePlayer snapshot[%d] node identity differs. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: SequencePlayer snapshot[%d]의 노드 식별자가 다릅니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -591,7 +561,7 @@ bool LogSequencePlayerSnapshotValidationDetails(const FString& OwnerName, UAnimI
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: SequencePlayer snapshot[%d] node memory is null. %s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: SequencePlayer snapshot[%d]의 노드 메모리가 null입니다. %s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity);
@@ -602,7 +572,7 @@ bool LogSequencePlayerSnapshotValidationDetails(const FString& OwnerName, UAnimI
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: SequencePlayer snapshot[%d] sequence asset differs. node=%s snapshotAsset=%s currentAsset=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: SequencePlayer snapshot[%d]의 sequence asset이 다릅니다. node=%s snapshotAsset=%s currentAsset=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -629,7 +599,7 @@ bool LogBlendSpacePlayerSnapshotValidationDetails(const FString& OwnerName, UAni
 	{
 		bMatches = false;
 		UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-			TEXT("[%s] SSR snapshot mismatch detail: BlendSpacePlayer count differs. snapshot=%d current=%d AnimClass=%s"),
+			TEXT("[%s] SSR 스냅샷 불일치 상세: BlendSpacePlayer 개수가 다릅니다. snapshot=%d current=%d AnimClass=%s"),
 			*OwnerName,
 			Snapshots.Num(),
 			CurrentCount,
@@ -644,7 +614,7 @@ bool LogBlendSpacePlayerSnapshotValidationDetails(const FString& OwnerName, UAni
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: BlendSpacePlayer snapshot[%d] has invalid node index. %s currentNodeCount=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: BlendSpacePlayer snapshot[%d]의 노드 인덱스가 유효하지 않습니다. %s currentNodeCount=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -657,7 +627,7 @@ bool LogBlendSpacePlayerSnapshotValidationDetails(const FString& OwnerName, UAni
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: BlendSpacePlayer snapshot[%d] points to unsupported node type. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: BlendSpacePlayer snapshot[%d]가 지원하지 않는 노드 타입을 가리킵니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -669,7 +639,7 @@ bool LogBlendSpacePlayerSnapshotValidationDetails(const FString& OwnerName, UAni
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: BlendSpacePlayer snapshot[%d] node identity differs. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: BlendSpacePlayer snapshot[%d]의 노드 식별자가 다릅니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -682,7 +652,7 @@ bool LogBlendSpacePlayerSnapshotValidationDetails(const FString& OwnerName, UAni
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: BlendSpacePlayer snapshot[%d] node memory is null. %s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: BlendSpacePlayer snapshot[%d]의 노드 메모리가 null입니다. %s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity);
@@ -693,7 +663,7 @@ bool LogBlendSpacePlayerSnapshotValidationDetails(const FString& OwnerName, UAni
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: BlendSpacePlayer snapshot[%d] blend space asset differs. node=%s snapshotAsset=%s currentAsset=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: BlendSpacePlayer snapshot[%d]의 blend space asset이 다릅니다. node=%s snapshotAsset=%s currentAsset=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -720,7 +690,7 @@ bool LogRotationOffsetBlendSpaceSnapshotValidationDetails(const FString& OwnerNa
 	{
 		bMatches = false;
 		UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-			TEXT("[%s] SSR snapshot mismatch detail: RotationOffsetBlendSpace count differs. snapshot=%d current=%d AnimClass=%s"),
+			TEXT("[%s] SSR 스냅샷 불일치 상세: RotationOffsetBlendSpace 개수가 다릅니다. snapshot=%d current=%d AnimClass=%s"),
 			*OwnerName,
 			Snapshots.Num(),
 			CurrentCount,
@@ -735,7 +705,7 @@ bool LogRotationOffsetBlendSpaceSnapshotValidationDetails(const FString& OwnerNa
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: RotationOffsetBlendSpace snapshot[%d] has invalid node index. %s currentNodeCount=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: RotationOffsetBlendSpace snapshot[%d]의 노드 인덱스가 유효하지 않습니다. %s currentNodeCount=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -748,7 +718,7 @@ bool LogRotationOffsetBlendSpaceSnapshotValidationDetails(const FString& OwnerNa
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: RotationOffsetBlendSpace snapshot[%d] points to unsupported node type. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: RotationOffsetBlendSpace snapshot[%d]가 지원하지 않는 노드 타입을 가리킵니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -760,7 +730,7 @@ bool LogRotationOffsetBlendSpaceSnapshotValidationDetails(const FString& OwnerNa
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: RotationOffsetBlendSpace snapshot[%d] node identity differs. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: RotationOffsetBlendSpace snapshot[%d]의 노드 식별자가 다릅니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -773,7 +743,7 @@ bool LogRotationOffsetBlendSpaceSnapshotValidationDetails(const FString& OwnerNa
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: RotationOffsetBlendSpace snapshot[%d] node memory is null. %s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: RotationOffsetBlendSpace snapshot[%d]의 노드 메모리가 null입니다. %s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity);
@@ -784,7 +754,7 @@ bool LogRotationOffsetBlendSpaceSnapshotValidationDetails(const FString& OwnerNa
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: RotationOffsetBlendSpace snapshot[%d] blend space asset differs. node=%s snapshotAsset=%s currentAsset=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: RotationOffsetBlendSpace snapshot[%d]의 blend space asset이 다릅니다. node=%s snapshotAsset=%s currentAsset=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -797,7 +767,7 @@ bool LogRotationOffsetBlendSpaceSnapshotValidationDetails(const FString& OwnerNa
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: RotationOffsetBlendSpace snapshot[%d] configuration hash differs. node=%s snapshotHash=%u currentHash=%u"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: RotationOffsetBlendSpace snapshot[%d]의 설정 해시가 다릅니다. node=%s snapshotHash=%u currentHash=%u"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -824,7 +794,7 @@ bool LogBlendListByBoolSnapshotValidationDetails(const FString& OwnerName, UAnim
 	{
 		bMatches = false;
 		UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-			TEXT("[%s] SSR snapshot mismatch detail: BlendListByBool count differs. snapshot=%d current=%d AnimClass=%s"),
+			TEXT("[%s] SSR 스냅샷 불일치 상세: BlendListByBool 개수가 다릅니다. snapshot=%d current=%d AnimClass=%s"),
 			*OwnerName,
 			Snapshots.Num(),
 			CurrentCount,
@@ -839,7 +809,7 @@ bool LogBlendListByBoolSnapshotValidationDetails(const FString& OwnerName, UAnim
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: BlendListByBool snapshot[%d] has invalid node index. %s currentNodeCount=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: BlendListByBool snapshot[%d]의 노드 인덱스가 유효하지 않습니다. %s currentNodeCount=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -852,7 +822,7 @@ bool LogBlendListByBoolSnapshotValidationDetails(const FString& OwnerName, UAnim
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: BlendListByBool snapshot[%d] points to unsupported node type. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: BlendListByBool snapshot[%d]가 지원하지 않는 노드 타입을 가리킵니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -864,7 +834,7 @@ bool LogBlendListByBoolSnapshotValidationDetails(const FString& OwnerName, UAnim
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: BlendListByBool snapshot[%d] node identity differs. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: BlendListByBool snapshot[%d]의 노드 식별자가 다릅니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -877,7 +847,7 @@ bool LogBlendListByBoolSnapshotValidationDetails(const FString& OwnerName, UAnim
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: BlendListByBool snapshot[%d] node memory is null. %s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: BlendListByBool snapshot[%d]의 노드 메모리가 null입니다. %s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity);
@@ -891,7 +861,7 @@ bool LogBlendListByBoolSnapshotValidationDetails(const FString& OwnerName, UAnim
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: BlendListByBool snapshot[%d] BlendPoseCount differs. node=%s snapshot=%d current=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: BlendListByBool snapshot[%d]의 BlendPoseCount가 다릅니다. node=%s snapshot=%d current=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -902,7 +872,7 @@ bool LogBlendListByBoolSnapshotValidationDetails(const FString& OwnerName, UAnim
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: BlendListByBool snapshot[%d] BlendTimeCount differs. node=%s snapshot=%d current=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: BlendListByBool snapshot[%d]의 BlendTimeCount가 다릅니다. node=%s snapshot=%d current=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -913,7 +883,7 @@ bool LogBlendListByBoolSnapshotValidationDetails(const FString& OwnerName, UAnim
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: BlendListByBool snapshot[%d] configuration hash differs. node=%s snapshotHash=%u currentHash=%u"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: BlendListByBool snapshot[%d]의 설정 해시가 다릅니다. node=%s snapshotHash=%u currentHash=%u"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -924,7 +894,7 @@ bool LogBlendListByBoolSnapshotValidationDetails(const FString& OwnerName, UAnim
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: BlendListByBool snapshot[%d] custom curve differs. node=%s snapshotCurve=%s currentCurve=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: BlendListByBool snapshot[%d]의 custom curve가 다릅니다. node=%s snapshotCurve=%s currentCurve=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -935,7 +905,7 @@ bool LogBlendListByBoolSnapshotValidationDetails(const FString& OwnerName, UAnim
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: BlendListByBool snapshot[%d] blend profile differs. node=%s snapshotProfile=%s currentProfile=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: BlendListByBool snapshot[%d]의 blend profile이 다릅니다. node=%s snapshotProfile=%s currentProfile=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -947,7 +917,7 @@ bool LogBlendListByBoolSnapshotValidationDetails(const FString& OwnerName, UAnim
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: BlendListByBool snapshot[%d] captured PerBlendData count is inconsistent. node=%s perBlendData=%d blendPoseCount=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: BlendListByBool snapshot[%d]의 캡처된 PerBlendData 개수가 일관되지 않습니다. node=%s perBlendData=%d blendPoseCount=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -960,7 +930,7 @@ bool LogBlendListByBoolSnapshotValidationDetails(const FString& OwnerName, UAnim
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: BlendListByBool snapshot[%d] captured PerBoneSampleData count is inconsistent. node=%s perBoneSampleData=%d blendPoseCount=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: BlendListByBool snapshot[%d]의 캡처된 PerBoneSampleData 개수가 일관되지 않습니다. node=%s perBoneSampleData=%d blendPoseCount=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -987,7 +957,7 @@ bool LogStateMachineSnapshotValidationDetails(const FString& OwnerName, UAnimIns
 	{
 		bMatches = false;
 		UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-			TEXT("[%s] SSR snapshot mismatch detail: StateMachine count differs. snapshot=%d current=%d AnimClass=%s"),
+			TEXT("[%s] SSR 스냅샷 불일치 상세: StateMachine 개수가 다릅니다. snapshot=%d current=%d AnimClass=%s"),
 			*OwnerName,
 			Snapshots.Num(),
 			CurrentCount,
@@ -1002,7 +972,7 @@ bool LogStateMachineSnapshotValidationDetails(const FString& OwnerName, UAnimIns
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: StateMachine snapshot[%d] has invalid node index. %s currentNodeCount=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: StateMachine snapshot[%d]의 노드 인덱스가 유효하지 않습니다. %s currentNodeCount=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1015,7 +985,7 @@ bool LogStateMachineSnapshotValidationDetails(const FString& OwnerName, UAnimIns
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: StateMachine snapshot[%d] points to unsupported node type. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: StateMachine snapshot[%d]가 지원하지 않는 노드 타입을 가리킵니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1027,7 +997,7 @@ bool LogStateMachineSnapshotValidationDetails(const FString& OwnerName, UAnimIns
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: StateMachine snapshot[%d] node identity differs. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: StateMachine snapshot[%d]의 노드 식별자가 다릅니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1040,7 +1010,7 @@ bool LogStateMachineSnapshotValidationDetails(const FString& OwnerName, UAnimIns
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: StateMachine snapshot[%d] node memory is null. %s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: StateMachine snapshot[%d]의 노드 메모리가 null입니다. %s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity);
@@ -1051,7 +1021,7 @@ bool LogStateMachineSnapshotValidationDetails(const FString& OwnerName, UAnimIns
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: StateMachine snapshot[%d] StateMachineIndexInClass differs. node=%s snapshot=%d current=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: StateMachine snapshot[%d]의 StateMachineIndexInClass가 다릅니다. node=%s snapshot=%d current=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1064,7 +1034,7 @@ bool LogStateMachineSnapshotValidationDetails(const FString& OwnerName, UAnimIns
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: StateMachine snapshot[%d] has no current machine description. node=%s snapshotMachine=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: StateMachine snapshot[%d]의 현재 machine description이 없습니다. node=%s snapshotMachine=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1077,7 +1047,7 @@ bool LogStateMachineSnapshotValidationDetails(const FString& OwnerName, UAnimIns
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: StateMachine snapshot[%d] machine name differs. node=%s snapshot=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: StateMachine snapshot[%d]의 machine 이름이 다릅니다. node=%s snapshot=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1088,7 +1058,7 @@ bool LogStateMachineSnapshotValidationDetails(const FString& OwnerName, UAnimIns
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: StateMachine snapshot[%d] state count differs. node=%s snapshot=%d current=%d machine=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: StateMachine snapshot[%d]의 state 개수가 다릅니다. node=%s snapshot=%d current=%d machine=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1100,7 +1070,7 @@ bool LogStateMachineSnapshotValidationDetails(const FString& OwnerName, UAnimIns
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: StateMachine snapshot[%d] transition count differs. node=%s snapshot=%d current=%d machine=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: StateMachine snapshot[%d]의 transition 개수가 다릅니다. node=%s snapshot=%d current=%d machine=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1128,7 +1098,7 @@ bool LogLayeredBoneBlendSnapshotValidationDetails(const FString& OwnerName, UAni
 	{
 		bMatches = false;
 		UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-			TEXT("[%s] SSR snapshot mismatch detail: LayeredBoneBlend count differs. snapshot=%d current=%d AnimClass=%s"),
+			TEXT("[%s] SSR 스냅샷 불일치 상세: LayeredBoneBlend 개수가 다릅니다. snapshot=%d current=%d AnimClass=%s"),
 			*OwnerName,
 			Snapshots.Num(),
 			CurrentCount,
@@ -1143,7 +1113,7 @@ bool LogLayeredBoneBlendSnapshotValidationDetails(const FString& OwnerName, UAni
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: LayeredBoneBlend snapshot[%d] has invalid node index. %s currentNodeCount=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: LayeredBoneBlend snapshot[%d]의 노드 인덱스가 유효하지 않습니다. %s currentNodeCount=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1156,7 +1126,7 @@ bool LogLayeredBoneBlendSnapshotValidationDetails(const FString& OwnerName, UAni
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: LayeredBoneBlend snapshot[%d] points to unsupported node type. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: LayeredBoneBlend snapshot[%d]가 지원하지 않는 노드 타입을 가리킵니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1168,7 +1138,7 @@ bool LogLayeredBoneBlendSnapshotValidationDetails(const FString& OwnerName, UAni
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: LayeredBoneBlend snapshot[%d] node identity differs. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: LayeredBoneBlend snapshot[%d]의 노드 식별자가 다릅니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1181,7 +1151,7 @@ bool LogLayeredBoneBlendSnapshotValidationDetails(const FString& OwnerName, UAni
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: LayeredBoneBlend snapshot[%d] node memory is null. %s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: LayeredBoneBlend snapshot[%d]의 노드 메모리가 null입니다. %s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity);
@@ -1193,7 +1163,7 @@ bool LogLayeredBoneBlendSnapshotValidationDetails(const FString& OwnerName, UAni
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: LayeredBoneBlend snapshot[%d] blend mode differs. node=%s snapshot=%d current=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: LayeredBoneBlend snapshot[%d]의 blend mode가 다릅니다. node=%s snapshot=%d current=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1204,7 +1174,7 @@ bool LogLayeredBoneBlendSnapshotValidationDetails(const FString& OwnerName, UAni
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: LayeredBoneBlend snapshot[%d] BlendPoseCount differs. node=%s snapshot=%d current=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: LayeredBoneBlend snapshot[%d]의 BlendPoseCount가 다릅니다. node=%s snapshot=%d current=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1215,7 +1185,7 @@ bool LogLayeredBoneBlendSnapshotValidationDetails(const FString& OwnerName, UAni
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: LayeredBoneBlend snapshot[%d] BlendWeightCount differs. node=%s snapshot=%d current=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: LayeredBoneBlend snapshot[%d]의 BlendWeightCount가 다릅니다. node=%s snapshot=%d current=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1226,7 +1196,7 @@ bool LogLayeredBoneBlendSnapshotValidationDetails(const FString& OwnerName, UAni
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: LayeredBoneBlend snapshot[%d] LayerSetupCount differs. node=%s snapshot=%d current=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: LayeredBoneBlend snapshot[%d]의 LayerSetupCount가 다릅니다. node=%s snapshot=%d current=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1237,7 +1207,7 @@ bool LogLayeredBoneBlendSnapshotValidationDetails(const FString& OwnerName, UAni
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: LayeredBoneBlend snapshot[%d] BlendMaskCount differs. node=%s snapshot=%d current=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: LayeredBoneBlend snapshot[%d]의 BlendMaskCount가 다릅니다. node=%s snapshot=%d current=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1248,7 +1218,7 @@ bool LogLayeredBoneBlendSnapshotValidationDetails(const FString& OwnerName, UAni
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: LayeredBoneBlend snapshot[%d] configuration hash differs. node=%s snapshotHash=%u currentHash=%u"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: LayeredBoneBlend snapshot[%d]의 설정 해시가 다릅니다. node=%s snapshotHash=%u currentHash=%u"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1259,7 +1229,7 @@ bool LogLayeredBoneBlendSnapshotValidationDetails(const FString& OwnerName, UAni
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: LayeredBoneBlend snapshot[%d] captured BlendWeights count is inconsistent. node=%s captured=%d expected=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: LayeredBoneBlend snapshot[%d]의 캡처된 BlendWeights 개수가 일관되지 않습니다. node=%s captured=%d expected=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1270,7 +1240,7 @@ bool LogLayeredBoneBlendSnapshotValidationDetails(const FString& OwnerName, UAni
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: LayeredBoneBlend snapshot[%d] captured BlendMasks count is inconsistent. node=%s captured=%d expected=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: LayeredBoneBlend snapshot[%d]의 캡처된 BlendMasks 개수가 일관되지 않습니다. node=%s captured=%d expected=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1285,7 +1255,7 @@ bool LogLayeredBoneBlendSnapshotValidationDetails(const FString& OwnerName, UAni
 			{
 				bMatches = false;
 				UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-					TEXT("[%s] SSR snapshot mismatch detail: LayeredBoneBlend snapshot[%d] blend mask[%d] differs. node=%s snapshotMask=%s currentMask=%s"),
+					TEXT("[%s] SSR 스냅샷 불일치 상세: LayeredBoneBlend snapshot[%d]의 blend mask[%d]가 다릅니다. node=%s snapshotMask=%s currentMask=%s"),
 					*OwnerName,
 					SnapshotIndex,
 					BlendMaskIndex,
@@ -1314,7 +1284,7 @@ bool LogCopyBoneSnapshotValidationDetails(const FString& OwnerName, UAnimInstanc
 	{
 		bMatches = false;
 		UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-			TEXT("[%s] SSR snapshot mismatch detail: CopyBone count differs. snapshot=%d current=%d AnimClass=%s"),
+			TEXT("[%s] SSR 스냅샷 불일치 상세: CopyBone 개수가 다릅니다. snapshot=%d current=%d AnimClass=%s"),
 			*OwnerName,
 			Snapshots.Num(),
 			CurrentCount,
@@ -1329,7 +1299,7 @@ bool LogCopyBoneSnapshotValidationDetails(const FString& OwnerName, UAnimInstanc
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: CopyBone snapshot[%d] has invalid node index. %s currentNodeCount=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: CopyBone snapshot[%d]의 노드 인덱스가 유효하지 않습니다. %s currentNodeCount=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1342,7 +1312,7 @@ bool LogCopyBoneSnapshotValidationDetails(const FString& OwnerName, UAnimInstanc
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: CopyBone snapshot[%d] points to unsupported node type. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: CopyBone snapshot[%d]가 지원하지 않는 노드 타입을 가리킵니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1354,7 +1324,7 @@ bool LogCopyBoneSnapshotValidationDetails(const FString& OwnerName, UAnimInstanc
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: CopyBone snapshot[%d] node identity differs. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: CopyBone snapshot[%d]의 노드 식별자가 다릅니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1367,7 +1337,7 @@ bool LogCopyBoneSnapshotValidationDetails(const FString& OwnerName, UAnimInstanc
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: CopyBone snapshot[%d] node memory is null. %s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: CopyBone snapshot[%d]의 노드 메모리가 null입니다. %s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity);
@@ -1379,7 +1349,7 @@ bool LogCopyBoneSnapshotValidationDetails(const FString& OwnerName, UAnimInstanc
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: CopyBone snapshot[%d] configuration hash differs. node=%s snapshotHash=%u currentHash=%u snapshotSource=%s currentSource=%s snapshotTarget=%s currentTarget=%s snapshotSpace=%d currentSpace=%d snapshotCopyTRS={%d,%d,%d} currentCopyTRS={%d,%d,%d}"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: CopyBone snapshot[%d]의 설정 해시가 다릅니다. node=%s snapshotHash=%u currentHash=%u snapshotSource=%s currentSource=%s snapshotTarget=%s currentTarget=%s snapshotSpace=%d currentSpace=%d snapshotCopyTRS={%d,%d,%d} currentCopyTRS={%d,%d,%d}"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1418,7 +1388,7 @@ bool LogTransformBoneSnapshotValidationDetails(const FString& OwnerName, UAnimIn
 	{
 		bMatches = false;
 		UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-			TEXT("[%s] SSR snapshot mismatch detail: TransformBone count differs. snapshot=%d current=%d AnimClass=%s"),
+			TEXT("[%s] SSR 스냅샷 불일치 상세: TransformBone 개수가 다릅니다. snapshot=%d current=%d AnimClass=%s"),
 			*OwnerName,
 			Snapshots.Num(),
 			CurrentCount,
@@ -1433,7 +1403,7 @@ bool LogTransformBoneSnapshotValidationDetails(const FString& OwnerName, UAnimIn
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: TransformBone snapshot[%d] has invalid node index. %s currentNodeCount=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: TransformBone snapshot[%d]의 노드 인덱스가 유효하지 않습니다. %s currentNodeCount=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1446,7 +1416,7 @@ bool LogTransformBoneSnapshotValidationDetails(const FString& OwnerName, UAnimIn
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: TransformBone snapshot[%d] points to unsupported node type. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: TransformBone snapshot[%d]가 지원하지 않는 노드 타입을 가리킵니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1458,7 +1428,7 @@ bool LogTransformBoneSnapshotValidationDetails(const FString& OwnerName, UAnimIn
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: TransformBone snapshot[%d] node identity differs. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: TransformBone snapshot[%d]의 노드 식별자가 다릅니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1471,7 +1441,7 @@ bool LogTransformBoneSnapshotValidationDetails(const FString& OwnerName, UAnimIn
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: TransformBone snapshot[%d] node memory is null. %s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: TransformBone snapshot[%d]의 노드 메모리가 null입니다. %s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity);
@@ -1483,7 +1453,7 @@ bool LogTransformBoneSnapshotValidationDetails(const FString& OwnerName, UAnimIn
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: TransformBone snapshot[%d] configuration hash differs. node=%s snapshotHash=%u currentHash=%u snapshotBone=%s currentBone=%s snapshotModes={%d,%d,%d} currentModes={%d,%d,%d} snapshotSpaces={%d,%d,%d} currentSpaces={%d,%d,%d}"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: TransformBone snapshot[%d]의 설정 해시가 다릅니다. node=%s snapshotHash=%u currentHash=%u snapshotBone=%s currentBone=%s snapshotModes={%d,%d,%d} currentModes={%d,%d,%d} snapshotSpaces={%d,%d,%d} currentSpaces={%d,%d,%d}"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1524,7 +1494,7 @@ bool LogTwoBoneIKSnapshotValidationDetails(const FString& OwnerName, UAnimInstan
 	{
 		bMatches = false;
 		UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-			TEXT("[%s] SSR snapshot mismatch detail: TwoBoneIK count differs. snapshot=%d current=%d AnimClass=%s"),
+			TEXT("[%s] SSR 스냅샷 불일치 상세: TwoBoneIK 개수가 다릅니다. snapshot=%d current=%d AnimClass=%s"),
 			*OwnerName,
 			Snapshots.Num(),
 			CurrentCount,
@@ -1539,7 +1509,7 @@ bool LogTwoBoneIKSnapshotValidationDetails(const FString& OwnerName, UAnimInstan
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: TwoBoneIK snapshot[%d] has invalid node index. %s currentNodeCount=%d"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: TwoBoneIK snapshot[%d]의 노드 인덱스가 유효하지 않습니다. %s currentNodeCount=%d"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1552,7 +1522,7 @@ bool LogTwoBoneIKSnapshotValidationDetails(const FString& OwnerName, UAnimInstan
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: TwoBoneIK snapshot[%d] points to unsupported node type. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: TwoBoneIK snapshot[%d]가 지원하지 않는 노드 타입을 가리킵니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1564,7 +1534,7 @@ bool LogTwoBoneIKSnapshotValidationDetails(const FString& OwnerName, UAnimInstan
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: TwoBoneIK snapshot[%d] node identity differs. expected=%s current=%s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: TwoBoneIK snapshot[%d]의 노드 식별자가 다릅니다. expected=%s current=%s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -1577,7 +1547,7 @@ bool LogTwoBoneIKSnapshotValidationDetails(const FString& OwnerName, UAnimInstan
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: TwoBoneIK snapshot[%d] node memory is null. %s"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: TwoBoneIK snapshot[%d]의 노드 메모리가 null입니다. %s"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity);
@@ -1589,7 +1559,7 @@ bool LogTwoBoneIKSnapshotValidationDetails(const FString& OwnerName, UAnimInstan
 		{
 			bMatches = false;
 			UE_LOG(LogLyraServerSideRewindDebug, Verbose,
-				TEXT("[%s] SSR snapshot mismatch detail: TwoBoneIK snapshot[%d] configuration hash differs. node=%s snapshotHash=%u currentHash=%u snapshotIKBone=%s currentIKBone=%s snapshotEffector={%s,%d} currentEffector={%s,%d} snapshotJoint={%s,%d} currentJoint={%s,%d} snapshotSpaces={%d,%d} currentSpaces={%d,%d} snapshotFlags={%d,%d,%d,%d} currentFlags={%d,%d,%d,%d}"),
+				TEXT("[%s] SSR 스냅샷 불일치 상세: TwoBoneIK snapshot[%d]의 설정 해시가 다릅니다. node=%s snapshotHash=%u currentHash=%u snapshotIKBone=%s currentIKBone=%s snapshotEffector={%s,%d} currentEffector={%s,%d} snapshotJoint={%s,%d} currentJoint={%s,%d} snapshotSpaces={%d,%d} currentSpaces={%d,%d} snapshotFlags={%d,%d,%d,%d} currentFlags={%d,%d,%d,%d}"),
 				*OwnerName,
 				SnapshotIndex,
 				*SnapshotIdentity,
@@ -2143,7 +2113,7 @@ bool ULyraSnapShotComponent_AnimNode::BuildFrameSnapshot(FAnimSSRFrameSnapshot& 
 
 	if (OutSnapshot.NodeSnapshots.IsEmpty())
 	{
-		UE_LOG(LogLyraServerSideRewind, Warning, TEXT("[%s] No supported animation nodes found for SSR snapshots."), *GetNameSafe(Owner));
+		UE_LOG(LogLyraServerSideRewind, Warning, TEXT("[%s] SSR snapshot으로 저장할 수 있는 지원 애니메이션 노드를 찾지 못했습니다."), *GetNameSafe(Owner));
 		return false;
 	}
 
@@ -2201,6 +2171,36 @@ void ULyraSnapShotComponent_AnimNode::LogNodeSnapshotSetValidationDetails(const 
 	LogCopyBoneSnapshotValidationDetails(OwnerName, AnimInstance, Snapshots.CopyBones);
 	LogTransformBoneSnapshotValidationDetails(OwnerName, AnimInstance, Snapshots.TransformBones);
 	LogTwoBoneIKSnapshotValidationDetails(OwnerName, AnimInstance, Snapshots.TwoBoneIKs);
+}
+
+void ULyraSnapShotComponent_AnimNode::LogUnsupportedSSRNodeProperties(UAnimInstance* AnimInstance) const
+{
+	if (!IsValid(AnimInstance))
+	{
+		return;
+	}
+
+	const IAnimClassInterface* AnimClass = IAnimClassInterface::GetFromClass(AnimInstance->GetClass());
+	if (!AnimClass)
+	{
+		return;
+	}
+
+	const TArray<FStructProperty*>& NodeProperties = AnimClass->GetAnimNodeProperties();
+	for (int32 NodeIndex = 0; NodeIndex < NodeProperties.Num(); ++NodeIndex)
+	{
+		const FStructProperty* NodeProperty = NodeProperties[NodeIndex];
+		if (!IsUnsupportedSSRNodeProperty(NodeProperty))
+		{
+			continue;
+		}
+
+		UE_LOG(LogLyraServerSideRewindDebug, Verbose,
+			TEXT("SSR에서 지원하지 않는 애니메이션 노드를 건너뜁니다. AnimClass=%s nodeIndex=%d %s"),
+			*GetNameSafe(AnimInstance->GetClass()),
+			NodeIndex,
+			*DescribeAnimNodeProperty(NodeProperty));
+	}
 }
 
 bool ULyraSnapShotComponent_AnimNode::RestoreNodeSnapshotSet(UAnimInstance* AnimInstance, const FAnimSSRNodeSnapshotSet& Snapshots) const
@@ -3195,7 +3195,7 @@ bool ULyraSnapShotComponent_AnimNode::EvaluateFrameSnapshotPose(const FAnimSSRFr
 	Mesh->HandleExistingParallelEvaluationTask(/*bBlockOnTask=*/true, /*bPerformPostAnimEvaluation=*/true);
 	if (AnimInstance->NeedsUpdate())
 	{
-		UE_LOG(LogLyraServerSideRewind, Warning, TEXT("[%s] SSR evaluation skipped because AnimInstance still needs update."),
+		UE_LOG(LogLyraServerSideRewind, Warning, TEXT("[%s] AnimInstance 업데이트가 아직 필요하여 SSR 평가를 건너뜁니다."),
 			*GetNameSafe(Owner));
 		return false;
 	}
@@ -3212,7 +3212,7 @@ bool ULyraSnapShotComponent_AnimNode::EvaluateFrameSnapshotPose(const FAnimSSRFr
 	{
 		const FString OwnerName = GetNameSafe(Owner);
 		UE_LOG(LogLyraServerSideRewind, Warning,
-			TEXT("[%s] SSR snapshot does not match current supported animation graph. AnimClass=%s SnapshotTime=%.3f SnapshotCounts={Sequence=%d BlendSpace=%d RotationOffsetBlendSpace=%d BlendListByBool=%d StateMachine=%d LayeredBoneBlend=%d CopyBone=%d TransformBone=%d TwoBoneIK=%d}. Enable LogLyraServerSideRewindDebug Verbose for details."),
+			TEXT("[%s] SSR snapshot이 현재 지원 애니메이션 그래프와 일치하지 않습니다. AnimClass=%s SnapshotTime=%.3f SnapshotCounts={Sequence=%d BlendSpace=%d RotationOffsetBlendSpace=%d BlendListByBool=%d StateMachine=%d LayeredBoneBlend=%d CopyBone=%d TransformBone=%d TwoBoneIK=%d}. 자세한 내용은 LogLyraServerSideRewindDebug Verbose를 확인하세요."),
 			*OwnerName,
 			*GetNameSafe(AnimInstance->GetClass()),
 			Snapshot.ServerTime,
@@ -3396,7 +3396,7 @@ void ULyraSnapShotComponent_AnimNode::DrawSavedSnapshotPose(const FAnimSSRFrameS
 		FAnimSSRRewindPose RewindPose;
 		if (EvaluateFrameSnapshotPose(Snapshot, RewindPose, /*bDisableCapturedBoneControllers=*/false))
 		{
-			// This stat excludes snapshot restore/evaluate and measures only debug primitive submission.
+			// 이 stat은 snapshot 복원/평가 비용을 제외하고 debug primitive 제출 비용만 측정한다.
 			SCOPE_CYCLE_COUNTER(STAT_LyraSSR_DrawSavedSnapshotDebug);
 			const FString Label = BoneControllerComparisonDrawSettings.bEnabled && BoneControllerComparisonDrawSettings.bDrawLabel
 				? MakeBoneControllerComparisonLabel(TEXT("ON"), Snapshot)
