@@ -4,12 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "Containers/Deque.h"
+#include "Animation/AnimMontageEvaluationState.h"
 #include "Animation/AnimNode_AssetPlayerBase.h"
 #include "Animation/AnimNode_StateMachine.h"
 #include "AnimNodes/AnimNode_BlendListByBool.h"
 #include "AnimNodes/AnimNode_BlendSpacePlayer.h"
 #include "AnimNodes/AnimNode_LayeredBoneBlend.h"
 #include "AnimNodes/AnimNode_RotationOffsetBlendSpace.h"
+#include "AnimNodes/AnimNode_Slot.h"
 #include "BoneControllers/AnimNode_CopyBone.h"
 #include "BoneControllers/AnimNode_ModifyBone.h"
 #include "BoneControllers/AnimNode_TwoBoneIK.h"
@@ -18,6 +20,7 @@
 
 class FStructProperty;
 class UAnimInstance;
+class UAnimMontage;
 class UAnimSequenceBase;
 class UBlendProfile;
 class UBlendSpace;
@@ -32,6 +35,22 @@ struct FAnimSSRNodeIdentity
 	int32 NodeIndex = INDEX_NONE;
 	FName NodePropertyName = NAME_None;
 	FName NodeStructName = NAME_None;
+};
+
+enum class EAnimSSRAnimInstanceRole : uint8
+{
+	Main,
+	Linked,
+	PostProcess
+};
+
+/** 평가 graph 안의 AnimInstance를 현재 mesh topology와 대조하기 위한 식별자다. */
+struct FAnimSSRAnimInstanceIdentity
+{
+	EAnimSSRAnimInstanceRole Role = EAnimSSRAnimInstanceRole::Main;
+	int32 LinkedInstanceIndex = INDEX_NONE;
+	TWeakObjectPtr<UAnimInstance> Instance;
+	TWeakObjectPtr<UClass> AnimClass;
 };
 
 /** 스켈레톤 pose DrawDebug 옵션을 한 곳에 묶어 saved/server/client 설정 반복을 줄인다. */
@@ -237,6 +256,15 @@ struct FAnimSSRTwoBoneIKSnapshot
 	FAnimNode_TwoBoneIKStateSnapshot TwoBoneIKState;
 };
 
+/** Montage pose를 graph에 합성하는 Slot 노드의 마지막 Update 결과다. */
+struct FAnimSSRSlotSnapshot
+{
+	FAnimSSRNodeIdentity Identity;
+	FName SlotName = NAME_None;
+	bool bAlwaysUpdateSourcePose = false;
+	FAnimNode_SlotStateSnapshot SlotState;
+};
+
 /** 한 AnimInstance에서 SSR이 지원하는 모든 node snapshot 묶음이다. */
 struct FAnimSSRNodeSnapshotSet
 {
@@ -265,6 +293,26 @@ struct FAnimSSRNodeSnapshotSet
 	}
 };
 
+/** 한 AnimInstance가 Evaluate에 사용하는 node, slot, montage proxy 상태다. */
+struct FAnimSSRAnimInstanceSnapshot
+{
+	FAnimSSRAnimInstanceIdentity Identity;
+	FAnimSSRNodeSnapshotSet NodeSnapshots;
+	TArray<FAnimSSRSlotSnapshot> Slots;
+
+	/** true면 GetMontageEvaluationData가 main proxy를 가리키므로 이 snapshot에는 중복 저장하지 않는다. */
+	bool bUsesMainInstanceMontageEvaluationData = false;
+	int32 MontageEvaluationDataOwnerSnapshotIndex = INDEX_NONE;
+	bool bHasOwnedMontageEvaluationData = false;
+	FAnimMontageEvaluationDataSnapshot MontageEvaluationData;
+
+	bool IsEmpty() const
+	{
+		return NodeSnapshots.IsEmpty() && Slots.IsEmpty() &&
+			(!bHasOwnedMontageEvaluationData || MontageEvaluationData.MontageEvaluationData.IsEmpty());
+	}
+};
+
 /** 특정 서버 frame에서 SSR pose 평가에 필요한 actor/mesh/node 상태다. */
 struct FAnimSSRFrameSnapshot
 {
@@ -273,7 +321,19 @@ struct FAnimSSRFrameSnapshot
 	FTransform MeshComponentTransform = FTransform::Identity;
 	FVector Velocity = FVector::ZeroVector;
 	FRotator ControlRotation = FRotator::ZeroRotator;
-	FAnimSSRNodeSnapshotSet NodeSnapshots;
+	TArray<FAnimSSRAnimInstanceSnapshot> AnimInstanceSnapshots;
+
+	bool IsEmpty() const
+	{
+		for (const FAnimSSRAnimInstanceSnapshot& AnimInstanceSnapshot : AnimInstanceSnapshots)
+		{
+			if (!AnimInstanceSnapshot.IsEmpty())
+			{
+				return false;
+			}
+		}
+		return true;
+	}
 };
 
 /** SSR 평가로 생성된 과거 pose 결과다. */
@@ -297,7 +357,7 @@ struct FAnimSSRSnapshotRange
 
 /**
  * AnimNode 기반 Snapshot 저장 컴포넌트.
- * 현재는 future 방식으로 보존하며, 서버 hit 판정용 ULyraServerSideRewindComponent에는 연결하지 않는다.
+ * 서버 hit 판정에서 과거 AnimNode 상태를 임시 복원하고 pose를 재평가하는 방식이다.
  */
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent), Blueprintable)
 class LYRAGAME_API ULyraSnapShotComponent_AnimNode : public ULyraSnapShotComponent
@@ -324,6 +384,13 @@ public:
 
 	/** TargetServerTime의 AnimNode snapshot을 평가하고, 가능하면 저장 frame 사이의 bone transform을 보간한다. */
 	bool EvaluatePoseAtServerTime(double TargetServerTime, FAnimSSRRewindPose& OutPose);
+	bool IsProfileDebugDrawEnabled() const
+	{
+		return SavedSnapshotDrawSettings.bEnabled
+			|| BoneControllerComparisonDrawSettings.bEnabled
+			|| ServerCurrentDrawSettings.bEnabled
+			|| ClientCurrentDrawSettings.bEnabled;
+	}
 
 #if ENABLE_DRAW_DEBUG
 	/** AnimNode rewind pose를 PhysicsAsset primitive 기준으로 시각화한다. */
@@ -369,6 +436,10 @@ protected:
 	/** 최신 frame이 앞쪽에 오도록 저장되는 AnimNode Snapshot history. */
 	TDeque<FAnimSSRFrameSnapshot> SnapShotHistory;
 
+	/** Dynamic montage가 history 보관 중 GC되지 않도록 현재 history가 참조하는 asset을 유지한다. */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UAnimMontage>> RetainedMontageAssets;
+
 private:
 	TWeakObjectPtr<USkeletalMeshComponent> CurrentPrerequisiteMesh;
 	
@@ -388,6 +459,12 @@ private:
 	void EnsureTickAfterMesh(USkeletalMeshComponent* Mesh);
 	void ConfigureMeshForSSR(USkeletalMeshComponent* Mesh);
 	bool BuildFrameSnapshot(FAnimSSRFrameSnapshot& OutSnapshot);
+	void BuildAnimInstanceIdentities(USkeletalMeshComponent* Mesh, TArray<FAnimSSRAnimInstanceIdentity>& OutIdentities) const;
+	bool CaptureAnimInstanceSnapshotSet(USkeletalMeshComponent* Mesh, TArray<FAnimSSRAnimInstanceSnapshot>& OutSnapshots) const;
+	bool ValidateAnimInstanceSnapshotSet(USkeletalMeshComponent* Mesh, const TArray<FAnimSSRAnimInstanceSnapshot>& Snapshots) const;
+	bool RestoreAnimInstanceSnapshotSet(const TArray<FAnimSSRAnimInstanceSnapshot>& Snapshots) const;
+	void PruneSnapshotHistory(double CurrentServerTime);
+	void RefreshRetainedMontageAssets();
 
 	bool CaptureNodeSnapshotSet(UAnimInstance* AnimInstance, FAnimSSRNodeSnapshotSet& OutSnapshots) const;
 	bool ValidateNodeSnapshotSet(UAnimInstance* AnimInstance, const FAnimSSRNodeSnapshotSet& Snapshots) const;
@@ -398,6 +475,9 @@ private:
 	/** 현재 AnimBP에서 SSR이 지원하지 않는 node를 디버그 로그에 출력한다. */
 	void LogUnsupportedSSRNodeProperties(UAnimInstance* AnimInstance) const;
 	bool RestoreNodeSnapshotSet(UAnimInstance* AnimInstance, const FAnimSSRNodeSnapshotSet& Snapshots) const;
+	bool CaptureSlotSnapshots(UAnimInstance* AnimInstance, TArray<FAnimSSRSlotSnapshot>& OutSnapshots) const;
+	bool ValidateSlotSnapshots(UAnimInstance* AnimInstance, const TArray<FAnimSSRSlotSnapshot>& Snapshots) const;
+	bool RestoreSlotSnapshots(UAnimInstance* AnimInstance, const TArray<FAnimSSRSlotSnapshot>& Snapshots) const;
 
 	/**
 	 * Capture 계열은 cpp 내부 공통 헬퍼로 AnimClass 조회와 node property 순회/캐스팅을 공유한다.

@@ -7,6 +7,8 @@
 #include "Animation/BlendProfile.h"
 #include "Animation/AnimCurveTypes.h"
 #include "Animation/AnimInstance.h"
+#include "Animation/AnimMontage.h"
+#include "Animation/AnimMontageEvaluationState.h"
 #include "Animation/AnimNode_StateMachine.h"
 #include "AnimNodes/AnimNode_AimOffsetLookAt.h"
 #include "AnimNodes/AnimNode_BlendListByBool.h"
@@ -18,6 +20,7 @@
 #include "AnimNodes/AnimNode_PoseHandler.h"
 #include "AnimNodes/AnimNode_RotationOffsetBlendSpace.h"
 #include "AnimNodes/AnimNode_SequenceEvaluator.h"
+#include "AnimNodes/AnimNode_Slot.h"
 #include "Animation/AnimNode_SequencePlayer.h"
 #include "Animation/AttributesRuntime.h"
 #include "BoneControllers/AnimNode_CopyBone.h"
@@ -39,7 +42,7 @@
 #include "Stats/Stats.h"
 #include "UObject/UnrealType.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogLyraServerSideRewind, Log, All);
+DEFINE_LOG_CATEGORY_STATIC(LogLyraAnimNodeServerSideRewind, Log, All);
 DEFINE_LOG_CATEGORY_STATIC(LogLyraServerSideRewindDebug, Log, All);
 
 DECLARE_STATS_GROUP(TEXT("LyraSSR"), STATGROUP_LyraSSR, STATCAT_Advanced);
@@ -47,6 +50,14 @@ DECLARE_CYCLE_STAT(TEXT("EvaluateFrameSnapshotPose"), STAT_LyraSSR_EvaluateFrame
 DECLARE_CYCLE_STAT(TEXT("DrawSavedSnapshotDebug"), STAT_LyraSSR_DrawSavedSnapshotDebug, STATGROUP_LyraSSR);
 DECLARE_CYCLE_STAT(TEXT("DrawServerCurrentMeshPoseDebug"), STAT_LyraSSR_DrawServerCurrentMeshPoseDebug, STATGROUP_LyraSSR);
 DECLARE_CYCLE_STAT(TEXT("DrawClientCurrentMeshPoseDebug"), STAT_LyraSSR_DrawClientCurrentMeshPoseDebug, STATGROUP_LyraSSR);
+DECLARE_DWORD_COUNTER_STAT(TEXT("History AnimInstance Snapshots"), STAT_LyraSSR_HistoryAnimInstanceSnapshots, STATGROUP_LyraSSR);
+DECLARE_DWORD_COUNTER_STAT(TEXT("History Slot Snapshots"), STAT_LyraSSR_HistorySlotSnapshots, STATGROUP_LyraSSR);
+DECLARE_DWORD_COUNTER_STAT(TEXT("History Montage States"), STAT_LyraSSR_HistoryMontageStates, STATGROUP_LyraSSR);
+DECLARE_DWORD_COUNTER_STAT(TEXT("Retained Montage Assets"), STAT_LyraSSR_RetainedMontageAssets, STATGROUP_LyraSSR);
+DECLARE_DWORD_COUNTER_STAT(TEXT("Topology Mismatches"), STAT_LyraSSR_TopologyMismatches, STATGROUP_LyraSSR);
+DECLARE_DWORD_COUNTER_STAT(TEXT("Expired Montage Assets"), STAT_LyraSSR_ExpiredMontageAssets, STATGROUP_LyraSSR);
+DECLARE_DWORD_COUNTER_STAT(TEXT("Restore Failures"), STAT_LyraSSR_RestoreFailures, STATGROUP_LyraSSR);
+DECLARE_MEMORY_STAT(TEXT("History Snapshot Memory"), STAT_LyraSSR_HistorySnapshotMemory, STATGROUP_LyraSSR);
 
 namespace
 {
@@ -257,6 +268,11 @@ bool IsTwoBoneIKNodeProperty(const FStructProperty* NodeProperty)
 	return NodeProperty && NodeProperty->Struct && NodeProperty->Struct->IsChildOf(FAnimNode_TwoBoneIK::StaticStruct());
 }
 
+bool IsSlotNodeProperty(const FStructProperty* NodeProperty)
+{
+	return NodeProperty && NodeProperty->Struct && NodeProperty->Struct->IsChildOf(FAnimNode_Slot::StaticStruct());
+}
+
 bool IsUnsupportedSSRNodeProperty(const FStructProperty* NodeProperty)
 {
 	if (!NodeProperty || !NodeProperty->Struct)
@@ -442,30 +458,43 @@ void RestoreSkeletalControlSnapshot(FAnimNode_SkeletalControlBase& Node, const F
 
 void DisableCapturedBoneControllerSnapshots(FAnimSSRFrameSnapshot& Snapshot)
 {
-	for (FAnimSSRCopyBoneSnapshot& CopyBoneSnapshot : Snapshot.NodeSnapshots.CopyBones)
+	for (FAnimSSRAnimInstanceSnapshot& AnimInstanceSnapshot : Snapshot.AnimInstanceSnapshots)
 	{
-		CopyBoneSnapshot.SkeletalControlState.ActualAlpha = 0.0f;
-	}
+		for (FAnimSSRCopyBoneSnapshot& CopyBoneSnapshot : AnimInstanceSnapshot.NodeSnapshots.CopyBones)
+		{
+			CopyBoneSnapshot.SkeletalControlState.ActualAlpha = 0.0f;
+		}
 
-	for (FAnimSSRTransformBoneSnapshot& TransformBoneSnapshot : Snapshot.NodeSnapshots.TransformBones)
-	{
-		TransformBoneSnapshot.SkeletalControlState.ActualAlpha = 0.0f;
-	}
+		for (FAnimSSRTransformBoneSnapshot& TransformBoneSnapshot : AnimInstanceSnapshot.NodeSnapshots.TransformBones)
+		{
+			TransformBoneSnapshot.SkeletalControlState.ActualAlpha = 0.0f;
+		}
 
-	for (FAnimSSRTwoBoneIKSnapshot& TwoBoneIKSnapshot : Snapshot.NodeSnapshots.TwoBoneIKs)
-	{
-		TwoBoneIKSnapshot.TwoBoneIKState.ActualAlpha = 0.0f;
+		for (FAnimSSRTwoBoneIKSnapshot& TwoBoneIKSnapshot : AnimInstanceSnapshot.NodeSnapshots.TwoBoneIKs)
+		{
+			TwoBoneIKSnapshot.TwoBoneIKState.ActualAlpha = 0.0f;
+		}
 	}
 }
 
 FString MakeBoneControllerComparisonLabel(const TCHAR* StateLabel, const FAnimSSRFrameSnapshot& Snapshot)
 {
+	int32 CopyBoneCount = 0;
+	int32 TransformBoneCount = 0;
+	int32 TwoBoneIKCount = 0;
+	for (const FAnimSSRAnimInstanceSnapshot& AnimInstanceSnapshot : Snapshot.AnimInstanceSnapshots)
+	{
+		CopyBoneCount += AnimInstanceSnapshot.NodeSnapshots.CopyBones.Num();
+		TransformBoneCount += AnimInstanceSnapshot.NodeSnapshots.TransformBones.Num();
+		TwoBoneIKCount += AnimInstanceSnapshot.NodeSnapshots.TwoBoneIKs.Num();
+	}
+
 	return FString::Printf(
 		TEXT("SSR C/T/IK %s  C=%d T=%d IK=%d"),
 		StateLabel,
-		Snapshot.NodeSnapshots.CopyBones.Num(),
-		Snapshot.NodeSnapshots.TransformBones.Num(),
-		Snapshot.NodeSnapshots.TwoBoneIKs.Num());
+		CopyBoneCount,
+		TransformBoneCount,
+		TwoBoneIKCount);
 }
 
 const IAnimClassInterface* GetAnimClassForSSRValidation(const FString& OwnerName, const TCHAR* NodeTypeName, UAnimInstance* AnimInstance)
@@ -1626,7 +1655,9 @@ public:
 		{
 			if (AnimInstance)
 			{
-				AnimInstance->PostEvaluateAnimation();
+				// UAnimInstance::PostEvaluateAnimation은 Native/Blueprint callback을 호출하고
+				// Proxy::PostEvaluate도 debug/log queue를 flush한다. SSR pass는 object reference cleanup만 수행한다.
+				AnimInstance->ClearSnapshotEvaluationObjectReferences();
 			}
 		}
 	}
@@ -1656,6 +1687,10 @@ ULyraSnapShotComponent_AnimNode::ULyraSnapShotComponent_AnimNode()
 void ULyraSnapShotComponent_AnimNode::BeginPlay()
 {
 	Super::BeginPlay();
+	if (!IsSSRActive())
+	{
+		return;
+	}
 
 	USkeletalMeshComponent* Mesh = ResolveTargetMesh();
 	EnsureTickAfterMesh(Mesh);
@@ -1746,6 +1781,11 @@ bool ULyraSnapShotComponent_AnimNode::IsReadyForSSREvaluation(USkeletalMeshCompo
 
 void ULyraSnapShotComponent_AnimNode::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
+	if (!IsSSRActive())
+	{
+		return;
+	}
+
 	AActor* Owner = GetOwner();
 	if (!IsValid(Owner))
 	{
@@ -1836,16 +1876,18 @@ bool ULyraSnapShotComponent_AnimNode::TryGetSnapShotAtTime(float HitTime, FAnimS
 	}
 
 	OutFrame = *SelectedFrame;
-	return !OutFrame.NodeSnapshots.IsEmpty();
+	return !OutFrame.IsEmpty();
 }
 
 bool ULyraSnapShotComponent_AnimNode::TryGetSnapShotRangeAtTime(double TargetServerTime, FAnimSSRSnapshotRange& OutRange) const
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(LyraProfile_Rewind_SnapshotLookup);
 	OutRange = FAnimSSRSnapshotRange();
 	OutRange.TargetServerTime = TargetServerTime;
 
 	if (SnapShotHistory.Num() == 0)
 	{
+		SetSnapshotLookupDiagnostics(false, false);
 		return false;
 	}
 
@@ -1860,22 +1902,27 @@ bool ULyraSnapShotComponent_AnimNode::TryGetSnapShotRangeAtTime(double TargetSer
 		OutRange.YoungerFrame = &Frame;
 		OutRange.Alpha = 0.0f;
 		OutRange.bSingleFrame = true;
-		return !Frame.NodeSnapshots.IsEmpty();
+		return !Frame.IsEmpty();
 	};
 
 	if (OldestTime > TargetServerTime && !bIsAtOldest)
 	{
+		SetSnapshotLookupDiagnostics(false, false);
 		return false;
 	}
 
 	if (bIsAtOldest)
 	{
-		return SetSingleFrame(SnapShotHistory.Last());
+		const bool bResult = SetSingleFrame(SnapShotHistory.Last());
+		SetSnapshotLookupDiagnostics(bResult, false);
+		return bResult;
 	}
 
 	if (NewestTime <= TargetServerTime || bIsAtNewest)
 	{
-		return SetSingleFrame(SnapShotHistory.First());
+		const bool bResult = SetSingleFrame(SnapShotHistory.First());
+		SetSnapshotLookupDiagnostics(bResult, false);
+		return bResult;
 	}
 
 	const int32 Count = SnapShotHistory.Num();
@@ -1887,7 +1934,9 @@ bool ULyraSnapShotComponent_AnimNode::TryGetSnapShotRangeAtTime(double TargetSer
 
 	if (YoungerIdx + 1 >= Count)
 	{
-		return SetSingleFrame(SnapShotHistory.Last());
+		const bool bResult = SetSingleFrame(SnapShotHistory.Last());
+		SetSnapshotLookupDiagnostics(bResult, false);
+		return bResult;
 	}
 
 	const FAnimSSRFrameSnapshot& YoungerFrame = SnapShotHistory[YoungerIdx];
@@ -1895,24 +1944,32 @@ bool ULyraSnapShotComponent_AnimNode::TryGetSnapShotRangeAtTime(double TargetSer
 	const double DeltaTime = YoungerFrame.ServerTime - OlderFrame.ServerTime;
 	if (FMath::IsNearlyZero(DeltaTime))
 	{
-		return SetSingleFrame(YoungerFrame);
+		const bool bResult = SetSingleFrame(YoungerFrame);
+		SetSnapshotLookupDiagnostics(bResult, false);
+		return bResult;
 	}
 
 	const double Alpha = FMath::Clamp((TargetServerTime - OlderFrame.ServerTime) / DeltaTime, 0.0, 1.0);
 	if (Alpha <= KINDA_SMALL_NUMBER)
 	{
-		return SetSingleFrame(OlderFrame);
+		const bool bResult = SetSingleFrame(OlderFrame);
+		SetSnapshotLookupDiagnostics(bResult, false);
+		return bResult;
 	}
 	if ((1.0 - Alpha) <= KINDA_SMALL_NUMBER)
 	{
-		return SetSingleFrame(YoungerFrame);
+		const bool bResult = SetSingleFrame(YoungerFrame);
+		SetSnapshotLookupDiagnostics(bResult, false);
+		return bResult;
 	}
 
 	OutRange.OlderFrame = &OlderFrame;
 	OutRange.YoungerFrame = &YoungerFrame;
 	OutRange.Alpha = static_cast<float>(Alpha);
 	OutRange.bSingleFrame = false;
-	return !OlderFrame.NodeSnapshots.IsEmpty() && !YoungerFrame.NodeSnapshots.IsEmpty();
+	const bool bResult = !OlderFrame.IsEmpty() && !YoungerFrame.IsEmpty();
+	SetSnapshotLookupDiagnostics(bResult, true);
+	return bResult;
 }
 
 bool ULyraSnapShotComponent_AnimNode::EvaluateSnapShotPose(const FAnimSSRFrameSnapshot& Snapshot, FAnimSSRRewindPose& OutPose)
@@ -1934,6 +1991,10 @@ bool ULyraSnapShotComponent_AnimNode::EvaluatePoseRewindSeconds(float RewindSeco
 bool ULyraSnapShotComponent_AnimNode::EvaluatePoseAtServerTime(double TargetServerTime, FAnimSSRRewindPose& OutPose)
 {
 	OutPose = FAnimSSRRewindPose();
+	ON_SCOPE_EXIT
+	{
+		SetPoseReconstructionSucceeded(!OutPose.ComponentSpaceTransforms.IsEmpty());
+	};
 
 	AActor* Owner = GetOwner();
 	if (!IsValid(Owner) || !Owner->HasAuthority())
@@ -1946,6 +2007,7 @@ bool ULyraSnapShotComponent_AnimNode::EvaluatePoseAtServerTime(double TargetServ
 	{
 		return false;
 	}
+	TRACE_CPUPROFILER_EVENT_SCOPE(LyraProfile_Rewind_PoseReconstruction);
 
 	if (Range.bSingleFrame)
 	{
@@ -1969,6 +2031,7 @@ bool ULyraSnapShotComponent_AnimNode::EvaluatePoseAtServerTime(double TargetServ
 	{
 		return true;
 	}
+	SetPoseReconstructionSucceeded(false);
 
 	const double YoungerDistance = FMath::Abs(Range.YoungerFrame->ServerTime - TargetServerTime);
 	const double OlderDistance = FMath::Abs(TargetServerTime - Range.OlderFrame->ServerTime);
@@ -2002,9 +2065,14 @@ bool ULyraSnapShotComponent_AnimNode::EvaluatePoseAtServerTime(double TargetServ
 
 void ULyraSnapShotComponent_AnimNode::UpdateSnapShotHistory()
 {
+	if (const UWorld* World = GetWorld())
+	{
+		PruneSnapshotHistory(World->GetTimeSeconds());
+	}
+
 	FAnimSSRFrameSnapshot ThisFrame;
 	CaptureCurrentSnapShot(GetOwner(), ThisFrame);
-	if (ThisFrame.NodeSnapshots.IsEmpty())
+	if (ThisFrame.IsEmpty())
 	{
 		return;
 	}
@@ -2023,14 +2091,22 @@ void ULyraSnapShotComponent_AnimNode::SaveSnapShotData(FAnimSSRFrameSnapshot Sna
 		DrawSavedSnapshotPose(SnapShotHistory.First());
 	}
 
-	if (SnapShotHistory.Num() >= 2)
+	PruneSnapshotHistory(SnapShotHistory.First().ServerTime);
+	RefreshRetainedMontageAssets();
+}
+
+void ULyraSnapShotComponent_AnimNode::PruneSnapshotHistory(double CurrentServerTime)
+{
+	bool bRemovedFrame = false;
+	while (!SnapShotHistory.IsEmpty() && CurrentServerTime - SnapShotHistory.Last().ServerTime > MaxRecordTime)
 	{
-		double HistoryLength = SnapShotHistory.First().ServerTime - SnapShotHistory.Last().ServerTime;
-		while (HistoryLength > MaxRecordTime && SnapShotHistory.Num() >= 2)
-		{
-			SnapShotHistory.PopLast();
-			HistoryLength = SnapShotHistory.First().ServerTime - SnapShotHistory.Last().ServerTime;
-		}
+		SnapShotHistory.PopLast();
+		bRemovedFrame = true;
+	}
+
+	if (bRemovedFrame)
+	{
+		RefreshRetainedMontageAssets();
 	}
 }
 
@@ -2086,9 +2162,14 @@ bool ULyraSnapShotComponent_AnimNode::BuildFrameSnapshot(FAnimSSRFrameSnapshot& 
 
 	// TickComponent 이후에도 Update-only 작업이 병렬로 남을 수 있으므로 snapshot 전에 동기화한다.
 	Mesh->HandleExistingParallelEvaluationTask(/*bBlockOnTask=*/true, /*bPerformPostAnimEvaluation=*/true);
-	if (AnimInstance->NeedsUpdate())
+	TArray<FAnimSSRAnimInstanceIdentity> CurrentAnimInstanceIdentities;
+	BuildAnimInstanceIdentities(Mesh, CurrentAnimInstanceIdentities);
+	for (const FAnimSSRAnimInstanceIdentity& Identity : CurrentAnimInstanceIdentities)
 	{
-		return false;
+		if (!Identity.Instance.IsValid() || Identity.Instance->NeedsUpdate())
+		{
+			return false;
+		}
 	}
 
 	OutSnapshot = FAnimSSRFrameSnapshot();
@@ -2106,18 +2187,268 @@ bool ULyraSnapShotComponent_AnimNode::BuildFrameSnapshot(FAnimSSRFrameSnapshot& 
 		OutSnapshot.ControlRotation = Owner->GetActorRotation();
 	}
 
-	if (!CaptureNodeSnapshotSet(AnimInstance, OutSnapshot.NodeSnapshots))
+	if (!CaptureAnimInstanceSnapshotSet(Mesh, OutSnapshot.AnimInstanceSnapshots))
 	{
 		return false;
 	}
 
-	if (OutSnapshot.NodeSnapshots.IsEmpty())
+	if (OutSnapshot.IsEmpty())
 	{
-		UE_LOG(LogLyraServerSideRewind, Warning, TEXT("[%s] SSR snapshot으로 저장할 수 있는 지원 애니메이션 노드를 찾지 못했습니다."), *GetNameSafe(Owner));
+		UE_LOG(LogLyraAnimNodeServerSideRewind, Warning, TEXT("[%s] SSR snapshot으로 저장할 수 있는 지원 애니메이션/Slot/Montage 상태를 찾지 못했습니다."), *GetNameSafe(Owner));
 		return false;
 	}
 
 	return true;
+}
+
+void ULyraSnapShotComponent_AnimNode::BuildAnimInstanceIdentities(
+	USkeletalMeshComponent* Mesh,
+	TArray<FAnimSSRAnimInstanceIdentity>& OutIdentities) const
+{
+	OutIdentities.Reset();
+	if (!IsValid(Mesh))
+	{
+		return;
+	}
+
+	TSet<UAnimInstance*> AddedInstances;
+	auto AddIdentity = [&OutIdentities, &AddedInstances](UAnimInstance* Instance, EAnimSSRAnimInstanceRole Role, int32 LinkedInstanceIndex)
+	{
+		if (!IsValid(Instance) || AddedInstances.Contains(Instance))
+		{
+			return;
+		}
+
+		FAnimSSRAnimInstanceIdentity& Identity = OutIdentities.AddDefaulted_GetRef();
+		Identity.Role = Role;
+		Identity.LinkedInstanceIndex = LinkedInstanceIndex;
+		Identity.Instance = Instance;
+		Identity.AnimClass = Instance->GetClass();
+		AddedInstances.Add(Instance);
+	};
+
+	AddIdentity(Mesh->GetAnimInstance(), EAnimSSRAnimInstanceRole::Main, INDEX_NONE);
+
+	const USkeletalMeshComponent* ConstMesh = Mesh;
+	const TArray<UAnimInstance*>& LinkedInstances = ConstMesh->GetLinkedAnimInstances();
+	for (int32 LinkedInstanceIndex = 0; LinkedInstanceIndex < LinkedInstances.Num(); ++LinkedInstanceIndex)
+	{
+		AddIdentity(LinkedInstances[LinkedInstanceIndex], EAnimSSRAnimInstanceRole::Linked, LinkedInstanceIndex);
+	}
+
+	if (Mesh->ShouldEvaluatePostProcessInstance())
+	{
+		AddIdentity(Mesh->GetPostProcessInstance(), EAnimSSRAnimInstanceRole::PostProcess, INDEX_NONE);
+	}
+}
+
+bool ULyraSnapShotComponent_AnimNode::CaptureAnimInstanceSnapshotSet(
+	USkeletalMeshComponent* Mesh,
+	TArray<FAnimSSRAnimInstanceSnapshot>& OutSnapshots) const
+{
+	OutSnapshots.Reset();
+
+	TArray<FAnimSSRAnimInstanceIdentity> Identities;
+	BuildAnimInstanceIdentities(Mesh, Identities);
+	if (Identities.IsEmpty())
+	{
+		return false;
+	}
+
+	OutSnapshots.Reserve(Identities.Num());
+	for (int32 SnapshotIndex = 0; SnapshotIndex < Identities.Num(); ++SnapshotIndex)
+	{
+		const FAnimSSRAnimInstanceIdentity& Identity = Identities[SnapshotIndex];
+		UAnimInstance* Instance = Identity.Instance.Get();
+		if (!IsValid(Instance))
+		{
+			return false;
+		}
+
+		FAnimSSRAnimInstanceSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
+		Snapshot.Identity = Identity;
+		if (!CaptureNodeSnapshotSet(Instance, Snapshot.NodeSnapshots) ||
+			!CaptureSlotSnapshots(Instance, Snapshot.Slots))
+		{
+			return false;
+		}
+
+		Snapshot.bUsesMainInstanceMontageEvaluationData =
+			Identity.Role != EAnimSSRAnimInstanceRole::Main && Instance->IsUsingMainInstanceMontageEvaluationData();
+		Snapshot.MontageEvaluationDataOwnerSnapshotIndex =
+			Snapshot.bUsesMainInstanceMontageEvaluationData ? 0 : SnapshotIndex;
+		Snapshot.bHasOwnedMontageEvaluationData = !Snapshot.bUsesMainInstanceMontageEvaluationData;
+		if (Snapshot.bHasOwnedMontageEvaluationData)
+		{
+			Instance->CaptureMontageEvaluationDataSnapshot(Snapshot.MontageEvaluationData);
+		}
+	}
+
+	return true;
+}
+
+bool ULyraSnapShotComponent_AnimNode::ValidateAnimInstanceSnapshotSet(
+	USkeletalMeshComponent* Mesh,
+	const TArray<FAnimSSRAnimInstanceSnapshot>& Snapshots) const
+{
+	TArray<FAnimSSRAnimInstanceIdentity> CurrentIdentities;
+	BuildAnimInstanceIdentities(Mesh, CurrentIdentities);
+	if (CurrentIdentities.Num() != Snapshots.Num())
+	{
+		INC_DWORD_STAT(STAT_LyraSSR_TopologyMismatches);
+		SetTopologyMatched(false);
+		UE_LOG(LogLyraAnimNodeServerSideRewind, Warning,
+			TEXT("[%s] SSR AnimInstance topology mismatch: current=%d snapshot=%d."),
+			*GetNameSafe(GetOwner()), CurrentIdentities.Num(), Snapshots.Num());
+		return false;
+	}
+
+	for (int32 SnapshotIndex = 0; SnapshotIndex < Snapshots.Num(); ++SnapshotIndex)
+	{
+		const FAnimSSRAnimInstanceSnapshot& Snapshot = Snapshots[SnapshotIndex];
+		const FAnimSSRAnimInstanceIdentity& CurrentIdentity = CurrentIdentities[SnapshotIndex];
+		UAnimInstance* Instance = CurrentIdentity.Instance.Get();
+		if (!IsValid(Instance) ||
+			Snapshot.Identity.Role != CurrentIdentity.Role ||
+			Snapshot.Identity.LinkedInstanceIndex != CurrentIdentity.LinkedInstanceIndex ||
+			Snapshot.Identity.Instance.Get() != Instance ||
+			Snapshot.Identity.AnimClass.Get() != Instance->GetClass())
+		{
+			INC_DWORD_STAT(STAT_LyraSSR_TopologyMismatches);
+			SetTopologyMatched(false);
+			UE_LOG(LogLyraAnimNodeServerSideRewind, Warning,
+				TEXT("[%s] SSR AnimInstance identity mismatch at index %d (role=%d linkedIndex=%d class=%s)."),
+				*GetNameSafe(GetOwner()), SnapshotIndex, static_cast<int32>(Snapshot.Identity.Role),
+				Snapshot.Identity.LinkedInstanceIndex, *GetNameSafe(Snapshot.Identity.AnimClass.Get()));
+			return false;
+		}
+
+		const bool bCurrentlyUsesMainMontageData =
+			CurrentIdentity.Role != EAnimSSRAnimInstanceRole::Main && Instance->IsUsingMainInstanceMontageEvaluationData();
+		const int32 ExpectedMontageDataOwnerIndex = bCurrentlyUsesMainMontageData ? 0 : SnapshotIndex;
+		if (bCurrentlyUsesMainMontageData != Snapshot.bUsesMainInstanceMontageEvaluationData ||
+			Snapshot.MontageEvaluationDataOwnerSnapshotIndex != ExpectedMontageDataOwnerIndex ||
+			Snapshot.bHasOwnedMontageEvaluationData == Snapshot.bUsesMainInstanceMontageEvaluationData)
+		{
+			INC_DWORD_STAT(STAT_LyraSSR_TopologyMismatches);
+			SetTopologyMatched(false);
+			UE_LOG(LogLyraAnimNodeServerSideRewind, Warning,
+				TEXT("[%s] SSR montage-data ownership mismatch for AnimInstance %s."),
+				*GetNameSafe(GetOwner()), *GetNameSafe(Instance));
+			return false;
+		}
+
+		if (!ValidateNodeSnapshotSet(Instance, Snapshot.NodeSnapshots) ||
+			!ValidateSlotSnapshots(Instance, Snapshot.Slots))
+		{
+			const FString OwnerName = GetNameSafe(GetOwner());
+			UE_LOG(LogLyraAnimNodeServerSideRewind, Warning,
+				TEXT("[%s] SSR AnimInstance node/Slot snapshot mismatch: instance=%s class=%s."),
+				*OwnerName, *GetNameSafe(Instance), *GetNameSafe(Instance->GetClass()));
+			LogNodeSnapshotSetValidationDetails(OwnerName, Instance, Snapshot.NodeSnapshots);
+			return false;
+		}
+
+		if (Snapshot.bHasOwnedMontageEvaluationData)
+		{
+			for (const FMontageEvaluationState& MontageState : Snapshot.MontageEvaluationData.MontageEvaluationData)
+			{
+				if (!MontageState.Montage.IsValid() ||
+					(MontageState.ActiveBlendProfile && !IsValid(MontageState.ActiveBlendProfile)))
+				{
+					INC_DWORD_STAT(STAT_LyraSSR_ExpiredMontageAssets);
+					UE_LOG(LogLyraAnimNodeServerSideRewind, Warning,
+						TEXT("[%s] SSR montage asset or blend profile expired: instance=%s snapshotIndex=%d."),
+						*GetNameSafe(GetOwner()), *GetNameSafe(Instance), SnapshotIndex);
+					return false;
+				}
+			}
+		}
+	}
+
+	return true;
+}
+
+bool ULyraSnapShotComponent_AnimNode::RestoreAnimInstanceSnapshotSet(
+	const TArray<FAnimSSRAnimInstanceSnapshot>& Snapshots) const
+{
+	// Main proxy를 먼저 복원한다. montage data 공유 linked instance는 별도 proxy 쓰기 없이 이를 읽는다.
+	for (const FAnimSSRAnimInstanceSnapshot& Snapshot : Snapshots)
+	{
+		UAnimInstance* Instance = Snapshot.Identity.Instance.Get();
+		if (!IsValid(Instance))
+		{
+			return false;
+		}
+
+		if (Snapshot.bHasOwnedMontageEvaluationData)
+		{
+			Instance->RestoreMontageEvaluationDataSnapshot(Snapshot.MontageEvaluationData);
+		}
+	}
+
+	for (const FAnimSSRAnimInstanceSnapshot& Snapshot : Snapshots)
+	{
+		UAnimInstance* Instance = Snapshot.Identity.Instance.Get();
+		if (!IsValid(Instance) ||
+			!RestoreNodeSnapshotSet(Instance, Snapshot.NodeSnapshots) ||
+			!RestoreSlotSnapshots(Instance, Snapshot.Slots))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void ULyraSnapShotComponent_AnimNode::RefreshRetainedMontageAssets()
+{
+	RetainedMontageAssets.Reset();
+	uint32 AnimInstanceSnapshotCount = 0;
+	uint32 SlotSnapshotCount = 0;
+	uint32 MontageStateCount = 0;
+	SIZE_T HistorySnapshotMemory = SnapShotHistory.Num() * sizeof(FAnimSSRFrameSnapshot);
+
+	for (const FAnimSSRFrameSnapshot& Frame : SnapShotHistory)
+	{
+		AnimInstanceSnapshotCount += Frame.AnimInstanceSnapshots.Num();
+		HistorySnapshotMemory += Frame.AnimInstanceSnapshots.GetAllocatedSize();
+		for (const FAnimSSRAnimInstanceSnapshot& AnimInstanceSnapshot : Frame.AnimInstanceSnapshots)
+		{
+			SlotSnapshotCount += AnimInstanceSnapshot.Slots.Num();
+			MontageStateCount += AnimInstanceSnapshot.MontageEvaluationData.MontageEvaluationData.Num();
+			HistorySnapshotMemory += AnimInstanceSnapshot.Slots.GetAllocatedSize();
+			HistorySnapshotMemory += AnimInstanceSnapshot.MontageEvaluationData.MontageEvaluationData.GetAllocatedSize();
+			HistorySnapshotMemory += AnimInstanceSnapshot.NodeSnapshots.SequencePlayers.GetAllocatedSize();
+			HistorySnapshotMemory += AnimInstanceSnapshot.NodeSnapshots.BlendSpacePlayers.GetAllocatedSize();
+			HistorySnapshotMemory += AnimInstanceSnapshot.NodeSnapshots.RotationOffsetBlendSpaces.GetAllocatedSize();
+			HistorySnapshotMemory += AnimInstanceSnapshot.NodeSnapshots.BlendListByBools.GetAllocatedSize();
+			HistorySnapshotMemory += AnimInstanceSnapshot.NodeSnapshots.StateMachines.GetAllocatedSize();
+			HistorySnapshotMemory += AnimInstanceSnapshot.NodeSnapshots.LayeredBoneBlends.GetAllocatedSize();
+			HistorySnapshotMemory += AnimInstanceSnapshot.NodeSnapshots.CopyBones.GetAllocatedSize();
+			HistorySnapshotMemory += AnimInstanceSnapshot.NodeSnapshots.TransformBones.GetAllocatedSize();
+			HistorySnapshotMemory += AnimInstanceSnapshot.NodeSnapshots.TwoBoneIKs.GetAllocatedSize();
+			for (const FMontageEvaluationState& MontageState : AnimInstanceSnapshot.MontageEvaluationData.MontageEvaluationData)
+			{
+				if (UAnimMontage* Montage = MontageState.Montage.Get())
+				{
+					RetainedMontageAssets.AddUnique(Montage);
+				}
+			}
+		}
+	}
+
+	SET_DWORD_STAT(STAT_LyraSSR_HistoryAnimInstanceSnapshots, AnimInstanceSnapshotCount);
+	SET_DWORD_STAT(STAT_LyraSSR_HistorySlotSnapshots, SlotSnapshotCount);
+	SET_DWORD_STAT(STAT_LyraSSR_HistoryMontageStates, MontageStateCount);
+	SET_DWORD_STAT(STAT_LyraSSR_RetainedMontageAssets, RetainedMontageAssets.Num());
+	SET_MEMORY_STAT(STAT_LyraSSR_HistorySnapshotMemory, HistorySnapshotMemory + RetainedMontageAssets.GetAllocatedSize());
+
+	UE_LOG(LogLyraAnimNodeServerSideRewind, VeryVerbose,
+		TEXT("[%s] SSR history: frames=%d animInstances=%u slots=%u montageStates=%u retainedMontages=%d snapshotBytes=%llu"),
+		*GetNameSafe(GetOwner()), SnapShotHistory.Num(), AnimInstanceSnapshotCount, SlotSnapshotCount,
+		MontageStateCount, RetainedMontageAssets.Num(),
+		static_cast<uint64>(HistorySnapshotMemory + RetainedMontageAssets.GetAllocatedSize()));
 }
 
 bool ULyraSnapShotComponent_AnimNode::CaptureNodeSnapshotSet(UAnimInstance* AnimInstance, FAnimSSRNodeSnapshotSet& OutSnapshots) const
@@ -2405,6 +2736,96 @@ bool ULyraSnapShotComponent_AnimNode::CaptureTwoBoneIKSnapshots(UAnimInstance* A
 			Snapshot.NodeConfigurationHash = HashTwoBoneIKConfiguration(TwoBoneIK);
 			TwoBoneIK.CaptureTwoBoneIKState(Snapshot.TwoBoneIKState);
 		});
+}
+
+bool ULyraSnapShotComponent_AnimNode::CaptureSlotSnapshots(
+	UAnimInstance* AnimInstance,
+	TArray<FAnimSSRSlotSnapshot>& OutSnapshots) const
+{
+	OutSnapshots.Reset();
+
+	return ForEachSSRAnimNode<FAnimNode_Slot>(
+		AnimInstance,
+		IsSlotNodeProperty,
+		[&OutSnapshots](int32 NodeIndex, const FStructProperty* NodeProperty, const FAnimNode_Slot& Slot)
+		{
+			FAnimSSRSlotSnapshot& Snapshot = OutSnapshots.AddDefaulted_GetRef();
+			CaptureSnapshotNodeIdentity(NodeIndex, NodeProperty, Snapshot.Identity);
+			Snapshot.SlotName = Slot.SlotName;
+			Snapshot.bAlwaysUpdateSourcePose = Slot.bAlwaysUpdateSourcePose;
+			Slot.CaptureSlotState(Snapshot.SlotState);
+		});
+}
+
+bool ULyraSnapShotComponent_AnimNode::ValidateSlotSnapshots(
+	UAnimInstance* AnimInstance,
+	const TArray<FAnimSSRSlotSnapshot>& Snapshots) const
+{
+	const TArray<FStructProperty*>* NodeProperties = GetSSRAnimNodeProperties(AnimInstance);
+	if (!NodeProperties || CountMatchingAnimNodeProperties(*NodeProperties, IsSlotNodeProperty) != Snapshots.Num())
+	{
+		return false;
+	}
+
+	for (const FAnimSSRSlotSnapshot& Snapshot : Snapshots)
+	{
+		if (!NodeProperties->IsValidIndex(Snapshot.Identity.NodeIndex))
+		{
+			return false;
+		}
+
+		const FStructProperty* NodeProperty = (*NodeProperties)[Snapshot.Identity.NodeIndex];
+		if (!IsSlotNodeProperty(NodeProperty) ||
+			NodeProperty->GetFName() != Snapshot.Identity.NodePropertyName ||
+			NodeProperty->Struct->GetFName() != Snapshot.Identity.NodeStructName)
+		{
+			return false;
+		}
+
+		const void* NodeMemory = NodeProperty->ContainerPtrToValuePtr<void>(AnimInstance);
+		const FAnimNode_Slot* Slot = static_cast<const FAnimNode_Slot*>(NodeMemory);
+		if (!Slot || Slot->SlotName != Snapshot.SlotName || Slot->bAlwaysUpdateSourcePose != Snapshot.bAlwaysUpdateSourcePose)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool ULyraSnapShotComponent_AnimNode::RestoreSlotSnapshots(
+	UAnimInstance* AnimInstance,
+	const TArray<FAnimSSRSlotSnapshot>& Snapshots) const
+{
+	const TArray<FStructProperty*>* NodeProperties = GetSSRAnimNodeProperties(AnimInstance);
+	if (!NodeProperties)
+	{
+		return false;
+	}
+
+	for (const FAnimSSRSlotSnapshot& Snapshot : Snapshots)
+	{
+		if (!NodeProperties->IsValidIndex(Snapshot.Identity.NodeIndex))
+		{
+			return false;
+		}
+
+		const FStructProperty* NodeProperty = (*NodeProperties)[Snapshot.Identity.NodeIndex];
+		if (!IsSlotNodeProperty(NodeProperty))
+		{
+			return false;
+		}
+
+		void* NodeMemory = NodeProperty->ContainerPtrToValuePtr<void>(AnimInstance);
+		FAnimNode_Slot* Slot = static_cast<FAnimNode_Slot*>(NodeMemory);
+		if (!Slot)
+		{
+			return false;
+		}
+		Slot->RestoreSlotState(Snapshot.SlotState);
+	}
+
+	return true;
 }
 
 bool ULyraSnapShotComponent_AnimNode::ValidateSequencePlayerSnapshots(UAnimInstance* AnimInstance, const TArray<FAnimSSRSequencePlayerSnapshot>& Snapshots) const
@@ -3193,40 +3614,32 @@ bool ULyraSnapShotComponent_AnimNode::EvaluateFrameSnapshotPose(const FAnimSSRFr
 
 	// SSR은 병렬 Update가 끝난 이후의 node 상태를 기준으로 저장/복원해야 한다.
 	Mesh->HandleExistingParallelEvaluationTask(/*bBlockOnTask=*/true, /*bPerformPostAnimEvaluation=*/true);
-	if (AnimInstance->NeedsUpdate())
+	TArray<FAnimSSRAnimInstanceIdentity> CurrentAnimInstanceIdentities;
+	BuildAnimInstanceIdentities(Mesh, CurrentAnimInstanceIdentities);
+	for (const FAnimSSRAnimInstanceIdentity& Identity : CurrentAnimInstanceIdentities)
 	{
-		UE_LOG(LogLyraServerSideRewind, Warning, TEXT("[%s] AnimInstance 업데이트가 아직 필요하여 SSR 평가를 건너뜁니다."),
-			*GetNameSafe(Owner));
+		if (!Identity.Instance.IsValid() || Identity.Instance->NeedsUpdate())
+		{
+			UE_LOG(LogLyraAnimNodeServerSideRewind, Warning,
+				TEXT("[%s] AnimInstance 업데이트가 아직 필요하여 SSR 평가를 건너뜁니다. Instance=%s Role=%d"),
+				*GetNameSafe(Owner), *GetNameSafe(Identity.Instance.Get()), static_cast<int32>(Identity.Role));
+			return false;
+		}
+	}
+
+	TArray<FAnimSSRAnimInstanceSnapshot> CurrentAnimInstanceSnapshots;
+	if (!CaptureAnimInstanceSnapshotSet(Mesh, CurrentAnimInstanceSnapshots))
+	{
 		return false;
 	}
 
-	FAnimSSRNodeSnapshotSet CurrentNodeSnapshots;
-	if (!CaptureNodeSnapshotSet(AnimInstance, CurrentNodeSnapshots))
-	{
-		return false;
-	}
-
-	// 과거 snapshot이 현재 AnimBP의 지원 node 집합과 같은지 먼저 확인한다.
+	// 과거 snapshot이 현재 main/linked/post-process topology 및 지원 node/Slot 집합과 같은지 먼저 확인한다.
 	// 일부만 복원하면 partial state가 남아 이후 서버 animation tick까지 오염될 수 있다.
-	if (!ValidateNodeSnapshotSet(AnimInstance, Snapshot.NodeSnapshots))
+	if (!ValidateAnimInstanceSnapshotSet(Mesh, Snapshot.AnimInstanceSnapshots))
 	{
-		const FString OwnerName = GetNameSafe(Owner);
-		UE_LOG(LogLyraServerSideRewind, Warning,
-			TEXT("[%s] SSR snapshot이 현재 지원 애니메이션 그래프와 일치하지 않습니다. AnimClass=%s SnapshotTime=%.3f SnapshotCounts={Sequence=%d BlendSpace=%d RotationOffsetBlendSpace=%d BlendListByBool=%d StateMachine=%d LayeredBoneBlend=%d CopyBone=%d TransformBone=%d TwoBoneIK=%d}. 자세한 내용은 LogLyraServerSideRewindDebug Verbose를 확인하세요."),
-			*OwnerName,
-			*GetNameSafe(AnimInstance->GetClass()),
-			Snapshot.ServerTime,
-			Snapshot.NodeSnapshots.SequencePlayers.Num(),
-			Snapshot.NodeSnapshots.BlendSpacePlayers.Num(),
-			Snapshot.NodeSnapshots.RotationOffsetBlendSpaces.Num(),
-			Snapshot.NodeSnapshots.BlendListByBools.Num(),
-			Snapshot.NodeSnapshots.StateMachines.Num(),
-			Snapshot.NodeSnapshots.LayeredBoneBlends.Num(),
-			Snapshot.NodeSnapshots.CopyBones.Num(),
-			Snapshot.NodeSnapshots.TransformBones.Num(),
-			Snapshot.NodeSnapshots.TwoBoneIKs.Num());
-
-		LogNodeSnapshotSetValidationDetails(OwnerName, AnimInstance, Snapshot.NodeSnapshots);
+		UE_LOG(LogLyraAnimNodeServerSideRewind, Warning,
+			TEXT("[%s] SSR snapshot validation failed. SnapshotTime=%.3f AnimInstances=%d."),
+			*GetNameSafe(Owner), Snapshot.ServerTime, Snapshot.AnimInstanceSnapshots.Num());
 		return false;
 	}
 
@@ -3235,10 +3648,15 @@ bool ULyraSnapShotComponent_AnimNode::EvaluateFrameSnapshotPose(const FAnimSSRFr
 	{
 		if (bShouldRestoreCurrentState)
 		{
-			// 과거 pose 평가가 AnimInstance 내부 상태를 임시로 바꾸므로 현재 상태 복구가 필요하다.
-			const bool bRestoredNodeState = RestoreNodeSnapshotSet(AnimInstance, CurrentNodeSnapshots);
-			ensureMsgf(bRestoredNodeState,
-				TEXT("Failed to restore current supported animation node state after SSR evaluation."));
+			// 과거 pose 평가는 proxy와 모든 graph instance의 상태를 임시로 바꾸므로 반환 경로와 무관하게 복구한다.
+			const bool bRestoredCurrentState = RestoreAnimInstanceSnapshotSet(CurrentAnimInstanceSnapshots);
+			if (!bRestoredCurrentState)
+			{
+				INC_DWORD_STAT(STAT_LyraSSR_RestoreFailures);
+				SetStateRestoreSucceeded(false);
+			}
+			ensureMsgf(bRestoredCurrentState,
+				TEXT("Failed to restore current animation node/Slot/montage proxy state after SSR evaluation."));
 		}
 	};
 
@@ -3249,8 +3667,13 @@ bool ULyraSnapShotComponent_AnimNode::EvaluateFrameSnapshotPose(const FAnimSSRFr
 	}
 
 	bShouldRestoreCurrentState = true;
-	if (!RestoreNodeSnapshotSet(AnimInstance, EvaluationSnapshot.NodeSnapshots))
+	if (!RestoreAnimInstanceSnapshotSet(EvaluationSnapshot.AnimInstanceSnapshots))
 	{
+		INC_DWORD_STAT(STAT_LyraSSR_RestoreFailures);
+		SetStateRestoreSucceeded(false);
+		UE_LOG(LogLyraAnimNodeServerSideRewind, Warning,
+			TEXT("[%s] Failed to restore historical AnimInstance/Slot/montage state for SSR evaluation."),
+			*GetNameSafe(Owner));
 		return false;
 	}
 

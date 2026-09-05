@@ -1,9 +1,18 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "LagCompensation/Test/LyraLagCompensationTestCharacter.h"
+#include "LagCompensation/Test/LyraGameplayAbility_LagCompensationTest.h"
 #include "LagCompensation/Test/LyraPatrolPath.h"
+#include "AbilitySystem/LyraAbilitySystemComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/GameStateBase.h"
+#include "GameModes/LyraExperienceManagerComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "TimerManager.h"
+
+#include UE_INLINE_GENERATED_CPP_BY_NAME(LyraLagCompensationTestCharacter)
+
+DEFINE_LOG_CATEGORY_STATIC(LogLyraLagCompensationTestCharacter, Log, All);
 
 ALyraLagCompensationTestCharacter::ALyraLagCompensationTestCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -11,6 +20,7 @@ ALyraLagCompensationTestCharacter::ALyraLagCompensationTestCharacter(const FObje
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 	SetReplicateMovement(true);
+	PeriodicTestAbilityClass = ULyraGameplayAbility_LagCompensationTest::StaticClass();
 
 	// AI 컨트롤러 자동 생성 및 빙의 설정
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
@@ -41,14 +51,134 @@ void ALyraLagCompensationTestCharacter::BeginPlay()
 		{
 			MoveComp->SetMovementMode(MOVE_Walking);
 		}
+
+		AGameStateBase* GameState = GetWorld() ? GetWorld()->GetGameState() : nullptr;
+		ULyraExperienceManagerComponent* ExperienceComponent =
+			GameState ? GameState->FindComponentByClass<ULyraExperienceManagerComponent>() : nullptr;
+		if (ExperienceComponent)
+		{
+			ExperienceComponent->CallOrRegister_OnExperienceLoaded(
+				FOnLyraExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
+		}
+		else
+		{
+			bExperienceReadyForAbilityTest = true;
+			InitializePeriodicAbilityTest();
+		}
 	}
 }
 
-void ALyraLagCompensationTestCharacter::InitializeTestCharacter(ALyraPatrolPath* InPath, ELagCompensationTestMode InMode, float InSpeed)
+void ALyraLagCompensationTestCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(AbilityActivationTimerHandle);
+	}
+
+	if (HasAuthority() && PeriodicTestAbilityHandle.IsValid())
+	{
+		if (ULyraAbilitySystemComponent* AbilitySystem = GetLyraAbilitySystemComponent())
+		{
+			AbilitySystem->ClearAbility(PeriodicTestAbilityHandle);
+		}
+	}
+
+	Super::EndPlay(EndPlayReason);
+}
+
+void ALyraLagCompensationTestCharacter::OnExperienceLoaded(const ULyraExperienceDefinition* Experience)
+{
+	(void)Experience;
+	bExperienceReadyForAbilityTest = true;
+	InitializePeriodicAbilityTest();
+}
+
+void ALyraLagCompensationTestCharacter::InitializePeriodicAbilityTest()
+{
+	if (!HasAuthority()
+		|| !bExperienceReadyForAbilityTest
+		|| bAbilityTestInitialized
+		|| AbilityTestMode != ELagCompensationAbilityTestMode::ActivateAbility)
+	{
+		return;
+	}
+
+	bAbilityTestInitialized = true;
+
+	ULyraAbilitySystemComponent* AbilitySystem = GetLyraAbilitySystemComponent();
+	if (!AbilitySystem || !PeriodicTestAbilityClass || !PeriodicTestMontage)
+	{
+		UE_LOG(
+			LogLyraLagCompensationTestCharacter,
+			Warning,
+			TEXT("[%s] Periodic montage test disabled. ASC=%s AbilityClass=%s Montage=%s"),
+			*GetNameSafe(this),
+			*GetNameSafe(AbilitySystem),
+			*GetNameSafe(PeriodicTestAbilityClass.Get()),
+			*GetNameSafe(PeriodicTestMontage));
+		return;
+	}
+
+	FGameplayAbilitySpec AbilitySpec(PeriodicTestAbilityClass, 1, INDEX_NONE, this);
+	PeriodicTestAbilityHandle = AbilitySystem->GiveAbility(AbilitySpec);
+
+	if (bActivateAbilityImmediately)
+	{
+		ActivatePeriodicTestAbility();
+	}
+
+	const float SafeInterval = FMath::Max(AbilityActivationInterval, 0.05f);
+	GetWorldTimerManager().SetTimer(
+		AbilityActivationTimerHandle,
+		this,
+		&ThisClass::ActivatePeriodicTestAbility,
+		SafeInterval,
+		true);
+}
+
+void ALyraLagCompensationTestCharacter::ActivatePeriodicTestAbility()
+{
+	if (!HasAuthority()
+		|| AbilityTestMode != ELagCompensationAbilityTestMode::ActivateAbility
+		|| !PeriodicTestAbilityHandle.IsValid())
+	{
+		return;
+	}
+
+	if (ULyraAbilitySystemComponent* AbilitySystem = GetLyraAbilitySystemComponent())
+	{
+		if (AbilitySystem->TryActivateAbility(PeriodicTestAbilityHandle))
+		{
+			++PeriodicAbilityActivationCount;
+		}
+	}
+}
+
+void ALyraLagCompensationTestCharacter::RecordPeriodicTestMontageResult(bool bInterrupted)
+{
+	if (bInterrupted)
+	{
+		++PeriodicMontageInterruptedCount;
+	}
+	else
+	{
+		++PeriodicMontageCompletedCount;
+	}
+}
+
+void ALyraLagCompensationTestCharacter::InitializeTestCharacter(
+	ALyraPatrolPath* InPath,
+	ELagCompensationTestMode InMode,
+	ELagCompensationAbilityTestMode InAbilityTestMode,
+	float InSpeed)
 {
 	PatrolPath = InPath;
 	TestMode = InMode;
+	AbilityTestMode = InAbilityTestMode;
 	MovementSpeed = InSpeed;
+
+	// SpawnActor's BeginPlay can run before ALyraPatrolPath passes this configuration.
+	InitializePeriodicAbilityTest();
 
 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
 	{

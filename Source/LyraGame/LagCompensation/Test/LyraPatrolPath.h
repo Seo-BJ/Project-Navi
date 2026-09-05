@@ -18,6 +18,14 @@ enum class ELagCompensationTestMode : uint8
 	ToggleCrouchPerTrip	// 왕복할 때마다 앉기/서기 전환
 };
 
+/** Independently controls whether the periodic montage ability runs. */
+UENUM(BlueprintType)
+enum class ELagCompensationAbilityTestMode : uint8
+{
+	Idle UMETA(DisplayName = "Idle"),
+	ActivateAbility UMETA(DisplayName = "Activate Ability")
+};
+
 UCLASS()
 class LYRAGAME_API ALyraPatrolPath : public AActor
 {
@@ -46,6 +54,10 @@ protected:
 	// 이동 속도 설정
 	UPROPERTY(EditInstanceOnly, Category = "Spawn Settings")
 	float MovementSpeed = 300.f;
+
+	// TestMode와 독립적으로 주기적 어빌리티 실행 여부를 설정
+	UPROPERTY(EditInstanceOnly, Category = "Spawn Settings")
+	ELagCompensationAbilityTestMode AbilityTestMode = ELagCompensationAbilityTestMode::Idle;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> Point1;

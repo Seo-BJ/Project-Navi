@@ -51,7 +51,7 @@ FServerSideRewindResult ULyraServerSideRewindComponent::ServerSideRewind(
 
 FServerSideRewindResult ULyraServerSideRewindComponent::ServerSideRewind(const FLyraServerSideRewindRequest& Request)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(LyraSSR_Dispatch);
+	TRACE_CPUPROFILER_EVENT_SCOPE(LyraProfile_RewindTotal);
 	SCOPE_CYCLE_COUNTER(STAT_LyraSSR_Dispatch);
 
 	FServerSideRewindResult Result;
@@ -63,6 +63,7 @@ FServerSideRewindResult ULyraServerSideRewindComponent::ServerSideRewind(const F
 		SnapShotComponent = ResolveSnapShotComponent(TargetActor);
 		if (IsValid(SnapShotComponent))
 		{
+			SnapShotComponent->ResetRewindDiagnostics();
 			ResolvedMode = SnapShotComponent->GetSnapShotMode();
 			switch (ResolvedMode)
 			{
@@ -91,29 +92,25 @@ ULyraSnapShotComponent* ULyraServerSideRewindComponent::ResolveSnapShotComponent
 		return nullptr;
 	}
 
-	if (ULyraSnapShotComponent_BoxComponent* BoxComponent = TargetActor->FindComponentByClass<ULyraSnapShotComponent_BoxComponent>(); IsValid(BoxComponent))
-	{
-		return BoxComponent;
-	}
-	if (ULyraSnapShotComponent_AnimNode* AnimNodeComponent = TargetActor->FindComponentByClass<ULyraSnapShotComponent_AnimNode>(); IsValid(AnimNodeComponent))
-	{
-		return AnimNodeComponent;
-	}
-	if (ULyraSnapShotComponent_SkeletalMesh* SkeletalMeshComponent = TargetActor->FindComponentByClass<ULyraSnapShotComponent_SkeletalMesh>(); IsValid(SkeletalMeshComponent))
-	{
-		return SkeletalMeshComponent;
-	}
-	if (ULyraSnapShotComponent* SnapShotComponent = TargetActor->FindComponentByClass<ULyraSnapShotComponent>(); IsValid(SnapShotComponent))
-	{
-		if (!SnapShotComponent->IsValidLowLevel())
-		{
-			UE_LOG(LogLyraServerSideRewind, Warning, TEXT("[%s] Invalid low-level Snapshot component pointer."), *GetNameSafe(TargetActor));
-			return nullptr;
-		}
-		return SnapShotComponent;
-	}
+	TInlineComponentArray<ULyraSnapShotComponent*, 4> SnapShotComponents(TargetActor);
+	return SelectUniqueActiveLyraSnapShotComponent(SnapShotComponents);
+}
 
-	return nullptr;
+ULyraSnapShotComponent* SelectUniqueActiveLyraSnapShotComponent(TConstArrayView<ULyraSnapShotComponent*> Components)
+{
+	ULyraSnapShotComponent* ActiveComponent = nullptr;
+	for (ULyraSnapShotComponent* Candidate : Components)
+	{
+		if (IsValid(Candidate) && Candidate->IsSSRActive())
+		{
+			if (ActiveComponent != nullptr)
+			{
+				return nullptr;
+			}
+			ActiveComponent = Candidate;
+		}
+	}
+	return ActiveComponent;
 }
 
 FServerSideRewindResult ULyraServerSideRewindComponent::ServerSideRewindBoxComponent(ULyraSnapShotComponent_BoxComponent* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const
@@ -434,7 +431,7 @@ bool ULyraServerSideRewindComponent::PerformPhysicsAssetCollision(
 	FHitResult& OutHit
 	) const
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(LyraSSR_MeshPhysicsAssetCollision);
+	TRACE_CPUPROFILER_EVENT_SCOPE(LyraProfile_Rewind_PhysicsCollision);
 	SCOPE_CYCLE_COUNTER(STAT_LyraSSR_MeshPhysicsAssetCollision);
 
 	if (!IsValid(SkeletalMeshComp) || !IsValid(SkeletalMeshComp->GetSkeletalMeshAsset()))

@@ -5,7 +5,10 @@
 #include "Character/LyraCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "DrawDebugHelpers.h"
+#include "Engine/World.h"
 #include "LagCompensation/LyraLagCompensationSettings.h"
+#include "LagCompensation/LyraLagCompensationProfileSubsystem.h"
+#include "LagCompensation/Test/LyraLagCompensationTestCharacter.h"
 #include "PhysicsEngine/BoxElem.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/SkeletalBodySetup.h"
@@ -17,14 +20,57 @@ ULyraSnapShotComponent::ULyraSnapShotComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
+void ULyraSnapShotComponent::SetSSRActive(bool bInActive)
+{
+	bSSRActive = bInActive;
+	SetComponentTickEnabled(bInActive);
+	PrimaryComponentTick.bStartWithTickEnabled = bInActive;
+}
+
+void ULyraSnapShotComponent::SetSnapshotLookupDiagnostics(bool bSucceeded, bool bUsedInterpolation) const
+{
+	LastRewindDiagnostics.bSnapshotLookupSucceeded = bSucceeded;
+	LastRewindDiagnostics.bUsedInterpolation = bUsedInterpolation;
+}
+
+void ULyraSnapShotComponent::SetPoseReconstructionSucceeded(bool bSucceeded) const
+{
+	LastRewindDiagnostics.bPoseReconstructionSucceeded &= bSucceeded;
+}
+
+void ULyraSnapShotComponent::SetStateRestoreSucceeded(bool bSucceeded) const
+{
+	LastRewindDiagnostics.bStateRestoreSucceeded &= bSucceeded;
+}
+
+void ULyraSnapShotComponent::SetTopologyMatched(bool bMatched) const
+{
+	LastRewindDiagnostics.bTopologyMatched &= bMatched;
+}
+
 void ULyraSnapShotComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	AActor* OwnerActor = GetOwner();
-	if (IsValid(OwnerActor) && OwnerActor->HasAuthority())
+	if (bSSRActive && IsValid(OwnerActor) && OwnerActor->HasAuthority())
 	{
-		UpdateSnapShotHistory();
+		ULyraLagCompensationProfileSubsystem* Profiler = GetWorld()
+			? GetWorld()->GetSubsystem<ULyraLagCompensationProfileSubsystem>()
+			: nullptr;
+		const bool bProfileTarget = OwnerActor->IsA<ALyraLagCompensationTestCharacter>();
+		if (bProfileTarget && Profiler && Profiler->IsMeasurementActive())
+		{
+			{
+				TRACE_CPUPROFILER_EVENT_SCOPE(LyraProfile_SnapshotUpdateGT);
+				UpdateSnapShotHistory();
+			}
+			Profiler->RecordSnapshotExecution(GFrameCounter);
+		}
+		else
+		{
+			UpdateSnapShotHistory();
+		}
 	}
 }
 

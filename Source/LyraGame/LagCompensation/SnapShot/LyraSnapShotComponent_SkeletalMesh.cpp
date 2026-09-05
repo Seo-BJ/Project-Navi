@@ -22,6 +22,30 @@ ULyraSnapShotComponent_SkeletalMesh::ULyraSnapShotComponent_SkeletalMesh()
 	PrimaryComponentTick.TickGroup = TG_PostPhysics;
 }
 
+void ULyraSnapShotComponent_SkeletalMesh::BeginPlay()
+{
+	Super::BeginPlay();
+	if (IsSSRActive())
+	{
+		EnsureTickAfterMesh(GetSkeletalMesh(GetOwner()));
+	}
+}
+
+void ULyraSnapShotComponent_SkeletalMesh::EnsureTickAfterMesh(USkeletalMeshComponent* Mesh)
+{
+	if (!IsValid(Mesh) || CurrentPrerequisiteMesh.Get() == Mesh)
+	{
+		return;
+	}
+
+	if (USkeletalMeshComponent* PreviousMesh = CurrentPrerequisiteMesh.Get())
+	{
+		PrimaryComponentTick.RemovePrerequisite(PreviousMesh, PreviousMesh->PrimaryComponentTick);
+	}
+	PrimaryComponentTick.AddPrerequisite(Mesh, Mesh->PrimaryComponentTick);
+	CurrentPrerequisiteMesh = Mesh;
+}
+
 USkeletalMeshComponent* ULyraSnapShotComponent_SkeletalMesh::GetSkeletalMesh(AActor* InActor) const
 {
 	if (!IsValid(InActor))
@@ -96,43 +120,61 @@ void ULyraSnapShotComponent_SkeletalMesh::CaptureCurrentSnapShot(AActor* HitActo
 
 bool ULyraSnapShotComponent_SkeletalMesh::TryGetSnapShotAtTime(float HitTime, FLyraMeshSnapShotFrame& OutPackage) const
 {
-	SCOPE_CYCLE_COUNTER(STAT_LyraLagMeshSnapshot_HistorySearch);
-
 	OutPackage = FLyraMeshSnapShotFrame();
-	if (SnapShotHistory.Num() == 0)
-	{
-		return false;
-	}
-
-	const float OldestTime = SnapShotHistory.Last().Time;
-	const float NewestTime = SnapShotHistory.First().Time;
-
-	if (OldestTime > HitTime)
-	{
-		return false;
-	}
-	if (NewestTime <= HitTime)
-	{
-		OutPackage = SnapShotHistory.First();
-		return !OutPackage.BoneTransforms.IsEmpty();
-	}
-
-	const int32 Count = SnapShotHistory.Num();
+	int32 Count = 0;
 	int32 YoungerIdx = 0;
-	while (YoungerIdx + 1 < Count && SnapShotHistory[YoungerIdx + 1].Time > HitTime)
 	{
-		++YoungerIdx;
+		SCOPE_CYCLE_COUNTER(STAT_LyraLagMeshSnapshot_HistorySearch);
+		TRACE_CPUPROFILER_EVENT_SCOPE(LyraProfile_Rewind_SnapshotLookup);
+		if (SnapShotHistory.Num() == 0)
+		{
+			SetSnapshotLookupDiagnostics(false, false);
+			return false;
+		}
+
+		const float OldestTime = SnapShotHistory.Last().Time;
+		const float NewestTime = SnapShotHistory.First().Time;
+
+		if (OldestTime > HitTime)
+		{
+			SetSnapshotLookupDiagnostics(false, false);
+			return false;
+		}
+		if (NewestTime <= HitTime)
+		{
+			OutPackage = SnapShotHistory.First();
+			SetSnapshotLookupDiagnostics(!OutPackage.BoneTransforms.IsEmpty(), false);
+			return !OutPackage.BoneTransforms.IsEmpty();
+		}
+
+		Count = SnapShotHistory.Num();
+		while (YoungerIdx + 1 < Count && SnapShotHistory[YoungerIdx + 1].Time > HitTime)
+		{
+			++YoungerIdx;
+		}
 	}
 
-	OutPackage = (YoungerIdx + 1 < Count)
+	const bool bHasInterpolationRange = YoungerIdx + 1 < Count;
+	const bool bMatchingTopology = bHasInterpolationRange
+		&& SnapShotHistory[YoungerIdx + 1].BoneTransforms.Num() == SnapShotHistory[YoungerIdx].BoneTransforms.Num();
+	const bool bDistinctTimes = bHasInterpolationRange
+		&& !FMath::IsNearlyZero(SnapShotHistory[YoungerIdx].Time - SnapShotHistory[YoungerIdx + 1].Time);
+	const bool bUsedInterpolation = bMatchingTopology && bDistinctTimes;
+	if (bHasInterpolationRange && !bMatchingTopology)
+	{
+		SetTopologyMatched(false);
+	}
+	OutPackage = bHasInterpolationRange
 		? InterpolateFrame(SnapShotHistory[YoungerIdx + 1], SnapShotHistory[YoungerIdx], HitTime)
 		: SnapShotHistory.Last();
 
+	SetSnapshotLookupDiagnostics(!OutPackage.BoneTransforms.IsEmpty(), bUsedInterpolation);
 	return !OutPackage.BoneTransforms.IsEmpty();
 }
 
 FLyraMeshSnapShotFrame ULyraSnapShotComponent_SkeletalMesh::InterpolateFrame(const FLyraMeshSnapShotFrame& Older, const FLyraMeshSnapShotFrame& Younger, float HitTime) const
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(LyraProfile_Rewind_PoseReconstruction);
 	TRACE_CPUPROFILER_EVENT_SCOPE(LyraLagMeshSnapshot_Interpolate);
 	SCOPE_CYCLE_COUNTER(STAT_LyraLagMeshSnapshot_Interpolate);
 

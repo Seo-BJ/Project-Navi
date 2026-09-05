@@ -10,6 +10,15 @@
 class ALyraCharacter;
 class USkeletalMeshComponent;
 
+struct FLyraSSRRewindDiagnostics
+{
+	bool bSnapshotLookupSucceeded = false;
+	bool bUsedInterpolation = false;
+	bool bPoseReconstructionSucceeded = true;
+	bool bStateRestoreSucceeded = true;
+	bool bTopologyMatched = true;
+};
+
 /**
  * Snapshot 저장 컴포넌트의 공통 부모.
  * Tick마다 과거 상태를 기록하는 책임만 가진다. 실제 저장 데이터는 방식별 자식 클래스가 보유한다.
@@ -33,6 +42,16 @@ public:
 	/** 서버가 과거 Snapshot을 보관하는 시간(초). */
 	float GetMaxRecordTime() const { return MaxRecordTime; }
 
+	/** A/B 프로파일링에서는 두 구현 중 정확히 하나만 history와 tick에 참여한다. */
+	void SetSSRActive(bool bInActive);
+	bool IsSSRActive() const { return bSSRActive; }
+	void ResetRewindDiagnostics() const { LastRewindDiagnostics = FLyraSSRRewindDiagnostics(); }
+	const FLyraSSRRewindDiagnostics& GetLastRewindDiagnostics() const { return LastRewindDiagnostics; }
+	void SetSnapshotLookupDiagnostics(bool bSucceeded, bool bUsedInterpolation) const;
+	void SetPoseReconstructionSucceeded(bool bSucceeded) const;
+	void SetStateRestoreSucceeded(bool bSucceeded) const;
+	void SetTopologyMatched(bool bMatched) const;
+
 	/** LyraCharacter의 현재 실제 mesh pose를 PhysicsAsset primitive 기준으로 시각화한다. */
 	void DrawCurrentPhysicsAssetPose(const ALyraCharacter* TargetCharacter, FColor Color) const;
 
@@ -43,6 +62,11 @@ protected:
 	/** 서버가 과거 Snapshot 데이터를 보관하는 최대 시간(초). */
 	UPROPERTY(EditAnywhere, Category = "Lag Compensation", meta = (ClampMin = "0.0"))
 	float MaxRecordTime = 0.5f;
+
+	UPROPERTY(Transient)
+	bool bSSRActive = true;
+
+	mutable FLyraSSRRewindDiagnostics LastRewindDiagnostics;
 
 	void DrawPhysicsAssetPose(
 		const USkeletalMeshComponent* SkeletalMeshComp,

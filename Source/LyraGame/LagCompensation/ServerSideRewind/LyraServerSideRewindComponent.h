@@ -19,6 +19,9 @@ struct FAnimSSRRewindPose;
 struct FLyraBoxSnapShotFrame;
 struct FLyraMeshSnapShotFrame;
 
+LYRAGAME_API ULyraSnapShotComponent* SelectUniqueActiveLyraSnapShotComponent(
+	TConstArrayView<ULyraSnapShotComponent*> Components);
+
 /**
  * 서버 사이드 리와인드 판정 전용 컴포넌트.
  * Snapshot 저장은 ULyraSnapShotComponent 계층이 담당하고, 이 컴포넌트는 저장된 Snapshot을 이용해 최종 hit 여부만 판단한다.
@@ -42,10 +45,10 @@ public:
 	/** 구조체 기반 서버 리와인드 판정 진입점. */
 	FServerSideRewindResult ServerSideRewind(const FLyraServerSideRewindRequest& Request);
 
-private:
-	/** TargetActor에 붙어 있는 Snapshot 컴포넌트를 찾는다. */
+	/** 활성 플래그로 선택된 유일한 Snapshot 컴포넌트. 프로파일 검증에도 사용한다. */
 	ULyraSnapShotComponent* ResolveSnapShotComponent(AActor* TargetActor) const;
 
+private:
 	FServerSideRewindResult ServerSideRewindBoxComponent(ULyraSnapShotComponent_BoxComponent* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const;
 	FServerSideRewindResult ServerSideRewindSkeletalMesh(ULyraSnapShotComponent_SkeletalMesh* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const;
 	FServerSideRewindResult ServerSideRewindAnimNode(ULyraSnapShotComponent_AnimNode* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const;

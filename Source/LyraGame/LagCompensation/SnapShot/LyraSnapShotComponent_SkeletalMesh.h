@@ -60,12 +60,16 @@ public:
 #endif
 
 protected:
+	virtual void BeginPlay() override;
+
 	/** 서버 Tick에서 최신 mesh Snapshot을 추가하고 MaxRecordTime 밖의 과거 frame을 제거한다. */
 	virtual void UpdateSnapShotHistory() override;
 
 private:
 	FLyraMeshSnapShotFrame InterpolateFrame(const FLyraMeshSnapShotFrame& Older, const FLyraMeshSnapShotFrame& Younger, float HitTime) const;
+	void EnsureTickAfterMesh(USkeletalMeshComponent* Mesh);
 
 	/** 최신 frame이 앞쪽에 오도록 저장되는 mesh Snapshot history. */
 	TDeque<FLyraMeshSnapShotFrame> SnapShotHistory;
+	TWeakObjectPtr<USkeletalMeshComponent> CurrentPrerequisiteMesh;
 };

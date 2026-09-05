@@ -18,6 +18,7 @@ class ULyraGameEngine : public UGameEngine
 public:
 
 	ULyraGameEngine(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	virtual float GetMaxTickRate(float DeltaTime, bool bAllowFrameRateSmoothing = true) const override;
 
 protected:
 

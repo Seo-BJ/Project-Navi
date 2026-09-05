@@ -83,7 +83,7 @@ void ALyraPatrolPath::SpawnConfiguredActor()
 	{
 		if (ALyraLagCompensationTestCharacter* TestChar = Cast<ALyraLagCompensationTestCharacter>(SpawnedActor))
 		{
-			TestChar->InitializeTestCharacter(this, TestMode, MovementSpeed);
+			TestChar->InitializeTestCharacter(this, TestMode, AbilityTestMode, MovementSpeed);
 		}
 		else if (ALyraLagCompensationTestActor* TestActor = Cast<ALyraLagCompensationTestActor>(SpawnedActor))
 		{

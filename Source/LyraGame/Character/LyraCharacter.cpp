@@ -19,9 +19,10 @@
 #include "TimerManager.h"
 #include "Components/BoxComponent.h"
 #include "Components/SphereComponent.h"
+#include "LagCompensation/LyraLagCompensationProfile.h"
+#include "LagCompensation/SnapShot/LyraSnapShotComponent_AnimNode.h"
 #include "LagCompensation/SnapShot/LyraSnapShotComponent_SkeletalMesh.h"
 #include "LagCompensation/ServerSideRewind/LyraServerSideRewindComponent.h"
-#include "LagCompensation/SnapShot/LyraSnapShotComponent_AnimNode.h"
 #include "Physics/LyraCollisionChannels.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraCharacter)
@@ -96,18 +97,62 @@ ALyraCharacter::ALyraCharacter(const FObjectInitializer& ObjectInitializer)
 	CrouchedEyeHeight = 50.0f;
 	
 	ServerSideRewindComponent = CreateDefaultSubobject<ULyraServerSideRewindComponent>(TEXT("ServerSideRewindComponent"));
-	//LyraSnapShotComponent_SkeletalMesh = CreateDefaultSubobject<ULyraSnapShotComponent_SkeletalMesh>(TEXT("LyraSnapShotComponent_SkeletalMesh"));
+	LyraSnapShotComponent_SkeletalMesh = CreateDefaultSubobject<ULyraSnapShotComponent_SkeletalMesh>(TEXT("LyraSnapShotComponent_SkeletalMesh"));
 	LyraSnapShotComponent_AnimNode = CreateDefaultSubobject<ULyraSnapShotComponent_AnimNode>(TEXT("LyraSnapShotComponent_AnimNode"));
+	ConfigureLagCompensationVariant();
+}
+
+void ALyraCharacter::ConfigureLagCompensationVariant()
+{
+	const bool bUseSkeletalMeshSnapshots =
+		FLyraSSRProfileConfiguration::GetVariant() == ELyraSSRProfileVariant::SkeletalMesh;
+	if (LyraSnapShotComponent_SkeletalMesh)
+	{
+		LyraSnapShotComponent_SkeletalMesh->SetSSRActive(bUseSkeletalMeshSnapshots);
+	}
+	if (LyraSnapShotComponent_AnimNode)
+	{
+		LyraSnapShotComponent_AnimNode->SetSSRActive(!bUseSkeletalMeshSnapshots);
+	}
+}
+
+ULyraSnapShotComponent* ALyraCharacter::GetActiveSnapShotComponent() const
+{
+	if (IsValid(LyraSnapShotComponent_SkeletalMesh) && LyraSnapShotComponent_SkeletalMesh->IsSSRActive())
+	{
+		return LyraSnapShotComponent_SkeletalMesh;
+	}
+	if (IsValid(LyraSnapShotComponent_AnimNode) && LyraSnapShotComponent_AnimNode->IsSSRActive())
+	{
+		return LyraSnapShotComponent_AnimNode;
+	}
+	return nullptr;
 }
 
 void ALyraCharacter::PreInitializeComponents()
 {
 	Super::PreInitializeComponents();
+	// Blueprint component templates can override tick flags after the native
+	// constructor. Re-apply the process-wide variant before component BeginPlay.
+	ConfigureLagCompensationVariant();
 }
 
 void ALyraCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (HasAuthority())
+	{
+		if (GetMesh())
+		{
+			const bool bUseSkeletalMeshSnapshots =
+				FLyraSSRProfileConfiguration::GetVariant() == ELyraSSRProfileVariant::SkeletalMesh;
+			GetMesh()->VisibilityBasedAnimTickOption = bUseSkeletalMeshSnapshots
+				? EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones
+				: EVisibilityBasedAnimTickOption::AlwaysTickPose;
+			GetMesh()->bEnableUpdateRateOptimizations = false;
+		}
+	}
 
 	UWorld* World = GetWorld();
 

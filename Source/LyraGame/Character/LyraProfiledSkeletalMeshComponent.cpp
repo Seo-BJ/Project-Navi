@@ -2,30 +2,41 @@
 
 #include "Character/LyraProfiledSkeletalMeshComponent.h"
 
-#include "Character/LyraCharacter.h"
 #include "GameFramework/Character.h"
-#include "Stats/Stats.h"
+#include "Engine/World.h"
+#include "LagCompensation/LyraLagCompensationProfileSubsystem.h"
+#include "LagCompensation/Test/LyraLagCompensationTestCharacter.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraProfiledSkeletalMeshComponent)
 
-DECLARE_STATS_GROUP(TEXT("Lyra Character Mesh"), STATGROUP_LyraCharacterMesh, STATCAT_Advanced);
-DECLARE_CYCLE_STAT(TEXT("LyraCharacterMeshTick"), STAT_LyraCharacterMeshTick, STATGROUP_LyraCharacterMesh);
-
-void ULyraProfiledSkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void ULyraProfiledSkeletalMeshComponent::TickComponent(
+	float DeltaTime,
+	ELevelTick TickType,
+	FActorComponentTickFunction* ThisTickFunction)
 {
 	AActor* Owner = GetOwner();
 	ACharacter* CharacterOwner = Cast<ACharacter>(Owner);
+	const bool bIsProfileTarget =
+		IsValid(Owner)
+		&& IsInGameThread()
+		&& Owner->HasAuthority()
+		&& Owner->IsA<ALyraLagCompensationTestCharacter>()
+		&& CharacterOwner
+		&& CharacterOwner->GetMesh() == this
+		&& !bEnableUpdateRateOptimizations;
 
-	const bool bIsLyraCharacterMesh =
-		IsValid(Owner) &&
-		Owner->IsA<ALyraCharacter>() &&
-		CharacterOwner &&
-		CharacterOwner->GetMesh() == this;
-
-	if (bIsLyraCharacterMesh)
+	ULyraLagCompensationProfileSubsystem* Profiler = bIsProfileTarget && GetWorld()
+		? GetWorld()->GetSubsystem<ULyraLagCompensationProfileSubsystem>()
+		: nullptr;
+	if (Profiler && Profiler->IsMeasurementActive())
 	{
-		SCOPE_CYCLE_COUNTER(STAT_LyraCharacterMeshTick);
-		Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+		// This is game-thread wall time for the native mesh tick. Worker evaluation is
+		// recorded separately by the engine's FParallelAnimationEvaluationTask scope.
+		{
+			TRACE_CPUPROFILER_EVENT_SCOPE(LyraProfile_MeshTickGT);
+			Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+		}
+		Profiler->RecordAnimationExecution(IsRunningParallelEvaluation());
 		return;
 	}
 

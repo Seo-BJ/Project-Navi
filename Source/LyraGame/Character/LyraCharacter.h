@@ -30,8 +30,9 @@ struct FGameplayTag;
 struct FGameplayTagContainer;
 class UBoxComponent;
 class ULyraServerSideRewindComponent;
-class ULyraSnapShotComponent_SkeletalMesh;
+class ULyraSnapShotComponent;
 class ULyraSnapShotComponent_AnimNode;
+class ULyraSnapShotComponent_SkeletalMesh;
 
 /**
  * FLyraReplicatedAcceleration: Compressed representation of acceleration
@@ -155,6 +156,8 @@ public:
 	FORCEINLINE USkeletalMeshComponent* GetFirstPersonMesh() const {return FirstPersonMesh.Get();}
 	
 	FORCEINLINE ULyraCameraComponent* GetLyraCameraComponent() const {return CameraComponent.Get();}
+	FORCEINLINE ULyraServerSideRewindComponent* GetServerSideRewindComponent() const { return ServerSideRewindComponent.Get(); }
+	ULyraSnapShotComponent* GetActiveSnapShotComponent() const;
 
 	//~ ILagCompensationTarget interface
 	virtual const TMap<FName, TObjectPtr<UBoxComponent>>& GetHitCollisionBoxes() const override;
@@ -236,6 +239,8 @@ protected:
 	}
 
 private:
+	void ConfigureLagCompensationVariant();
+
 	UFUNCTION()
 	void OnControllerChangedTeam(UObject* TeamAgent, int32 OldTeam, int32 NewTeam);
 
@@ -248,8 +253,8 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<ULyraServerSideRewindComponent> ServerSideRewindComponent;
 
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Meta = (AllowPrivateAccess = "true"))
-	//TObjectPtr<ULyraSnapShotComponent_SkeletalMesh> LyraSnapShotComponent_SkeletalMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<ULyraSnapShotComponent_SkeletalMesh> LyraSnapShotComponent_SkeletalMesh;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<ULyraSnapShotComponent_AnimNode> LyraSnapShotComponent_AnimNode;
