@@ -517,7 +517,8 @@ bool ULyraLagCompensationProfileSubsystem::ExecuteInterpolatedMiss()
 	const FLyraSSRRewindDiagnostics& Diagnostics = Snapshot->GetLastRewindDiagnostics();
 	bool bValidResult = true;
 	if (!Diagnostics.bSnapshotLookupSucceeded) { Invalidate(Invalid_SnapshotRange); bValidResult = false; }
-	if (!Diagnostics.bUsedInterpolation) { Invalidate(Invalid_SingleFrameFallback); bValidResult = false; }
+	const bool bExpectedInterpolation = Snapshot->GetSnapShotMode() == ELyraSnapShotMode::SkeletalMesh;
+	if (Diagnostics.bUsedInterpolation != bExpectedInterpolation) { Invalidate(Invalid_SingleFrameFallback); bValidResult = false; }
 	if (!Diagnostics.bPoseReconstructionSucceeded) { Invalidate(Invalid_PoseReconstruction); bValidResult = false; }
 	if (!Diagnostics.bStateRestoreSucceeded) { Invalidate(Invalid_StateRestore); bValidResult = false; }
 	if (!Diagnostics.bTopologyMatched) { Invalidate(Invalid_TopologyMismatch); bValidResult = false; }

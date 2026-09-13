@@ -345,13 +345,12 @@ struct FAnimSSRRewindPose
 	TArray<FTransform> ComponentSpaceTransforms;
 };
 
-/** 보간된 SSR pose를 평가할 때 사용하는 저장 snapshot range다. */
+/** 요청 시간과 인접한 SSR snapshot을 찾을 때 사용하는 저장 snapshot range다. */
 struct FAnimSSRSnapshotRange
 {
 	const FAnimSSRFrameSnapshot* OlderFrame = nullptr;
 	const FAnimSSRFrameSnapshot* YoungerFrame = nullptr;
 	double TargetServerTime = 0.0;
-	float Alpha = 0.0f;
 	bool bSingleFrame = true;
 };
 
@@ -382,7 +381,7 @@ public:
 	/** 현재 서버 시간에서 RewindSeconds만큼 과거의 애님 노드 Snapshot pose를 평가한다. */
 	bool EvaluatePoseRewindSeconds(float RewindSeconds, FAnimSSRRewindPose& OutPose);
 
-	/** TargetServerTime의 AnimNode snapshot을 평가하고, 가능하면 저장 frame 사이의 bone transform을 보간한다. */
+	/** TargetServerTime과 가장 가까운 AnimNode snapshot 하나를 평가한다. */
 	bool EvaluatePoseAtServerTime(double TargetServerTime, FAnimSSRRewindPose& OutPose);
 	bool IsProfileDebugDrawEnabled() const
 	{
@@ -516,7 +515,6 @@ private:
 	bool TryGetSnapShotRangeAtTime(double TargetServerTime, FAnimSSRSnapshotRange& OutRange) const;
 	bool EvaluateFrameSnapshotPose(const FAnimSSRFrameSnapshot& Snapshot, FAnimSSRRewindPose& OutPose, bool bDisableCapturedBoneControllers = false);
 	bool EvaluateSnapshotPose(USkeletalMeshComponent* Mesh, UAnimInstance* AnimInstance, const FAnimSSRFrameSnapshot& Snapshot, FAnimSSRRewindPose& OutPose) const;
-	bool InterpolateRewindPoses(const FAnimSSRRewindPose& OlderPose, const FAnimSSRRewindPose& YoungerPose, double TargetServerTime, float Alpha, FAnimSSRRewindPose& OutPose) const;
 
 	/** 저장된 snapshot pose를 설정된 주기에 맞춰 DrawDebug로 출력한다. */
 	void DrawSavedSnapshotPose(const FAnimSSRFrameSnapshot& Snapshot);
