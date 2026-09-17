@@ -118,8 +118,20 @@ void ULyraSnapShotComponent_SkeletalMesh::CaptureCurrentSnapShot(AActor* HitActo
 	OutPackage.BoneTransforms = Mesh->GetComponentSpaceTransforms();
 }
 
-bool ULyraSnapShotComponent_SkeletalMesh::TryGetSnapShotAtTime(float HitTime, FLyraMeshSnapShotFrame& OutPackage) const
+bool ULyraSnapShotComponent_SkeletalMesh::TryGetSnapShotAtTime(
+	float HitTime,
+	FLyraMeshSnapShotFrame& OutPackage,
+	FLyraSSRRewindDiagnostics* Diagnostics) const
 {
+	auto SetLookupDiagnostics = [Diagnostics](bool bSucceeded, bool bUsedInterpolation)
+	{
+		if (Diagnostics)
+		{
+			Diagnostics->bSnapshotLookupSucceeded = bSucceeded;
+			Diagnostics->bUsedInterpolation = bUsedInterpolation;
+		}
+	};
+
 	OutPackage = FLyraMeshSnapShotFrame();
 	int32 Count = 0;
 	int32 YoungerIdx = 0;
@@ -128,7 +140,7 @@ bool ULyraSnapShotComponent_SkeletalMesh::TryGetSnapShotAtTime(float HitTime, FL
 		TRACE_CPUPROFILER_EVENT_SCOPE(LyraProfile_Rewind_SnapshotLookup);
 		if (SnapShotHistory.Num() == 0)
 		{
-			SetSnapshotLookupDiagnostics(false, false);
+			SetLookupDiagnostics(false, false);
 			return false;
 		}
 
@@ -137,13 +149,13 @@ bool ULyraSnapShotComponent_SkeletalMesh::TryGetSnapShotAtTime(float HitTime, FL
 
 		if (OldestTime > HitTime)
 		{
-			SetSnapshotLookupDiagnostics(false, false);
+			SetLookupDiagnostics(false, false);
 			return false;
 		}
 		if (NewestTime <= HitTime)
 		{
 			OutPackage = SnapShotHistory.First();
-			SetSnapshotLookupDiagnostics(!OutPackage.BoneTransforms.IsEmpty(), false);
+			SetLookupDiagnostics(!OutPackage.BoneTransforms.IsEmpty(), false);
 			return !OutPackage.BoneTransforms.IsEmpty();
 		}
 
@@ -162,13 +174,16 @@ bool ULyraSnapShotComponent_SkeletalMesh::TryGetSnapShotAtTime(float HitTime, FL
 	const bool bUsedInterpolation = bMatchingTopology && bDistinctTimes;
 	if (bHasInterpolationRange && !bMatchingTopology)
 	{
-		SetTopologyMatched(false);
+		if (Diagnostics)
+		{
+			Diagnostics->bTopologyMatched = false;
+		}
 	}
 	OutPackage = bHasInterpolationRange
 		? InterpolateFrame(SnapShotHistory[YoungerIdx + 1], SnapShotHistory[YoungerIdx], HitTime)
 		: SnapShotHistory.Last();
 
-	SetSnapshotLookupDiagnostics(!OutPackage.BoneTransforms.IsEmpty(), bUsedInterpolation);
+	SetLookupDiagnostics(!OutPackage.BoneTransforms.IsEmpty(), bUsedInterpolation);
 	return !OutPackage.BoneTransforms.IsEmpty();
 }
 

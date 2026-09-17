@@ -7,9 +7,19 @@
 #include "GameFramework/Actor.h"
 #include "LyraLagCompensationTypes.generated.h"
 
+/** 한 번의 서버 리와인드 요청에서 수집한 진단 정보. */
+struct FLyraSSRRewindDiagnostics
+{
+	bool bSnapshotLookupSucceeded = false;
+	bool bUsedInterpolation = false;
+	bool bPoseReconstructionSucceeded = true;
+	bool bStateRestoreSucceeded = true;
+	bool bTopologyMatched = true;
+};
+
 /**
  * 서버 리와인드 판정 결과.
- * 무기 어빌리티는 이 값만 보고 최종 타격 성공과 헤드샷 여부를 처리한다.
+ * 판정값과 요청 단위 진단값을 함께 반환하므로 SnapshotComponent에 이전 요청 상태를 남기지 않는다.
  */
 USTRUCT(BlueprintType)
 struct FServerSideRewindResult
@@ -21,6 +31,9 @@ struct FServerSideRewindResult
 
 	UPROPERTY()
 	bool bHeadShot = false;
+
+	/** C++ 진단/프로파일링용 요청 단위 부가 정보. Blueprint 판정 계약에는 포함하지 않는다. */
+	FLyraSSRRewindDiagnostics Diagnostics;
 };
 
 /**

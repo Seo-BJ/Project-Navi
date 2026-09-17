@@ -56,6 +56,18 @@ using namespace LyraAnimNodeSnapshotPrivate;
 
 namespace LyraAnimNodeSnapshotPrivate
 {
+void SetSnapshotLookupDiagnostics(
+	FLyraSSRRewindDiagnostics* Diagnostics,
+	bool bSucceeded,
+	bool bUsedInterpolation)
+{
+	if (Diagnostics)
+	{
+		Diagnostics->bSnapshotLookupSucceeded = bSucceeded;
+		Diagnostics->bUsedInterpolation = bUsedInterpolation;
+	}
+}
+
 int32 CountStateMachineTransitions(const FBakedAnimationStateMachine* Machine)
 {
 	if (!Machine)
@@ -680,12 +692,13 @@ bool ULyraSnapShotComponent_AnimNode::TryGetSnapShotAtTime(float HitTime, FAnimS
 	}
 
 	OutFrame = *SelectedFrame;
-	const bool bResult = !OutFrame.IsEmpty();
-	SetSnapshotLookupDiagnostics(bResult, false);
-	return bResult;
+	return !OutFrame.IsEmpty();
 }
 
-bool ULyraSnapShotComponent_AnimNode::TryGetSnapShotRangeAtTime(double TargetServerTime, FAnimSSRSnapshotRange& OutRange) const
+bool ULyraSnapShotComponent_AnimNode::TryGetSnapShotRangeAtTime(
+	double TargetServerTime,
+	FAnimSSRSnapshotRange& OutRange,
+	FLyraSSRRewindDiagnostics* Diagnostics) const
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(LyraProfile_Rewind_SnapshotLookup);
 	OutRange = FAnimSSRSnapshotRange();
@@ -693,7 +706,7 @@ bool ULyraSnapShotComponent_AnimNode::TryGetSnapShotRangeAtTime(double TargetSer
 
 	if (SnapShotHistory.Num() == 0)
 	{
-		SetSnapshotLookupDiagnostics(false, false);
+		SetSnapshotLookupDiagnostics(Diagnostics, false, false);
 		return false;
 	}
 
@@ -712,21 +725,21 @@ bool ULyraSnapShotComponent_AnimNode::TryGetSnapShotRangeAtTime(double TargetSer
 
 	if (OldestTime > TargetServerTime && !bIsAtOldest)
 	{
-		SetSnapshotLookupDiagnostics(false, false);
+		SetSnapshotLookupDiagnostics(Diagnostics, false, false);
 		return false;
 	}
 
 	if (bIsAtOldest)
 	{
 		const bool bResult = SetSingleFrame(SnapShotHistory.Last());
-		SetSnapshotLookupDiagnostics(bResult, false);
+		SetSnapshotLookupDiagnostics(Diagnostics, bResult, false);
 		return bResult;
 	}
 
 	if (NewestTime <= TargetServerTime || bIsAtNewest)
 	{
 		const bool bResult = SetSingleFrame(SnapShotHistory.First());
-		SetSnapshotLookupDiagnostics(bResult, false);
+		SetSnapshotLookupDiagnostics(Diagnostics, bResult, false);
 		return bResult;
 	}
 
@@ -740,7 +753,7 @@ bool ULyraSnapShotComponent_AnimNode::TryGetSnapShotRangeAtTime(double TargetSer
 	if (YoungerIdx + 1 >= Count)
 	{
 		const bool bResult = SetSingleFrame(SnapShotHistory.Last());
-		SetSnapshotLookupDiagnostics(bResult, false);
+		SetSnapshotLookupDiagnostics(Diagnostics, bResult, false);
 		return bResult;
 	}
 
@@ -750,7 +763,7 @@ bool ULyraSnapShotComponent_AnimNode::TryGetSnapShotRangeAtTime(double TargetSer
 	if (FMath::IsNearlyZero(DeltaTime))
 	{
 		const bool bResult = SetSingleFrame(YoungerFrame);
-		SetSnapshotLookupDiagnostics(bResult, false);
+		SetSnapshotLookupDiagnostics(Diagnostics, bResult, false);
 		return bResult;
 	}
 
@@ -758,13 +771,13 @@ bool ULyraSnapShotComponent_AnimNode::TryGetSnapShotRangeAtTime(double TargetSer
 	if (Alpha <= KINDA_SMALL_NUMBER)
 	{
 		const bool bResult = SetSingleFrame(OlderFrame);
-		SetSnapshotLookupDiagnostics(bResult, false);
+		SetSnapshotLookupDiagnostics(Diagnostics, bResult, false);
 		return bResult;
 	}
 	if ((1.0 - Alpha) <= KINDA_SMALL_NUMBER)
 	{
 		const bool bResult = SetSingleFrame(YoungerFrame);
-		SetSnapshotLookupDiagnostics(bResult, false);
+		SetSnapshotLookupDiagnostics(Diagnostics, bResult, false);
 		return bResult;
 	}
 
@@ -772,7 +785,7 @@ bool ULyraSnapShotComponent_AnimNode::TryGetSnapShotRangeAtTime(double TargetSer
 	OutRange.YoungerFrame = &YoungerFrame;
 	OutRange.bSingleFrame = false;
 	const bool bResult = !OlderFrame.IsEmpty() && !YoungerFrame.IsEmpty();
-	SetSnapshotLookupDiagnostics(bResult, false);
+	SetSnapshotLookupDiagnostics(Diagnostics, bResult, false);
 	return bResult;
 }
 
@@ -792,12 +805,18 @@ bool ULyraSnapShotComponent_AnimNode::EvaluatePoseRewindSeconds(float RewindSeco
 	return EvaluatePoseAtServerTime(World->GetTimeSeconds() - FMath::Max(0.0f, RewindSeconds), OutPose);
 }
 
-bool ULyraSnapShotComponent_AnimNode::EvaluatePoseAtServerTime(double TargetServerTime, FAnimSSRRewindPose& OutPose)
+bool ULyraSnapShotComponent_AnimNode::EvaluatePoseAtServerTime(
+	double TargetServerTime,
+	FAnimSSRRewindPose& OutPose,
+	FLyraSSRRewindDiagnostics* Diagnostics)
 {
 	OutPose = FAnimSSRRewindPose();
 	ON_SCOPE_EXIT
 	{
-		SetPoseReconstructionSucceeded(!OutPose.ComponentSpaceTransforms.IsEmpty());
+		if (Diagnostics)
+		{
+			Diagnostics->bPoseReconstructionSucceeded = !OutPose.ComponentSpaceTransforms.IsEmpty();
+		}
 	};
 
 	AActor* Owner = GetOwner();
@@ -807,7 +826,7 @@ bool ULyraSnapShotComponent_AnimNode::EvaluatePoseAtServerTime(double TargetServ
 	}
 
 	FAnimSSRSnapshotRange Range;
-	if (!TryGetSnapShotRangeAtTime(TargetServerTime, Range))
+	if (!TryGetSnapShotRangeAtTime(TargetServerTime, Range, Diagnostics))
 	{
 		return false;
 	}
@@ -815,14 +834,14 @@ bool ULyraSnapShotComponent_AnimNode::EvaluatePoseAtServerTime(double TargetServ
 	const FAnimSSRFrameSnapshot* NearestFrame = SelectNearestSnapshotFrame(Range);
 	if (!NearestFrame || NearestFrame->IsEmpty())
 	{
-		SetSnapshotLookupDiagnostics(false, false);
+		SetSnapshotLookupDiagnostics(Diagnostics, false, false);
 		return false;
 	}
 
-	SetSnapshotLookupDiagnostics(true, false);
+	SetSnapshotLookupDiagnostics(Diagnostics, true, false);
 	TRACE_CPUPROFILER_EVENT_SCOPE(LyraProfile_Rewind_PoseReconstruction);
 	// 가장 가까운 snapshot 하나만 복원/평가하여 보간용 이중 pose 평가 비용을 제거한다.
-	return EvaluateFrameSnapshotPose(*NearestFrame, OutPose);
+	return EvaluateFrameSnapshotPose(*NearestFrame, OutPose, false, Diagnostics);
 }
 
 void ULyraSnapShotComponent_AnimNode::UpdateSnapShotHistory()
@@ -1051,14 +1070,18 @@ bool ULyraSnapShotComponent_AnimNode::CaptureAnimInstanceSnapshotSet(
 
 bool ULyraSnapShotComponent_AnimNode::ValidateAnimInstanceSnapshotSet(
 	USkeletalMeshComponent* Mesh,
-	const TArray<FAnimSSRAnimInstanceSnapshot>& Snapshots) const
+	const TArray<FAnimSSRAnimInstanceSnapshot>& Snapshots,
+	FLyraSSRRewindDiagnostics* Diagnostics) const
 {
 	TArray<FAnimSSRAnimInstanceIdentity> CurrentIdentities;
 	BuildAnimInstanceIdentities(Mesh, CurrentIdentities);
 	if (CurrentIdentities.Num() != Snapshots.Num())
 	{
 		INC_DWORD_STAT(STAT_LyraSSR_TopologyMismatches);
-		SetTopologyMatched(false);
+		if (Diagnostics)
+		{
+			Diagnostics->bTopologyMatched = false;
+		}
 		UE_LOG(LogLyraAnimNodeServerSideRewind, Warning,
 			TEXT("[%s] SSR AnimInstance topology mismatch: current=%d snapshot=%d."),
 			*GetNameSafe(GetOwner()), CurrentIdentities.Num(), Snapshots.Num());
@@ -1077,7 +1100,10 @@ bool ULyraSnapShotComponent_AnimNode::ValidateAnimInstanceSnapshotSet(
 			Snapshot.Identity.AnimClass.Get() != Instance->GetClass())
 		{
 			INC_DWORD_STAT(STAT_LyraSSR_TopologyMismatches);
-			SetTopologyMatched(false);
+			if (Diagnostics)
+			{
+				Diagnostics->bTopologyMatched = false;
+			}
 			UE_LOG(LogLyraAnimNodeServerSideRewind, Warning,
 				TEXT("[%s] SSR AnimInstance identity mismatch at index %d (role=%d linkedIndex=%d class=%s)."),
 				*GetNameSafe(GetOwner()), SnapshotIndex, static_cast<int32>(Snapshot.Identity.Role),
@@ -1093,7 +1119,10 @@ bool ULyraSnapShotComponent_AnimNode::ValidateAnimInstanceSnapshotSet(
 			Snapshot.bHasOwnedMontageEvaluationData == Snapshot.bUsesMainInstanceMontageEvaluationData)
 		{
 			INC_DWORD_STAT(STAT_LyraSSR_TopologyMismatches);
-			SetTopologyMatched(false);
+			if (Diagnostics)
+			{
+				Diagnostics->bTopologyMatched = false;
+			}
 			UE_LOG(LogLyraAnimNodeServerSideRewind, Warning,
 				TEXT("[%s] SSR montage-data ownership mismatch for AnimInstance %s."),
 				*GetNameSafe(GetOwner()), *GetNameSafe(Instance));
@@ -1103,6 +1132,10 @@ bool ULyraSnapShotComponent_AnimNode::ValidateAnimInstanceSnapshotSet(
 		if (!ValidateNodeSnapshotSet(Instance, Snapshot.NodeSnapshots) ||
 			!ValidateSlotSnapshots(Instance, Snapshot.Slots))
 		{
+			if (Diagnostics)
+			{
+				Diagnostics->bTopologyMatched = false;
+			}
 			const FString OwnerName = GetNameSafe(GetOwner());
 			UE_LOG(LogLyraAnimNodeServerSideRewind, Warning,
 				TEXT("[%s] SSR AnimInstance node/Slot snapshot mismatch: instance=%s class=%s."),
@@ -2307,7 +2340,11 @@ bool ULyraSnapShotComponent_AnimNode::RestoreTwoBoneIKSnapshots(UAnimInstance* A
 	return true;
 }
 
-bool ULyraSnapShotComponent_AnimNode::EvaluateFrameSnapshotPose(const FAnimSSRFrameSnapshot& Snapshot, FAnimSSRRewindPose& OutPose, bool bDisableCapturedBoneControllers)
+bool ULyraSnapShotComponent_AnimNode::EvaluateFrameSnapshotPose(
+	const FAnimSSRFrameSnapshot& Snapshot,
+	FAnimSSRRewindPose& OutPose,
+	bool bDisableCapturedBoneControllers,
+	FLyraSSRRewindDiagnostics* Diagnostics)
 {
 	SCOPE_CYCLE_COUNTER(STAT_LyraSSR_EvaluateFrameSnapshotPose);
 
@@ -2354,7 +2391,7 @@ bool ULyraSnapShotComponent_AnimNode::EvaluateFrameSnapshotPose(const FAnimSSRFr
 
 	// 과거 snapshot이 현재 main/linked/post-process topology 및 지원 node/Slot 집합과 같은지 먼저 확인한다.
 	// 일부만 복원하면 partial state가 남아 이후 서버 animation tick까지 오염될 수 있다.
-	if (!ValidateAnimInstanceSnapshotSet(Mesh, Snapshot.AnimInstanceSnapshots))
+	if (!ValidateAnimInstanceSnapshotSet(Mesh, Snapshot.AnimInstanceSnapshots, Diagnostics))
 	{
 		UE_LOG(LogLyraAnimNodeServerSideRewind, Warning,
 			TEXT("[%s] SSR snapshot validation failed. SnapshotTime=%.3f AnimInstances=%d."),
@@ -2372,7 +2409,10 @@ bool ULyraSnapShotComponent_AnimNode::EvaluateFrameSnapshotPose(const FAnimSSRFr
 			if (!bRestoredCurrentState)
 			{
 				INC_DWORD_STAT(STAT_LyraSSR_RestoreFailures);
-				SetStateRestoreSucceeded(false);
+				if (Diagnostics)
+				{
+					Diagnostics->bStateRestoreSucceeded = false;
+				}
 			}
 			ensureMsgf(bRestoredCurrentState,
 				TEXT("Failed to restore current animation node/Slot/montage proxy state after SSR evaluation."));
@@ -2389,7 +2429,10 @@ bool ULyraSnapShotComponent_AnimNode::EvaluateFrameSnapshotPose(const FAnimSSRFr
 	if (!RestoreAnimInstanceSnapshotSet(EvaluationSnapshot.AnimInstanceSnapshots))
 	{
 		INC_DWORD_STAT(STAT_LyraSSR_RestoreFailures);
-		SetStateRestoreSucceeded(false);
+		if (Diagnostics)
+		{
+			Diagnostics->bStateRestoreSucceeded = false;
+		}
 		UE_LOG(LogLyraAnimNodeServerSideRewind, Warning,
 			TEXT("[%s] Failed to restore historical AnimInstance/Slot/montage state for SSR evaluation."),
 			*GetNameSafe(Owner));

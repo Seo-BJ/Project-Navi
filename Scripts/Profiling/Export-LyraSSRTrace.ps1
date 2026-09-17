@@ -202,15 +202,11 @@ $counterFiles = [ordered]@{
     ActualMeasurementSeconds = 'actual_measurement_seconds.csv'
     FrameMilliseconds = 'frame_milliseconds.csv'
     ServerFrames = 'server_frames.csv'
-    SnapshotCalls = 'snapshot_calls.csv'
-    SnapshotFrames = 'snapshot_frames.csv'
     RewindRequests = 'rewind_requests.csv'
     RewindHits = 'rewind_hits.csv'
     RewindMisses = 'rewind_misses.csv'
     RewindInvalidResults = 'rewind_invalid_results.csv'
     MissedInjections = 'missed_injections.csv'
-    ParallelAnimationMeshTicks = 'parallel_animation_mesh_ticks.csv'
-    NonParallelAnimationMeshTicks = 'non_parallel_animation_mesh_ticks.csv'
     ParallelCapableAnimInstances = 'parallel_capable_anim_instances.csv'
     GameThreadOnlyAnimInstances = 'game_thread_only_anim_instances.csv'
 }
@@ -267,6 +263,15 @@ if (-not (Test-Path -LiteralPath $eventsPath)) {
 
 $events = @(Import-Csv -LiteralPath $eventsPath)
 function Counter-Path([string]$Name) { Join-Path $resolvedOutput $counterFiles[$Name] }
+
+$snapshotEvents = @($events | Where-Object TimerName -eq 'LyraProfile_SnapshotUpdateGT')
+$meshEvents = @($events | Where-Object TimerName -eq 'LyraProfile_MeshTickGT')
+$workerEvents = @($events | Where-Object {
+    $_.TimerName -eq 'CharacterMesh0' -and $_.ThreadName -notmatch '^GameThread'
+})
+$snapshotTimerCount = $snapshotEvents.Count
+$parallelAnimationTickCount = $workerEvents.Count
+$nonParallelAnimationTickCount = [Math]::Max(0, $meshEvents.Count - $parallelAnimationTickCount)
 
 $serverFrameCounter = Get-FinalCounterValue (Counter-Path 'ServerFrames')
 $serverFrameCount = if ([double]::IsNaN($serverFrameCounter)) { 0 } else { [int]$serverFrameCounter }
@@ -340,15 +345,14 @@ $metadata = [ordered]@{
     EffectiveEngineMaxTickRate = Get-FinalCounterValue (Counter-Path 'EffectiveEngineMaxTickRate')
     ActualMeasurementSeconds = Get-FinalCounterValue (Counter-Path 'ActualMeasurementSeconds')
     ServerFrames = $serverFrameCount
-    SnapshotCalls = Get-FinalCounterValue (Counter-Path 'SnapshotCalls')
-    SnapshotFrames = Get-FinalCounterValue (Counter-Path 'SnapshotFrames')
+    SnapshotCalls = $snapshotTimerCount
     RewindRequests = Get-FinalCounterValue (Counter-Path 'RewindRequests')
     RewindHits = Get-FinalCounterValue (Counter-Path 'RewindHits')
     RewindMisses = Get-FinalCounterValue (Counter-Path 'RewindMisses')
     RewindInvalidResults = Get-FinalCounterValue (Counter-Path 'RewindInvalidResults')
     MissedInjections = Get-FinalCounterValue (Counter-Path 'MissedInjections')
-    ParallelAnimationMeshTicks = Get-FinalCounterValue (Counter-Path 'ParallelAnimationMeshTicks')
-    NonParallelAnimationMeshTicks = Get-FinalCounterValue (Counter-Path 'NonParallelAnimationMeshTicks')
+    ParallelAnimationMeshTicks = $parallelAnimationTickCount
+    NonParallelAnimationMeshTicks = $nonParallelAnimationTickCount
     ParallelCapableAnimInstances = Get-FinalCounterValue (Counter-Path 'ParallelCapableAnimInstances')
     GameThreadOnlyAnimInstances = Get-FinalCounterValue (Counter-Path 'GameThreadOnlyAnimInstances')
 }
@@ -364,6 +368,7 @@ if ($metadata.InvalidReasonMask -ne 0) { $invalidReasons.Add("InvalidReasonMask 
 if ($metadata.DedicatedServer -ne 1) { $invalidReasons.Add("capture is not from NM_DedicatedServer") }
 if ($metadata.CharacterCount -ne 10) { $invalidReasons.Add("CharacterCount is $($metadata.CharacterCount), expected 10") }
 if ($metadata.EffectiveEngineMaxTickRate -ne 0) { $invalidReasons.Add("EffectiveEngineMaxTickRate is $($metadata.EffectiveEngineMaxTickRate), expected uncapped 0") }
+if ($metadata.SnapshotCalls -le 0) { $invalidReasons.Add("no snapshot timing events were exported") }
 if ($metadata.ParallelAnimationMeshTicks -le 0) { $invalidReasons.Add("no native parallel animation mesh tick was observed") }
 if ($metadata.NonParallelAnimationMeshTicks -ne 0) { $invalidReasons.Add("non-parallel animation mesh ticks were observed") }
 if ($metadata.ParallelCapableAnimInstances -le 0) { $invalidReasons.Add("no parallel-capable animation instance was observed") }
@@ -395,29 +400,16 @@ switch ($metadata.Profile) {
     default { $invalidReasons.Add("unsupported or missing profile: $($metadata.Profile)") }
 }
 
-$snapshotTimerCount = @($events | Where-Object TimerName -eq 'LyraProfile_SnapshotUpdateGT').Count
-$snapshotCallCount = Convert-ToIntOrDefault $metadata.SnapshotCalls
-if ($snapshotTimerCount -ne $snapshotCallCount) {
-    $invalidReasons.Add("snapshot timer count ($snapshotTimerCount) does not match SnapshotCalls ($($metadata.SnapshotCalls))")
-}
 $rewindTimerCount = @($events | Where-Object TimerName -eq 'LyraProfile_RewindTotal').Count
 if ($rewindTimerCount -ne $rewindRequestCount) {
     $invalidReasons.Add("rewind timer count ($rewindTimerCount) does not match RewindRequests ($($metadata.RewindRequests))")
 }
 
-$meshEvents = @($events | Where-Object TimerName -eq 'LyraProfile_MeshTickGT')
-if ($meshEvents.Count -eq 0) { $invalidReasons.Add("no target mesh game-thread timing events were exported") }
+if ($meshEvents.Count -eq 0) { $invalidReasons.Add("no Lyra mesh game-thread timing events were exported") }
 if (@($meshEvents | Where-Object { $_.ThreadName -notmatch '^GameThread' }).Count -gt 0) {
-    $invalidReasons.Add("target mesh timing events were observed outside GameThread")
+    $invalidReasons.Add("Lyra mesh timing events were observed outside GameThread")
 }
-$workerEvents = @($events | Where-Object {
-    $_.TimerName -eq 'CharacterMesh0' -and $_.ThreadName -notmatch '^GameThread'
-})
 if ($workerEvents.Count -eq 0) { $invalidReasons.Add("no native parallel animation worker timing events were exported") }
-$parallelAnimationTickCount = Convert-ToIntOrDefault $metadata.ParallelAnimationMeshTicks
-if ($workerEvents.Count -ne $parallelAnimationTickCount) {
-    $invalidReasons.Add("parallel animation worker timer count ($($workerEvents.Count)) does not match ParallelAnimationMeshTicks ($parallelAnimationTickCount)")
-}
 $completionEvents = @($events | Where-Object {
     $_.TimerName -like '*FParallelAnimationCompletionTask*' -or
     $_.TimerName -eq 'USkeletalMeshComponent_CompleteParallelAnimationEvaluation'

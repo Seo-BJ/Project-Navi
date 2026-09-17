@@ -93,8 +93,6 @@ FServerSideRewindResult ULyraServerSideRewindSubsystem::ServerSideRewind(const F
 		return {};
 	}
 
-	SnapShotComponent->ResetRewindDiagnostics();
-
 	switch (SnapShotComponent->GetSnapShotMode())
 	{
 	case ELyraSnapShotMode::BoxComponent:
@@ -138,19 +136,23 @@ ULyraSnapShotComponent* SelectUniqueActiveLyraSnapShotComponent(TConstArrayView<
 
 FServerSideRewindResult ULyraServerSideRewindSubsystem::ServerSideRewindBoxComponent(ULyraSnapShotComponent_BoxComponent* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const
 {
+	FServerSideRewindResult Result;
 	if (!IsValid(SnapShotComponent) || !IsValid(Request.TargetActor.Get()))
 	{
-		return FServerSideRewindResult();
+		return Result;
 	}
 
 	FLyraBoxSnapShotFrame FrameToCheck;
-	if (!SnapShotComponent->TryGetSnapShotAtTime(Request.HitTime, FrameToCheck))
+	Result.Diagnostics.bSnapshotLookupSucceeded = SnapShotComponent->TryGetSnapShotAtTime(Request.HitTime, FrameToCheck);
+	if (!Result.Diagnostics.bSnapshotLookupSucceeded)
 	{
-		return FServerSideRewindResult();
+		return Result;
 	}
 
 	FrameToCheck.HitActor = Request.TargetActor.Get();
-	return ConfirmBoxHit(SnapShotComponent, FrameToCheck, Request);
+	FServerSideRewindResult HitResult = ConfirmBoxHit(SnapShotComponent, FrameToCheck, Request);
+	HitResult.Diagnostics = Result.Diagnostics;
+	return HitResult;
 }
 
 FServerSideRewindResult ULyraServerSideRewindSubsystem::ConfirmBoxHit(
@@ -301,19 +303,22 @@ void ULyraServerSideRewindSubsystem::SetMeshCollisionEnabledType(AActor* TargetA
 
 FServerSideRewindResult ULyraServerSideRewindSubsystem::ServerSideRewindSkeletalMesh(ULyraSnapShotComponent_SkeletalMesh* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const
 {
+	FServerSideRewindResult Result;
 	if (!IsValid(SnapShotComponent) || !IsValid(Request.TargetActor.Get()))
 	{
-		return FServerSideRewindResult();
+		return Result;
 	}
 
 	FLyraMeshSnapShotFrame FrameToCheck;
-	if (!SnapShotComponent->TryGetSnapShotAtTime(Request.HitTime, FrameToCheck))
+	if (!SnapShotComponent->TryGetSnapShotAtTime(Request.HitTime, FrameToCheck, &Result.Diagnostics))
 	{
-		return FServerSideRewindResult();
+		return Result;
 	}
 
 	FrameToCheck.HitActor = Request.TargetActor.Get();
-	return ConfirmMeshHit(SnapShotComponent, FrameToCheck, Request);
+	FServerSideRewindResult HitResult = ConfirmMeshHit(SnapShotComponent, FrameToCheck, Request);
+	HitResult.Diagnostics = Result.Diagnostics;
+	return HitResult;
 }
 
 FServerSideRewindResult ULyraServerSideRewindSubsystem::ConfirmMeshHit(
@@ -361,18 +366,21 @@ FServerSideRewindResult ULyraServerSideRewindSubsystem::ConfirmMeshHit(
 
 FServerSideRewindResult ULyraServerSideRewindSubsystem::ServerSideRewindAnimNode(ULyraSnapShotComponent_AnimNode* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const
 {
+	FServerSideRewindResult Result;
 	if (!IsValid(SnapShotComponent) || !IsValid(Request.TargetActor.Get()))
 	{
-		return FServerSideRewindResult();
+		return Result;
 	}
 
 	FAnimSSRRewindPose RewindPose;
-	if (!SnapShotComponent->EvaluatePoseAtServerTime(Request.HitTime, RewindPose))
+	if (!SnapShotComponent->EvaluatePoseAtServerTime(Request.HitTime, RewindPose, &Result.Diagnostics))
 	{
-		return FServerSideRewindResult();
+		return Result;
 	}
 
-	return ConfirmAnimNodeHit(SnapShotComponent, RewindPose, Request);
+	FServerSideRewindResult HitResult = ConfirmAnimNodeHit(SnapShotComponent, RewindPose, Request);
+	HitResult.Diagnostics = Result.Diagnostics;
+	return HitResult;
 }
 
 FServerSideRewindResult ULyraServerSideRewindSubsystem::ConfirmAnimNodeHit(

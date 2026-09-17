@@ -52,7 +52,10 @@ public:
 	void CaptureCurrentSnapShot(AActor* HitActor, FLyraMeshSnapShotFrame& OutPackage) const;
 
 	/** 요청한 서버 시간에 해당하는 mesh Snapshot을 찾고, 필요하면 보간한다. */
-	bool TryGetSnapShotAtTime(float HitTime, FLyraMeshSnapShotFrame& OutPackage) const;
+	bool TryGetSnapShotAtTime(
+		float HitTime,
+		FLyraMeshSnapShotFrame& OutPackage,
+		FLyraSSRRewindDiagnostics* Diagnostics = nullptr) const;
 
 #if ENABLE_DRAW_DEBUG
 	/** 저장된 mesh Snapshot pose를 PhysicsAsset primitive 기준으로 시각화한다. */

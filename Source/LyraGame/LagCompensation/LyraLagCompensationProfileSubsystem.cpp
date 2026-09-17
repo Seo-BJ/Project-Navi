@@ -37,15 +37,11 @@ TRACE_DECLARE_UNCHECKED_FLOAT_COUNTER(LyraSSR_RequestedMeasurementSeconds, TEXT(
 TRACE_DECLARE_UNCHECKED_FLOAT_COUNTER(LyraSSR_ActualMeasurementSeconds, TEXT("LyraSSR/ActualMeasurementSeconds"));
 TRACE_DECLARE_UNCHECKED_FLOAT_COUNTER(LyraSSR_FrameMilliseconds, TEXT("LyraSSR/FrameMilliseconds"));
 TRACE_DECLARE_UNCHECKED_INT_COUNTER(LyraSSR_ServerFrames, TEXT("LyraSSR/ServerFrames"));
-TRACE_DECLARE_UNCHECKED_INT_COUNTER(LyraSSR_SnapshotCalls, TEXT("LyraSSR/SnapshotCalls"));
-TRACE_DECLARE_UNCHECKED_INT_COUNTER(LyraSSR_SnapshotFrames, TEXT("LyraSSR/SnapshotFrames"));
 TRACE_DECLARE_UNCHECKED_INT_COUNTER(LyraSSR_RewindRequests, TEXT("LyraSSR/RewindRequests"));
 TRACE_DECLARE_UNCHECKED_INT_COUNTER(LyraSSR_RewindHits, TEXT("LyraSSR/RewindHits"));
 TRACE_DECLARE_UNCHECKED_INT_COUNTER(LyraSSR_RewindMisses, TEXT("LyraSSR/RewindMisses"));
 TRACE_DECLARE_UNCHECKED_INT_COUNTER(LyraSSR_RewindInvalidResults, TEXT("LyraSSR/RewindInvalidResults"));
 TRACE_DECLARE_UNCHECKED_INT_COUNTER(LyraSSR_MissedInjections, TEXT("LyraSSR/MissedInjections"));
-TRACE_DECLARE_UNCHECKED_INT_COUNTER(LyraSSR_ParallelAnimationMeshTicks, TEXT("LyraSSR/ParallelAnimationMeshTicks"));
-TRACE_DECLARE_UNCHECKED_INT_COUNTER(LyraSSR_NonParallelAnimationMeshTicks, TEXT("LyraSSR/NonParallelAnimationMeshTicks"));
 TRACE_DECLARE_UNCHECKED_INT_COUNTER(LyraSSR_ParallelCapableAnimInstances, TEXT("LyraSSR/ParallelCapableAnimInstances"));
 TRACE_DECLARE_UNCHECKED_INT_COUNTER(LyraSSR_GameThreadOnlyAnimInstances, TEXT("LyraSSR/GameThreadOnlyAnimInstances"));
 
@@ -363,20 +359,13 @@ void ULyraLagCompensationProfileSubsystem::BeginMeasurement(double NowSeconds)
 
 	MeasurementStartSeconds = NowSeconds;
 	LastServerFrameSeconds = NowSeconds;
-	MeasurementStartFrame = GFrameCounter;
 	NextLoadRequestSeconds = NowSeconds;
-	SnapshotCallCount = 0;
-	SnapshotMeasuredFrameCount = 0;
-	SnapshotCallsInCurrentFrame = 0;
 	ServerFrameCount = 0;
 	RewindRequestCount = 0;
 	RewindHitCount = 0;
 	RewindMissCount = 0;
 	RewindInvalidCount = 0;
 	MissedInjectionCount = 0;
-	ParallelAnimationTickCount = 0;
-	NonParallelAnimationTickCount = 0;
-	CurrentSnapshotFrame = MAX_uint64;
 	TargetIndex = 0;
 	State = ESessionState::Measuring;
 
@@ -387,59 +376,6 @@ void ULyraLagCompensationProfileSubsystem::BeginMeasurement(double NowSeconds)
 		FLyraSSRProfileConfiguration::GetVariantName(Variant),
 		FLyraSSRProfileConfiguration::GetModeName(Mode),
 		MeasurementRegionName);
-}
-
-bool ULyraLagCompensationProfileSubsystem::IsMeasurementActive() const
-{
-	return State == ESessionState::Measuring;
-}
-
-bool ULyraLagCompensationProfileSubsystem::ShouldObserveAnimationExecution() const
-{
-	return IsMeasurementActive();
-}
-
-void ULyraLagCompensationProfileSubsystem::RecordSnapshotExecution(uint64 FrameNumber)
-{
-	if (!IsMeasurementActive())
-	{
-		return;
-	}
-
-	if (CurrentSnapshotFrame != FrameNumber)
-	{
-		if (CurrentSnapshotFrame != MAX_uint64)
-		{
-			ValidateCompletedSnapshotFrame(CurrentSnapshotFrame, SnapshotCallsInCurrentFrame);
-			if (FrameNumber != CurrentSnapshotFrame + 1)
-			{
-				Invalidate(Invalid_SnapshotCallsPerFrame);
-			}
-		}
-		CurrentSnapshotFrame = FrameNumber;
-		SnapshotCallsInCurrentFrame = 0;
-		++SnapshotMeasuredFrameCount;
-	}
-
-	++SnapshotCallsInCurrentFrame;
-	++SnapshotCallCount;
-}
-
-void ULyraLagCompensationProfileSubsystem::RecordAnimationExecution(bool bDispatchedParallelWork)
-{
-	if (!IsMeasurementActive())
-	{
-		return;
-	}
-
-	if (bDispatchedParallelWork)
-	{
-		++ParallelAnimationTickCount;
-	}
-	else
-	{
-		++NonParallelAnimationTickCount;
-	}
 }
 
 void ULyraLagCompensationProfileSubsystem::TickRewindMicro()
@@ -501,7 +437,6 @@ bool ULyraLagCompensationProfileSubsystem::ExecuteInterpolatedMiss()
 	Request.HitLocation = HitLocation;
 	Request.HitTime = static_cast<float>(World->GetTimeSeconds() - ProfileRewindSeconds);
 
-	Snapshot->ResetRewindDiagnostics();
 	const FServerSideRewindResult Result = RewindEvaluator->ServerSideRewind(Request);
 	++RewindRequestCount;
 	if (Result.bHitConfirmed)
@@ -514,7 +449,7 @@ bool ULyraLagCompensationProfileSubsystem::ExecuteInterpolatedMiss()
 		++RewindMissCount;
 	}
 
-	const FLyraSSRRewindDiagnostics& Diagnostics = Snapshot->GetLastRewindDiagnostics();
+	const FLyraSSRRewindDiagnostics& Diagnostics = Result.Diagnostics;
 	bool bValidResult = true;
 	if (!Diagnostics.bSnapshotLookupSucceeded) { Invalidate(Invalid_SnapshotRange); bValidResult = false; }
 	const bool bExpectedInterpolation = Snapshot->GetSnapShotMode() == ELyraSnapShotMode::SkeletalMesh;
@@ -550,15 +485,6 @@ void ULyraLagCompensationProfileSubsystem::RecordServerFrame(double NowSeconds)
 	TRACE_COUNTER_SET(LyraSSR_FrameMilliseconds, FrameMilliseconds);
 }
 
-void ULyraLagCompensationProfileSubsystem::ValidateCompletedSnapshotFrame(uint64 FrameNumber, int32 CallsInFrame)
-{
-	// BeginMeasurement may occur after some component ticks in its first frame.
-	if (FrameNumber != MeasurementStartFrame && CallsInFrame != ExpectedCharacterCount)
-	{
-		Invalidate(Invalid_SnapshotCallsPerFrame);
-	}
-}
-
 void ULyraLagCompensationProfileSubsystem::FinishSession(double NowSeconds)
 {
 	if (State == ESessionState::Finished)
@@ -566,15 +492,6 @@ void ULyraLagCompensationProfileSubsystem::FinishSession(double NowSeconds)
 		return;
 	}
 
-	MeasurementEndFrame = GFrameCounter;
-	if (CurrentSnapshotFrame != MAX_uint64)
-	{
-		ValidateCompletedSnapshotFrame(CurrentSnapshotFrame, SnapshotCallsInCurrentFrame);
-	}
-	if (MeasurementStartSeconds > 0.0 && SnapshotCallCount == 0)
-	{
-		Invalidate(Invalid_NoSnapshotSamples);
-	}
 	if (MeasurementStartSeconds > 0.0 && ServerFrameCount == 0)
 	{
 		Invalidate(Invalid_NoServerFrames);
@@ -592,12 +509,6 @@ void ULyraLagCompensationProfileSubsystem::FinishSession(double NowSeconds)
 	{
 		Invalidate(Invalid_RewindRequestCount);
 	}
-	if (MeasurementStartSeconds > 0.0 && !IsLyraSSRAnimationExecutionValid(
-		ELyraSSRAnimationMode::Parallel, ParallelAnimationTickCount, NonParallelAnimationTickCount))
-	{
-		Invalidate(Invalid_AnimationExecution);
-	}
-
 	const double ActualMeasurementSeconds = MeasurementStartSeconds > 0.0
 		? FMath::Max(0.0, NowSeconds - MeasurementStartSeconds)
 		: 0.0;
@@ -618,10 +529,9 @@ void ULyraLagCompensationProfileSubsystem::FinishSession(double NowSeconds)
 	State = ESessionState::Finished;
 	RestoreAnimationCVars();
 	UE_LOG(LogLyraLagCompensationProfile, Display,
-		TEXT("Lag compensation Insights profile finished. Valid=%s InvalidReasonMask=%u Frames=%d SnapshotCalls=%d RewindRequests=%d Hits=%d Misses=%d ParallelTicks=%d NonParallelTicks=%d Duration=%.3fs. Stop PIE and analyze the server .utrace."),
+		TEXT("Lag compensation Insights profile finished. Valid=%s InvalidReasonMask=%u Frames=%d RewindRequests=%d Hits=%d Misses=%d Duration=%.3fs. Stop PIE and analyze the server .utrace."),
 		InvalidReasonMask == 0 ? TEXT("true") : TEXT("false"), InvalidReasonMask,
-		ServerFrameCount, SnapshotCallCount, RewindRequestCount, RewindHitCount, RewindMissCount,
-		ParallelAnimationTickCount, NonParallelAnimationTickCount, ActualMeasurementSeconds);
+		ServerFrameCount, RewindRequestCount, RewindHitCount, RewindMissCount, ActualMeasurementSeconds);
 }
 
 void ULyraLagCompensationProfileSubsystem::PublishTraceCounters() const
@@ -644,15 +554,11 @@ void ULyraLagCompensationProfileSubsystem::PublishTraceCounters() const
 	TRACE_COUNTER_SET(LyraSSR_RequestedMeasurementSeconds,
 		Mode == ELyraSSRProfileMode::RewindMicro ? 0.0 : MeasurementDurationSeconds);
 	TRACE_COUNTER_SET(LyraSSR_ServerFrames, ServerFrameCount);
-	TRACE_COUNTER_SET(LyraSSR_SnapshotCalls, SnapshotCallCount);
-	TRACE_COUNTER_SET(LyraSSR_SnapshotFrames, SnapshotMeasuredFrameCount);
 	TRACE_COUNTER_SET(LyraSSR_RewindRequests, RewindRequestCount);
 	TRACE_COUNTER_SET(LyraSSR_RewindHits, RewindHitCount);
 	TRACE_COUNTER_SET(LyraSSR_RewindMisses, RewindMissCount);
 	TRACE_COUNTER_SET(LyraSSR_RewindInvalidResults, RewindInvalidCount);
 	TRACE_COUNTER_SET(LyraSSR_MissedInjections, MissedInjectionCount);
-	TRACE_COUNTER_SET(LyraSSR_ParallelAnimationMeshTicks, ParallelAnimationTickCount);
-	TRACE_COUNTER_SET(LyraSSR_NonParallelAnimationMeshTicks, NonParallelAnimationTickCount);
 	TRACE_COUNTER_SET(LyraSSR_ParallelCapableAnimInstances, ParallelCapableAnimInstanceCount);
 	TRACE_COUNTER_SET(LyraSSR_GameThreadOnlyAnimInstances, GameThreadOnlyAnimInstanceCount);
 }

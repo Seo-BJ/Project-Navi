@@ -1,6 +1,6 @@
 # Lyra Server Side Rewind profiling
 
-The dedicated server .utrace file is the only runtime measurement artifact. The server does not buffer cycle samples or write CSV files. Export-LyraSSRTrace.ps1 runs Unreal Insights headlessly after capture and creates derived CSV files.
+The dedicated server .utrace file is the only runtime measurement artifact. The server does not buffer cycle samples or write CSV files. Export-LyraSSRTrace.ps1 runs Unreal Insights headlessly after capture and creates derived CSV files. Snapshot and mesh code only expose Unreal Insights trace scopes; they do not reference or call the profiling subsystem.
 
 ## Editor setup
 
@@ -76,7 +76,7 @@ powershell -ExecutionPolicy Bypass -File .\Scripts\Profiling\Export-LyraSSRTrace
 The script creates trace-name_analysis beside the trace with:
 
 - summary.csv: average, p50, p95, p99, min, max, total, average total per server frame, frame milliseconds, and effective Hz
-- metadata.csv: variant/profile, dedicated-server state, uncapped state, request/result counts, native parallel tick counts, and validity
+- metadata.csv: variant/profile, dedicated-server state, uncapped state, request/result counts, timing-event-derived snapshot/native parallel tick counts, and validity
 - timing_events.csv: raw Unreal Insights timing events inside LyraSSR_Measurement
 - counter CSV files and unreal_insights_export.log
 
@@ -86,7 +86,7 @@ Discard a run when metadata.csv reports AnalysisValid=False or SessionValid=0.
 
 - Snapshot save cost: LyraProfile_SnapshotUpdateGT
 - SSR request cost: LyraProfile_RewindTotal
-- Target mesh game-thread tick: LyraProfile_MeshTickGT
+- Lyra character mesh game-thread tick: LyraProfile_MeshTickGT
 - Native worker CPU: the non-game-thread `CharacterMesh0` UObject context scope surrounding `ParallelAnimationEvaluation`
 - Native completion: FParallelAnimationCompletionTask and USkeletalMeshComponent_CompleteParallelAnimationEvaluation
 - Game-thread wait: USkeletalMeshComponent::BlockOnParallelEvaluationTask
@@ -94,6 +94,6 @@ Discard a run when metadata.csv reports AnalysisValid=False or SessionValid=0.
 
 Use Snapshot captures for snapshot cost, mesh tick, and steady-state server frames. Use RewindMicro for per-request SSR cost. Use RewindLoad for server frames under SSR load.
 
-ParallelAnimationWorkerCPU excludes same-named game-thread scopes and validates that its event count equals ParallelAnimationMeshTicks. It is summed CPU work across worker threads, not elapsed frame latency. Do not add it to MeshTickGT and call the result wall time. BlockOnParallelEvaluationTask is wait latency rather than active CPU work, but it remains part of server frame time. Parent inclusive timers and nested child timers must not be summed twice.
+SnapshotCalls and ParallelAnimationMeshTicks in metadata.csv are derived from timing events inside the measurement region rather than runtime callbacks. ParallelAnimationWorkerCPU excludes same-named game-thread scopes. It is summed CPU work across worker threads, not elapsed frame latency. Do not add it to MeshTickGT and call the result wall time. BlockOnParallelEvaluationTask is wait latency rather than active CPU work, but it remains part of server frame time. Parent inclusive timers and nested child timers must not be summed twice.
 
 The built-in worker timer is server-wide. Keep the map, player count, and every non-target animated actor identical across variants so the A/B delta remains attributable to the selected SSR method. A spectator or non-animated client pawn gives the cleanest worker-thread capture.

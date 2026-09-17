@@ -382,7 +382,10 @@ public:
 	bool EvaluatePoseRewindSeconds(float RewindSeconds, FAnimSSRRewindPose& OutPose);
 
 	/** TargetServerTime과 가장 가까운 AnimNode snapshot 하나를 평가한다. */
-	bool EvaluatePoseAtServerTime(double TargetServerTime, FAnimSSRRewindPose& OutPose);
+	bool EvaluatePoseAtServerTime(
+		double TargetServerTime,
+		FAnimSSRRewindPose& OutPose,
+		FLyraSSRRewindDiagnostics* Diagnostics = nullptr);
 	bool IsProfileDebugDrawEnabled() const
 	{
 		return SavedSnapshotDrawSettings.bEnabled
@@ -460,7 +463,10 @@ private:
 	bool BuildFrameSnapshot(FAnimSSRFrameSnapshot& OutSnapshot);
 	void BuildAnimInstanceIdentities(USkeletalMeshComponent* Mesh, TArray<FAnimSSRAnimInstanceIdentity>& OutIdentities) const;
 	bool CaptureAnimInstanceSnapshotSet(USkeletalMeshComponent* Mesh, TArray<FAnimSSRAnimInstanceSnapshot>& OutSnapshots) const;
-	bool ValidateAnimInstanceSnapshotSet(USkeletalMeshComponent* Mesh, const TArray<FAnimSSRAnimInstanceSnapshot>& Snapshots) const;
+	bool ValidateAnimInstanceSnapshotSet(
+		USkeletalMeshComponent* Mesh,
+		const TArray<FAnimSSRAnimInstanceSnapshot>& Snapshots,
+		FLyraSSRRewindDiagnostics* Diagnostics = nullptr) const;
 	bool RestoreAnimInstanceSnapshotSet(const TArray<FAnimSSRAnimInstanceSnapshot>& Snapshots) const;
 	void PruneSnapshotHistory(double CurrentServerTime);
 	void RefreshRetainedMontageAssets();
@@ -512,8 +518,15 @@ private:
 	bool RestoreTransformBoneSnapshots(UAnimInstance* AnimInstance, const TArray<FAnimSSRTransformBoneSnapshot>& Snapshots) const;
 	bool RestoreTwoBoneIKSnapshots(UAnimInstance* AnimInstance, const TArray<FAnimSSRTwoBoneIKSnapshot>& Snapshots) const;
 
-	bool TryGetSnapShotRangeAtTime(double TargetServerTime, FAnimSSRSnapshotRange& OutRange) const;
-	bool EvaluateFrameSnapshotPose(const FAnimSSRFrameSnapshot& Snapshot, FAnimSSRRewindPose& OutPose, bool bDisableCapturedBoneControllers = false);
+	bool TryGetSnapShotRangeAtTime(
+		double TargetServerTime,
+		FAnimSSRSnapshotRange& OutRange,
+		FLyraSSRRewindDiagnostics* Diagnostics = nullptr) const;
+	bool EvaluateFrameSnapshotPose(
+		const FAnimSSRFrameSnapshot& Snapshot,
+		FAnimSSRRewindPose& OutPose,
+		bool bDisableCapturedBoneControllers = false,
+		FLyraSSRRewindDiagnostics* Diagnostics = nullptr);
 	bool EvaluateSnapshotPose(USkeletalMeshComponent* Mesh, UAnimInstance* AnimInstance, const FAnimSSRFrameSnapshot& Snapshot, FAnimSSRRewindPose& OutPose) const;
 
 	/** 저장된 snapshot pose를 설정된 주기에 맞춰 DrawDebug로 출력한다. */

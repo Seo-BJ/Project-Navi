@@ -28,11 +28,6 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual TStatId GetStatId() const override;
 
-	bool IsMeasurementActive() const;
-	bool ShouldObserveAnimationExecution() const;
-	void RecordSnapshotExecution(uint64 FrameNumber);
-	void RecordAnimationExecution(bool bDispatchedParallelWork);
-
 private:
 	enum class ESessionState : uint8
 	{
@@ -52,7 +47,6 @@ private:
 	bool ExecuteInterpolatedMiss();
 	void FinishSession(double NowSeconds);
 	void RecordServerFrame(double NowSeconds);
-	void ValidateCompletedSnapshotFrame(uint64 FrameNumber, int32 CallsInFrame);
 	void PublishTraceCounters() const;
 	void RestoreAnimationCVars();
 	bool ValidateAnimationCVars() const;
@@ -70,24 +64,16 @@ private:
 
 	int32 TargetIndex = 0;
 	int32 MicroWarmupCount = 0;
-	int32 SnapshotCallCount = 0;
-	int32 SnapshotMeasuredFrameCount = 0;
-	int32 SnapshotCallsInCurrentFrame = 0;
 	int32 ServerFrameCount = 0;
 	int32 RewindRequestCount = 0;
 	int32 RewindHitCount = 0;
 	int32 RewindMissCount = 0;
 	int32 RewindInvalidCount = 0;
 	int32 MissedInjectionCount = 0;
-	int32 ParallelAnimationTickCount = 0;
-	int32 NonParallelAnimationTickCount = 0;
 	int32 ParallelCapableAnimInstanceCount = 0;
 	int32 GameThreadOnlyAnimInstanceCount = 0;
 	uint32 InvalidReasonMask = 0;
 	uint64 SessionStartFrame = 0;
-	uint64 MeasurementStartFrame = 0;
-	uint64 MeasurementEndFrame = 0;
-	uint64 CurrentSnapshotFrame = MAX_uint64;
 	double SessionDiscoveryStartSeconds = 0.0;
 	double WarmupStartSeconds = 0.0;
 	double MeasurementStartSeconds = 0.0;
