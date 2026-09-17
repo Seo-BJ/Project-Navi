@@ -3,10 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
 #include "Engine/EngineTypes.h"
 #include "LagCompensation/LyraLagCompensationTypes.h"
-#include "LyraServerSideRewindComponent.generated.h"
+#include "Subsystems/WorldSubsystem.h"
+#include "LyraServerSideRewindSubsystem.generated.h"
 
 class ULyraSnapShotComponent;
 class ULyraSnapShotComponent_AnimNode;
@@ -23,16 +23,17 @@ LYRAGAME_API ULyraSnapShotComponent* SelectUniqueActiveLyraSnapShotComponent(
 	TConstArrayView<ULyraSnapShotComponent*> Components);
 
 /**
- * 서버 사이드 리와인드 판정 전용 컴포넌트.
- * Snapshot 저장은 ULyraSnapShotComponent 계층이 담당하고, 이 컴포넌트는 저장된 Snapshot을 이용해 최종 hit 여부만 판단한다.
+ * 서버 권한 World의 서버 사이드 리와인드 판정 전용 Subsystem.
+ * Snapshot 저장은 ULyraSnapShotComponent 계층이 담당하고, 이 Subsystem은 요청 Target의 Snapshot을 이용해 최종 hit 여부만 판단한다.
  */
-UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class LYRAGAME_API ULyraServerSideRewindComponent : public UActorComponent
+UCLASS()
+class LYRAGAME_API ULyraServerSideRewindSubsystem : public UWorldSubsystem
 {
 	GENERATED_BODY()
 
 public:
-	ULyraServerSideRewindComponent();
+	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
+	virtual bool DoesSupportWorldType(EWorldType::Type WorldType) const override;
 
 	/** 서버 리와인드 판정 진입점. */
 	FServerSideRewindResult ServerSideRewind(const FLyraServerSideRewindRequest& Request);
@@ -95,12 +96,4 @@ private:
 	void DrawDebugBoxHitResult(const FHitResult& HitResult, bool bConfirmHit) const;
 	void VisualizeMeshConfirmHit(const FVector& Start, const FVector& End, bool bSuccess, const FHitResult& HitResult, const AActor* TargetActor) const;
 #endif
-
-	/** Box 방식 SSR trace와 결과 hitbox를 그릴지 여부. */
-	UPROPERTY(EditAnywhere, Category = "Server Side Rewind|Debug")
-	bool bDrawBoxHitResult = false;
-
-	/** Box 방식 debug line/box 유지 시간. */
-	UPROPERTY(EditAnywhere, Category = "Server Side Rewind|Debug", meta = (ClampMin = "0.0"))
-	float BoxHitDebugDrawTime = 4.0f;
 };

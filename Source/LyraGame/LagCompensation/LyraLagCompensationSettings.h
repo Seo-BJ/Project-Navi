@@ -46,4 +46,12 @@ public:
 	/** 디버그 시각화 유지 시간 (초) */
 	UPROPERTY(config, EditAnywhere, Category = "Debug Drawing", meta = (ConsoleVariable = "lyra.LagComp.DrawMeshDuration", ForceUnits = s))
 	float DrawMeshLagCompensationDuration;
+
+	/** Box 기반 Lag Compensation 디버그 시각화 ON/OFF */
+	UPROPERTY(config, EditAnywhere, Category = "Debug Drawing", meta = (ConsoleVariable = "lyra.LagComp.DrawBox"))
+	bool bDrawBoxLagCompensation;
+
+	/** Box 기반 디버그 시각화 유지 시간 (초) */
+	UPROPERTY(config, EditAnywhere, Category = "Debug Drawing", meta = (ConsoleVariable = "lyra.LagComp.DrawBoxDuration", ForceUnits = s, ClampMin = "0.0"))
+	float DrawBoxLagCompensationDuration;
 };

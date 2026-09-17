@@ -11,7 +11,6 @@ class ULyraHealthSet;
 class ULyraCombatSet;
 class UBoxComponent;
 class UGameplayEffect;
-class ULyraServerSideRewindComponent;
 class ULyraSnapShotComponent;
 
 UCLASS()
@@ -43,9 +42,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lag Compensation")
-	TObjectPtr<ULyraServerSideRewindComponent> ServerSideRewindComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lag Compensation")
 	TObjectPtr<ULyraSnapShotComponent> LyraSnapShotComponent;

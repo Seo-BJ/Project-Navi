@@ -30,6 +30,18 @@ namespace LyraLagCompensationCVars
 		Settings->DrawMeshLagCompensationDuration = Var->GetFloat();
 	}
 
+	static void SyncDrawBoxToCDO(IConsoleVariable* Var)
+	{
+		ULyraLagCompensationDeveloperSettings* Settings = GetMutableDefault<ULyraLagCompensationDeveloperSettings>();
+		Settings->bDrawBoxLagCompensation = Var->GetBool();
+	}
+
+	static void SyncDrawBoxDurationToCDO(IConsoleVariable* Var)
+	{
+		ULyraLagCompensationDeveloperSettings* Settings = GetMutableDefault<ULyraLagCompensationDeveloperSettings>();
+		Settings->DrawBoxLagCompensationDuration = Var->GetFloat();
+	}
+
 	static bool bUseLagCompensation = true;
 	static FAutoConsoleVariableRef CVarUseLagCompensation(
 		TEXT("lyra.LagComp.Enabled"),
@@ -54,6 +66,22 @@ namespace LyraLagCompensationCVars
 		TEXT("Lag Compensation 디버그 시각화 유지 시간 (초)"),
 		FConsoleVariableDelegate::CreateStatic(&SyncDrawMeshDurationToCDO),
 		ECVF_Default);
+
+	static bool bDrawBoxLagCompensation = false;
+	static FAutoConsoleVariableRef CVarDrawBox(
+		TEXT("lyra.LagComp.DrawBox"),
+		bDrawBoxLagCompensation,
+		TEXT("Box 기반 Lag Compensation 디버그 시각화 ON/OFF"),
+		FConsoleVariableDelegate::CreateStatic(&SyncDrawBoxToCDO),
+		ECVF_Default);
+
+	static float DrawBoxLagCompensationDuration = 4.0f;
+	static FAutoConsoleVariableRef CVarDrawBoxDuration(
+		TEXT("lyra.LagComp.DrawBoxDuration"),
+		DrawBoxLagCompensationDuration,
+		TEXT("Box 기반 Lag Compensation 디버그 시각화 유지 시간 (초)"),
+		FConsoleVariableDelegate::CreateStatic(&SyncDrawBoxDurationToCDO),
+		ECVF_Default);
 }
 
 ULyraLagCompensationSettings::ULyraLagCompensationSettings()
@@ -65,6 +93,8 @@ ULyraLagCompensationSettings::ULyraLagCompensationSettings()
 ULyraLagCompensationDeveloperSettings::ULyraLagCompensationDeveloperSettings()
 	: bDrawMeshLagCompensation(false)
 	, DrawMeshLagCompensationDuration(3.0f)
+	, bDrawBoxLagCompensation(false)
+	, DrawBoxLagCompensationDuration(4.0f)
 {
 }
 

@@ -1,11 +1,12 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "LagCompensation/ServerSideRewind/LyraServerSideRewindComponent.h"
+#include "LagCompensation/ServerSideRewind/LyraServerSideRewindSubsystem.h"
 
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "DrawDebugHelpers.h"
+#include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "LagCompensation/ILagCompensationTarget.h"
 #include "LagCompensation/LyraLagCompensationSettings.h"
@@ -29,18 +30,59 @@ DECLARE_CYCLE_STAT(TEXT("SSR - BoxConfirmHit"), STAT_LyraSSR_BoxConfirmHit, STAT
 DECLARE_CYCLE_STAT(TEXT("SSR - MeshConfirmHit"), STAT_LyraSSR_MeshConfirmHit, STATGROUP_LyraServerSideRewind);
 DECLARE_CYCLE_STAT(TEXT("SSR - MeshPhysicsAssetCollision"), STAT_LyraSSR_MeshPhysicsAssetCollision, STATGROUP_LyraServerSideRewind);
 
-ULyraServerSideRewindComponent::ULyraServerSideRewindComponent()
+namespace
 {
-	PrimaryComponentTick.bCanEverTick = false;
+	bool ShouldDrawBoxLagCompensation()
+	{
+		const ULyraLagCompensationDeveloperSettings* Settings = GetDefault<ULyraLagCompensationDeveloperSettings>();
+		return IsValid(Settings) && Settings->bDrawBoxLagCompensation;
+	}
+
+	float GetBoxLagCompensationDrawDuration()
+	{
+		const ULyraLagCompensationDeveloperSettings* Settings = GetDefault<ULyraLagCompensationDeveloperSettings>();
+		return IsValid(Settings) ? Settings->DrawBoxLagCompensationDuration : 4.0f;
+	}
 }
 
-FServerSideRewindResult ULyraServerSideRewindComponent::ServerSideRewind(const FLyraServerSideRewindRequest& Request)
+bool ULyraServerSideRewindSubsystem::ShouldCreateSubsystem(UObject* Outer) const
+{
+	const UWorld* World = Cast<UWorld>(Outer);
+	return Super::ShouldCreateSubsystem(Outer)
+		&& IsValid(World)
+		&& DoesSupportWorldType(World->WorldType)
+		&& World->GetNetMode() != NM_Client;
+}
+
+bool ULyraServerSideRewindSubsystem::DoesSupportWorldType(const EWorldType::Type WorldType) const
+{
+	return WorldType == EWorldType::Game || WorldType == EWorldType::PIE;
+}
+
+FServerSideRewindResult ULyraServerSideRewindSubsystem::ServerSideRewind(const FLyraServerSideRewindRequest& Request)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(LyraProfile_RewindTotal);
 	SCOPE_CYCLE_COUNTER(STAT_LyraSSR_Dispatch);
 
+	UWorld* World = GetWorld();
+	if (!ensureMsgf(IsValid(World) && World->GetNetMode() != NM_Client,
+		TEXT("ServerSideRewind must run in an authority World.")))
+	{
+		return {};
+	}
+
 	AActor* TargetActor = Request.TargetActor.Get();
 	if (!IsValid(TargetActor))
+	{
+		return {};
+	}
+	if (!ensureMsgf(TargetActor->HasAuthority(),
+		TEXT("ServerSideRewind target '%s' must have authority."), *GetNameSafe(TargetActor)))
+	{
+		return {};
+	}
+	if (!ensureMsgf(TargetActor->GetWorld() == World,
+		TEXT("ServerSideRewind target '%s' belongs to a different World."), *GetNameSafe(TargetActor)))
 	{
 		return {};
 	}
@@ -66,7 +108,7 @@ FServerSideRewindResult ULyraServerSideRewindComponent::ServerSideRewind(const F
 	}
 }
 
-ULyraSnapShotComponent* ULyraServerSideRewindComponent::ResolveSnapShotComponent(AActor* TargetActor) const
+ULyraSnapShotComponent* ULyraServerSideRewindSubsystem::ResolveSnapShotComponent(AActor* TargetActor) const
 {
 	if (!IsValid(TargetActor))
 	{
@@ -94,7 +136,7 @@ ULyraSnapShotComponent* SelectUniqueActiveLyraSnapShotComponent(TConstArrayView<
 	return ActiveComponent;
 }
 
-FServerSideRewindResult ULyraServerSideRewindComponent::ServerSideRewindBoxComponent(ULyraSnapShotComponent_BoxComponent* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const
+FServerSideRewindResult ULyraServerSideRewindSubsystem::ServerSideRewindBoxComponent(ULyraSnapShotComponent_BoxComponent* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const
 {
 	if (!IsValid(SnapShotComponent) || !IsValid(Request.TargetActor.Get()))
 	{
@@ -111,7 +153,7 @@ FServerSideRewindResult ULyraServerSideRewindComponent::ServerSideRewindBoxCompo
 	return ConfirmBoxHit(SnapShotComponent, FrameToCheck, Request);
 }
 
-FServerSideRewindResult ULyraServerSideRewindComponent::ConfirmBoxHit(
+FServerSideRewindResult ULyraServerSideRewindSubsystem::ConfirmBoxHit(
 	ULyraSnapShotComponent_BoxComponent* SnapShotComponent,
 	const FLyraBoxSnapShotFrame& FrameToCheck,
 	const FLyraServerSideRewindRequest& Request
@@ -152,10 +194,11 @@ FServerSideRewindResult ULyraServerSideRewindComponent::ConfirmBoxHit(
 	const FVector TraceEnd = Request.TraceStart + (Request.HitLocation - Request.TraceStart) * 1.25f;
 
 #if ENABLE_DRAW_DEBUG
-	if (bDrawBoxHitResult)
+	if (ShouldDrawBoxLagCompensation())
 	{
-		DrawDebugLine(World, Request.TraceStart, TraceEnd, FColor::Red, false, BoxHitDebugDrawTime, 0, 1.0f);
-		DrawDebugPoint(World, Request.HitLocation, 10.0f, FColor::Cyan, false, BoxHitDebugDrawTime);
+		const float DrawDuration = GetBoxLagCompensationDrawDuration();
+		DrawDebugLine(World, Request.TraceStart, TraceEnd, FColor::Red, false, DrawDuration, 0, 1.0f);
+		DrawDebugPoint(World, Request.HitLocation, 10.0f, FColor::Cyan, false, DrawDuration);
 	}
 #endif
 
@@ -196,7 +239,7 @@ FServerSideRewindResult ULyraServerSideRewindComponent::ConfirmBoxHit(
 	}
 
 #if ENABLE_DRAW_DEBUG
-	if (bDrawBoxHitResult)
+	if (ShouldDrawBoxLagCompensation())
 	{
 		VisualizeBoxConfirmHit(Request.TraceStart, TraceEnd, bHitSuccess, ConfirmHitResult, TargetActor);
 	}
@@ -205,7 +248,7 @@ FServerSideRewindResult ULyraServerSideRewindComponent::ConfirmBoxHit(
 	return FServerSideRewindResult{ bHitSuccess, bHeadShot };
 }
 
-bool ULyraServerSideRewindComponent::PerformBoxHitCheck(const TArray<UBoxComponent*>& BoxesToCheck, const FVector& Start, const FVector& End, const FCollisionQueryParams& Params, FHitResult& OutHit) const
+bool ULyraServerSideRewindSubsystem::PerformBoxHitCheck(const TArray<UBoxComponent*>& BoxesToCheck, const FVector& Start, const FVector& End, const FCollisionQueryParams& Params, FHitResult& OutHit) const
 {
 	UWorld* World = GetWorld();
 	if (!IsValid(World))
@@ -236,7 +279,7 @@ bool ULyraServerSideRewindComponent::PerformBoxHitCheck(const TArray<UBoxCompone
 	return bHit;
 }
 
-void ULyraServerSideRewindComponent::SetMeshCollisionEnabledType(AActor* TargetActor, ECollisionEnabled::Type CollisionEnabled) const
+void ULyraServerSideRewindSubsystem::SetMeshCollisionEnabledType(AActor* TargetActor, ECollisionEnabled::Type CollisionEnabled) const
 {
 	ACharacter* HitCharacter = Cast<ACharacter>(TargetActor);
 	if (!IsValid(HitCharacter))
@@ -256,7 +299,7 @@ void ULyraServerSideRewindComponent::SetMeshCollisionEnabledType(AActor* TargetA
 	}
 }
 
-FServerSideRewindResult ULyraServerSideRewindComponent::ServerSideRewindSkeletalMesh(ULyraSnapShotComponent_SkeletalMesh* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const
+FServerSideRewindResult ULyraServerSideRewindSubsystem::ServerSideRewindSkeletalMesh(ULyraSnapShotComponent_SkeletalMesh* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const
 {
 	if (!IsValid(SnapShotComponent) || !IsValid(Request.TargetActor.Get()))
 	{
@@ -273,7 +316,7 @@ FServerSideRewindResult ULyraServerSideRewindComponent::ServerSideRewindSkeletal
 	return ConfirmMeshHit(SnapShotComponent, FrameToCheck, Request);
 }
 
-FServerSideRewindResult ULyraServerSideRewindComponent::ConfirmMeshHit(
+FServerSideRewindResult ULyraServerSideRewindSubsystem::ConfirmMeshHit(
 	ULyraSnapShotComponent_SkeletalMesh* SnapShotComponent,
 	const FLyraMeshSnapShotFrame& FrameToCheck,
 	const FLyraServerSideRewindRequest& Request
@@ -316,7 +359,7 @@ FServerSideRewindResult ULyraServerSideRewindComponent::ConfirmMeshHit(
 	return FServerSideRewindResult{ bHit, bHeadShot };
 }
 
-FServerSideRewindResult ULyraServerSideRewindComponent::ServerSideRewindAnimNode(ULyraSnapShotComponent_AnimNode* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const
+FServerSideRewindResult ULyraServerSideRewindSubsystem::ServerSideRewindAnimNode(ULyraSnapShotComponent_AnimNode* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const
 {
 	if (!IsValid(SnapShotComponent) || !IsValid(Request.TargetActor.Get()))
 	{
@@ -332,7 +375,7 @@ FServerSideRewindResult ULyraServerSideRewindComponent::ServerSideRewindAnimNode
 	return ConfirmAnimNodeHit(SnapShotComponent, RewindPose, Request);
 }
 
-FServerSideRewindResult ULyraServerSideRewindComponent::ConfirmAnimNodeHit(
+FServerSideRewindResult ULyraServerSideRewindSubsystem::ConfirmAnimNodeHit(
 	ULyraSnapShotComponent_AnimNode* SnapShotComponent,
 	const FAnimSSRRewindPose& RewindPose,
 	const FLyraServerSideRewindRequest& Request
@@ -378,7 +421,7 @@ FServerSideRewindResult ULyraServerSideRewindComponent::ConfirmAnimNodeHit(
 	return FServerSideRewindResult{ bHit, bHeadShot };
 }
 
-bool ULyraServerSideRewindComponent::PerformPhysicsAssetCollision(
+bool ULyraServerSideRewindSubsystem::PerformPhysicsAssetCollision(
 	ULyraSnapShotComponent_SkeletalMesh* SnapShotComponent,
 	AActor* TargetActor,
 	const FLyraMeshSnapShotFrame& Frame,
@@ -402,7 +445,7 @@ bool ULyraServerSideRewindComponent::PerformPhysicsAssetCollision(
 	return PerformPhysicsAssetCollision(SkeletalMeshComp, Frame.MeshTransform, Frame.BoneTransforms, TraceStart, TraceEnd, BoneFilter, OutHit);
 }
 
-bool ULyraServerSideRewindComponent::PerformPhysicsAssetCollision(
+bool ULyraServerSideRewindSubsystem::PerformPhysicsAssetCollision(
 	USkeletalMeshComponent* SkeletalMeshComp,
 	const FTransform& MeshTransform,
 	const TArray<FTransform>& ComponentSpaceTransforms,
@@ -533,8 +576,9 @@ bool ULyraServerSideRewindComponent::PerformPhysicsAssetCollision(
 }
 
 #if ENABLE_DRAW_DEBUG
-void ULyraServerSideRewindComponent::VisualizeBoxConfirmHit(const FVector& Start, const FVector& End, bool bSuccess, const FHitResult& HitResult, AActor* TargetActor) const
+void ULyraServerSideRewindSubsystem::VisualizeBoxConfirmHit(const FVector& Start, const FVector& End, bool bSuccess, const FHitResult& HitResult, AActor* TargetActor) const
 {
+	const float DrawDuration = GetBoxLagCompensationDrawDuration();
 	if (bSuccess)
 	{
 		DrawDebugBoxHitResult(HitResult, true);
@@ -551,26 +595,26 @@ void ULyraServerSideRewindComponent::VisualizeBoxConfirmHit(const FVector& Start
 			{
 				if (UBoxComponent* BoxComponent = HitBoxPair.Value.Get(); IsValid(BoxComponent))
 				{
-					DrawDebugBox(GetWorld(), BoxComponent->GetComponentLocation(), BoxComponent->GetScaledBoxExtent(), BoxComponent->GetComponentQuat(), FColor::Green, false, BoxHitDebugDrawTime);
+					DrawDebugBox(GetWorld(), BoxComponent->GetComponentLocation(), BoxComponent->GetScaledBoxExtent(), BoxComponent->GetComponentQuat(), FColor::Green, false, DrawDuration);
 				}
 			}
 		}
 	}
 }
 
-void ULyraServerSideRewindComponent::DrawDebugBoxHitResult(const FHitResult& HitResult, bool bConfirmHit) const
+void ULyraServerSideRewindSubsystem::DrawDebugBoxHitResult(const FHitResult& HitResult, bool bConfirmHit) const
 {
 	if (HitResult.Component.IsValid())
 	{
 		if (UBoxComponent* Box = Cast<UBoxComponent>(HitResult.Component.Get()))
 		{
 			const FColor DrawColor = bConfirmHit ? FColor::Blue : FColor::Red;
-			DrawDebugBox(GetWorld(), Box->GetComponentLocation(), Box->GetScaledBoxExtent(), FQuat(Box->GetComponentRotation()), DrawColor, false, BoxHitDebugDrawTime);
+			DrawDebugBox(GetWorld(), Box->GetComponentLocation(), Box->GetScaledBoxExtent(), FQuat(Box->GetComponentRotation()), DrawColor, false, GetBoxLagCompensationDrawDuration());
 		}
 	}
 }
 
-void ULyraServerSideRewindComponent::VisualizeMeshConfirmHit(const FVector& Start, const FVector& End, bool bSuccess, const FHitResult& HitResult, const AActor* TargetActor) const
+void ULyraServerSideRewindSubsystem::VisualizeMeshConfirmHit(const FVector& Start, const FVector& End, bool bSuccess, const FHitResult& HitResult, const AActor* TargetActor) const
 {
 	const ULyraLagCompensationDeveloperSettings* Settings = GetDefault<ULyraLagCompensationDeveloperSettings>();
 	const float DrawDebugDuration = IsValid(Settings) ? Settings->DrawMeshLagCompensationDuration : 5.0f;

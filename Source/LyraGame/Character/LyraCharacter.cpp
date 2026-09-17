@@ -22,7 +22,6 @@
 #include "LagCompensation/LyraLagCompensationProfile.h"
 #include "LagCompensation/SnapShot/LyraSnapShotComponent_AnimNode.h"
 #include "LagCompensation/SnapShot/LyraSnapShotComponent_SkeletalMesh.h"
-#include "LagCompensation/ServerSideRewind/LyraServerSideRewindComponent.h"
 #include "Physics/LyraCollisionChannels.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraCharacter)
@@ -96,7 +95,6 @@ ALyraCharacter::ALyraCharacter(const FObjectInitializer& ObjectInitializer)
 	BaseEyeHeight = 80.0f;
 	CrouchedEyeHeight = 50.0f;
 	
-	ServerSideRewindComponent = CreateDefaultSubobject<ULyraServerSideRewindComponent>(TEXT("ServerSideRewindComponent"));
 	LyraSnapShotComponent_SkeletalMesh = CreateDefaultSubobject<ULyraSnapShotComponent_SkeletalMesh>(TEXT("LyraSnapShotComponent_SkeletalMesh"));
 	LyraSnapShotComponent_AnimNode = CreateDefaultSubobject<ULyraSnapShotComponent_AnimNode>(TEXT("LyraSnapShotComponent_AnimNode"));
 	ConfigureLagCompensationVariant();

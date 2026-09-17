@@ -10,7 +10,7 @@
 #include "EngineUtils.h"
 #include "HAL/IConsoleManager.h"
 #include "LagCompensation/LyraLagCompensationSettings.h"
-#include "LagCompensation/ServerSideRewind/LyraServerSideRewindComponent.h"
+#include "LagCompensation/ServerSideRewind/LyraServerSideRewindSubsystem.h"
 #include "LagCompensation/SnapShot/LyraSnapShotComponent.h"
 #include "LagCompensation/SnapShot/LyraSnapShotComponent_AnimNode.h"
 #include "LagCompensation/Test/LyraLagCompensationTestCharacter.h"
@@ -150,6 +150,7 @@ bool ULyraLagCompensationProfileSubsystem::ShouldCreateSubsystem(UObject* Outer)
 void ULyraLagCompensationProfileSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
+	Collection.InitializeDependency<ULyraServerSideRewindSubsystem>();
 	Variant = FLyraSSRProfileConfiguration::GetVariant();
 	Mode = FLyraSSRProfileConfiguration::GetMode();
 	// Every benchmark uses the engine's native parallel animation path. The old
@@ -295,12 +296,12 @@ void ULyraLagCompensationProfileSubsystem::TryStartSession(double NowSeconds)
 		return;
 	}
 
+	ULyraServerSideRewindSubsystem* RewindEvaluator = World->GetSubsystem<ULyraServerSideRewindSubsystem>();
 	for (const TWeakObjectPtr<ALyraLagCompensationTestCharacter>& TargetPtr : Targets)
 	{
 		ALyraLagCompensationTestCharacter* Target = TargetPtr.Get();
 		ULyraSnapShotComponent* ActiveSnapshot = Target ? Target->GetActiveSnapShotComponent() : nullptr;
-		ULyraServerSideRewindComponent* Rewind = Target ? Target->GetServerSideRewindComponent() : nullptr;
-		if (!ActiveSnapshot || !Rewind || Rewind->ResolveSnapShotComponent(Target) != ActiveSnapshot)
+		if (!ActiveSnapshot || !RewindEvaluator || RewindEvaluator->ResolveSnapShotComponent(Target) != ActiveSnapshot)
 		{
 			Invalidate(Invalid_ActiveSnapshotSelection);
 		}
@@ -476,11 +477,10 @@ bool ULyraLagCompensationProfileSubsystem::ExecuteInterpolatedMiss()
 
 	ALyraLagCompensationTestCharacter* Target = Targets[TargetIndex].Get();
 	TargetIndex = (TargetIndex + 1) % Targets.Num();
-	ALyraLagCompensationTestCharacter* RequestOwner = Targets[0].Get();
-	ULyraServerSideRewindComponent* Rewind = RequestOwner ? RequestOwner->GetServerSideRewindComponent() : nullptr;
 	ULyraSnapShotComponent* Snapshot = Target ? Target->GetActiveSnapShotComponent() : nullptr;
 	UWorld* World = GetWorld();
-	if (!Target || !Rewind || !Snapshot || !World)
+	ULyraServerSideRewindSubsystem* RewindEvaluator = World ? World->GetSubsystem<ULyraServerSideRewindSubsystem>() : nullptr;
+	if (!Target || !RewindEvaluator || !Snapshot || !World)
 	{
 		Invalidate(Invalid_ActiveSnapshotSelection);
 		return false;
@@ -502,7 +502,7 @@ bool ULyraLagCompensationProfileSubsystem::ExecuteInterpolatedMiss()
 	Request.HitTime = static_cast<float>(World->GetTimeSeconds() - ProfileRewindSeconds);
 
 	Snapshot->ResetRewindDiagnostics();
-	const FServerSideRewindResult Result = Rewind->ServerSideRewind(Request);
+	const FServerSideRewindResult Result = RewindEvaluator->ServerSideRewind(Request);
 	++RewindRequestCount;
 	if (Result.bHitConfirmed)
 	{

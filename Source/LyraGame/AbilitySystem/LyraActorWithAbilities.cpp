@@ -8,7 +8,6 @@
 #include "Physics/LyraCollisionChannels.h"
 #include "GameplayEffect.h"
 #include "LagCompensation/SnapShot/LyraSnapShotComponent_BoxComponent.h"
-#include "LagCompensation/ServerSideRewind/LyraServerSideRewindComponent.h"
 
 ALyraActorWithAbilities::ALyraActorWithAbilities(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -25,7 +24,6 @@ ALyraActorWithAbilities::ALyraActorWithAbilities(const FObjectInitializer& Objec
 	StaticMeshComponent->SetupAttachment(RootComponent);
 	StaticMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	ServerSideRewindComponent = CreateDefaultSubobject<ULyraServerSideRewindComponent>(TEXT("ServerSideRewindComponent"));
 	LyraSnapShotComponent = CreateDefaultSubobject<ULyraSnapShotComponent_BoxComponent>(TEXT("LyraSnapShotComponent"));
 
 	AbilitySystemComponent = CreateDefaultSubobject<ULyraAbilitySystemComponent>(TEXT("AbilitySystemComponent"));

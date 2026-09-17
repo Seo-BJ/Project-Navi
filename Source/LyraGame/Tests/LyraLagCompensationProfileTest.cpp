@@ -5,7 +5,7 @@
 #include "Misc/AutomationTest.h"
 
 #include "LagCompensation/LyraLagCompensationProfile.h"
-#include "LagCompensation/ServerSideRewind/LyraServerSideRewindComponent.h"
+#include "LagCompensation/ServerSideRewind/LyraServerSideRewindSubsystem.h"
 #include "LagCompensation/SnapShot/LyraSnapShotComponent_AnimNode.h"
 #include "LagCompensation/SnapShot/LyraSnapShotComponent_SkeletalMesh.h"
 

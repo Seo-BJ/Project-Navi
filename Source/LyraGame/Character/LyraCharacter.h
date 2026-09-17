@@ -29,7 +29,6 @@ struct FFrame;
 struct FGameplayTag;
 struct FGameplayTagContainer;
 class UBoxComponent;
-class ULyraServerSideRewindComponent;
 class ULyraSnapShotComponent;
 class ULyraSnapShotComponent_AnimNode;
 class ULyraSnapShotComponent_SkeletalMesh;
@@ -156,7 +155,6 @@ public:
 	FORCEINLINE USkeletalMeshComponent* GetFirstPersonMesh() const {return FirstPersonMesh.Get();}
 	
 	FORCEINLINE ULyraCameraComponent* GetLyraCameraComponent() const {return CameraComponent.Get();}
-	FORCEINLINE ULyraServerSideRewindComponent* GetServerSideRewindComponent() const { return ServerSideRewindComponent.Get(); }
 	ULyraSnapShotComponent* GetActiveSnapShotComponent() const;
 
 	//~ ILagCompensationTarget interface
@@ -250,9 +248,6 @@ private:
 	UFUNCTION()
 	void OnRep_MyTeamID(FGenericTeamId OldTeamID);
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<ULyraServerSideRewindComponent> ServerSideRewindComponent;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<ULyraSnapShotComponent_SkeletalMesh> LyraSnapShotComponent_SkeletalMesh;
 

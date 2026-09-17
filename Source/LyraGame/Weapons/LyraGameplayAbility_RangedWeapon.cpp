@@ -17,7 +17,7 @@
 #include "Character/LyraCharacter.h"
 #include "LagCompensation/LyraLagCompensationSettings.h"
 #include "LagCompensation/SnapShot/LyraSnapShotComponent.h"
-#include "LagCompensation/ServerSideRewind/LyraServerSideRewindComponent.h"
+#include "LagCompensation/ServerSideRewind/LyraServerSideRewindSubsystem.h"
 #include "LagCompensation/LyraTimeSyncComponent.h"
 #include "Player/LyraPlayerController.h"
 #include "GameFramework/GameStateBase.h"
@@ -523,6 +523,11 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 			if (GetDefault<ULyraLagCompensationSettings>()->bUseLagCompensation)
 			{
 				TRACE_CPUPROFILER_EVENT_SCOPE(ServerRewind_HitValidationLoop);
+				UWorld* World = GetWorld();
+				ULyraServerSideRewindSubsystem* RewindEvaluator = IsValid(World)
+					? World->GetSubsystem<ULyraServerSideRewindSubsystem>()
+					: nullptr;
+				ensureMsgf(IsValid(RewindEvaluator), TEXT("ServerSideRewindSubsystem is required in an authority World."));
 
 				for (uint8 i = 0; (i < LocalTargetDataHandle.Num()) && (i < 255); ++i)
 				{
@@ -532,17 +537,16 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 						const FHitResult& LocalHitResult = SingleTargetHit->HitResult;
 
 						AActor* TargetActor = LocalHitResult.GetActor();
-						ULyraServerSideRewindComponent* ServerSideRewind = IsValid(TargetActor) ? TargetActor->GetComponentByClass<ULyraServerSideRewindComponent>() : nullptr;
 
 						FServerSideRewindResult RewindResult;
-						if (IsValid(ServerSideRewind))
+						if (IsValid(RewindEvaluator) && IsValid(TargetActor))
 						{
 							FLyraServerSideRewindRequest RewindRequest;
 							RewindRequest.TargetActor = TargetActor;
 							RewindRequest.TraceStart = LocalHitResult.TraceStart;
 							RewindRequest.HitLocation = LocalHitResult.ImpactPoint;
 							RewindRequest.HitTime = LocalHitTime;
-							RewindResult = ServerSideRewind->ServerSideRewind(RewindRequest);
+							RewindResult = RewindEvaluator->ServerSideRewind(RewindRequest);
 						}
 						
 						if (SingleTargetHit->bHitReplaced)
