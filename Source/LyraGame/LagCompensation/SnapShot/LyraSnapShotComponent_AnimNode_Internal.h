@@ -3,6 +3,9 @@
 #pragma once
 
 #include "LyraSnapShotComponent_AnimNode.h"
+#include "Stats/Stats.h"
+
+DECLARE_STATS_GROUP(TEXT("LyraSSR"), STATGROUP_LyraSSR, STATCAT_Advanced);
 
 class FStructProperty;
 class UAnimInstance;

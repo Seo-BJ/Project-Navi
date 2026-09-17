@@ -34,15 +34,7 @@ class LYRAGAME_API ULyraServerSideRewindComponent : public UActorComponent
 public:
 	ULyraServerSideRewindComponent();
 
-	/** 무기 어빌리티에서 호출하는 서버 리와인드 판정 진입점. */
-	FServerSideRewindResult ServerSideRewind(
-		AActor* TargetActor,
-		const FVector_NetQuantize& TraceStart,
-		const FVector_NetQuantize& HitLocation,
-		float HitTime
-		);
-
-	/** 구조체 기반 서버 리와인드 판정 진입점. */
+	/** 서버 리와인드 판정 진입점. */
 	FServerSideRewindResult ServerSideRewind(const FLyraServerSideRewindRequest& Request);
 
 	/** 활성 플래그로 선택된 유일한 Snapshot 컴포넌트. 프로파일 검증에도 사용한다. */

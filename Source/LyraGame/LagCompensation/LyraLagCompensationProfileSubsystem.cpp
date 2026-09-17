@@ -53,7 +53,7 @@ namespace
 {
 constexpr double WarmupDurationSeconds = 5.0;
 constexpr double MeasurementDurationSeconds = 60.0;
-constexpr double RewindSeconds = 6.5 / 60.0;
+constexpr double ProfileRewindSeconds = 6.5 / 60.0;
 constexpr double RewindLoadIntervalSeconds = 1.0 / 30.0;
 constexpr int32 RewindMicroWarmupRequests = 50;
 constexpr int32 RewindMicroMeasuredRequests = 1000;
@@ -499,7 +499,7 @@ bool ULyraLagCompensationProfileSubsystem::ExecuteInterpolatedMiss()
 	Request.TargetActor = Target;
 	Request.TraceStart = TraceStart;
 	Request.HitLocation = HitLocation;
-	Request.HitTime = static_cast<float>(World->GetTimeSeconds() - RewindSeconds);
+	Request.HitTime = static_cast<float>(World->GetTimeSeconds() - ProfileRewindSeconds);
 
 	Snapshot->ResetRewindDiagnostics();
 	const FServerSideRewindResult Result = Rewind->ServerSideRewind(Request);

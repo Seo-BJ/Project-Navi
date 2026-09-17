@@ -42,7 +42,6 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogLyraAnimNodeServerSideRewind, Log, All);
 
-DECLARE_STATS_GROUP(TEXT("LyraSSR"), STATGROUP_LyraSSR, STATCAT_Advanced);
 DECLARE_CYCLE_STAT(TEXT("EvaluateFrameSnapshotPose"), STAT_LyraSSR_EvaluateFrameSnapshotPose, STATGROUP_LyraSSR);
 DECLARE_DWORD_COUNTER_STAT(TEXT("History AnimInstance Snapshots"), STAT_LyraSSR_HistoryAnimInstanceSnapshots, STATGROUP_LyraSSR);
 DECLARE_DWORD_COUNTER_STAT(TEXT("History Slot Snapshots"), STAT_LyraSSR_HistorySlotSnapshots, STATGROUP_LyraSSR);

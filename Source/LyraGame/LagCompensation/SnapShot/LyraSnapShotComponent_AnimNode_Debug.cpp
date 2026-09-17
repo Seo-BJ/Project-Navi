@@ -11,7 +11,6 @@
 #include "ReferenceSkeleton.h"
 #include "Stats/Stats.h"
 
-DECLARE_STATS_GROUP(TEXT("LyraSSR"), STATGROUP_LyraSSR, STATCAT_Advanced);
 DECLARE_CYCLE_STAT(TEXT("DrawSavedSnapshotDebug"), STAT_LyraSSR_DrawSavedSnapshotDebug, STATGROUP_LyraSSR);
 DECLARE_CYCLE_STAT(TEXT("DrawServerCurrentMeshPoseDebug"), STAT_LyraSSR_DrawServerCurrentMeshPoseDebug, STATGROUP_LyraSSR);
 DECLARE_CYCLE_STAT(TEXT("DrawClientCurrentMeshPoseDebug"), STAT_LyraSSR_DrawClientCurrentMeshPoseDebug, STATGROUP_LyraSSR);
@@ -237,4 +236,3 @@ void ULyraSnapShotComponent_AnimNode::DrawRewindPose(
 	const UWorld* World = GetWorld();
 	DrawPoseSkeleton(World, SkeletalMesh, RewindPose.ComponentSpaceTransforms, RewindPose.MeshComponentTransform, DrawSettings, WorldOffset, Label);
 }
-

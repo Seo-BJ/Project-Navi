@@ -537,7 +537,12 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 						FServerSideRewindResult RewindResult;
 						if (IsValid(ServerSideRewind))
 						{
-							RewindResult = ServerSideRewind->ServerSideRewind(TargetActor, LocalHitResult.TraceStart, LocalHitResult.ImpactPoint, LocalHitTime);
+							FLyraServerSideRewindRequest RewindRequest;
+							RewindRequest.TargetActor = TargetActor;
+							RewindRequest.TraceStart = LocalHitResult.TraceStart;
+							RewindRequest.HitLocation = LocalHitResult.ImpactPoint;
+							RewindRequest.HitTime = LocalHitTime;
+							RewindResult = ServerSideRewind->ServerSideRewind(RewindRequest);
 						}
 						
 						if (SingleTargetHit->bHitReplaced)

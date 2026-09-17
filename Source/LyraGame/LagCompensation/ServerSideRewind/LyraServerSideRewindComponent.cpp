@@ -34,55 +34,36 @@ ULyraServerSideRewindComponent::ULyraServerSideRewindComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-FServerSideRewindResult ULyraServerSideRewindComponent::ServerSideRewind(
-	AActor* TargetActor,
-	const FVector_NetQuantize& TraceStart,
-	const FVector_NetQuantize& HitLocation,
-	float HitTime
-	)
-{
-	FLyraServerSideRewindRequest Request;
-	Request.TargetActor = TargetActor;
-	Request.TraceStart = TraceStart;
-	Request.HitLocation = HitLocation;
-	Request.HitTime = HitTime;
-	return ServerSideRewind(Request);
-}
-
 FServerSideRewindResult ULyraServerSideRewindComponent::ServerSideRewind(const FLyraServerSideRewindRequest& Request)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(LyraProfile_RewindTotal);
 	SCOPE_CYCLE_COUNTER(STAT_LyraSSR_Dispatch);
 
-	FServerSideRewindResult Result;
-	ELyraSnapShotMode ResolvedMode = ELyraSnapShotMode::None;
-	ULyraSnapShotComponent* SnapShotComponent = nullptr;
 	AActor* TargetActor = Request.TargetActor.Get();
-	if (IsValid(TargetActor))
+	if (!IsValid(TargetActor))
 	{
-		SnapShotComponent = ResolveSnapShotComponent(TargetActor);
-		if (IsValid(SnapShotComponent))
-		{
-			SnapShotComponent->ResetRewindDiagnostics();
-			ResolvedMode = SnapShotComponent->GetSnapShotMode();
-			switch (ResolvedMode)
-			{
-			case ELyraSnapShotMode::BoxComponent:
-				Result = ServerSideRewindBoxComponent(Cast<ULyraSnapShotComponent_BoxComponent>(SnapShotComponent), Request);
-				break;
-			case ELyraSnapShotMode::SkeletalMesh:
-				Result = ServerSideRewindSkeletalMesh(Cast<ULyraSnapShotComponent_SkeletalMesh>(SnapShotComponent), Request);
-				break;
-			case ELyraSnapShotMode::AnimNode:
-				Result = ServerSideRewindAnimNode(Cast<ULyraSnapShotComponent_AnimNode>(SnapShotComponent), Request);
-				break;
-			default:
-				break;
-			}
-		}
+		return {};
 	}
 
-	return Result;
+	ULyraSnapShotComponent* SnapShotComponent = ResolveSnapShotComponent(TargetActor);
+	if (!IsValid(SnapShotComponent))
+	{
+		return {};
+	}
+
+	SnapShotComponent->ResetRewindDiagnostics();
+
+	switch (SnapShotComponent->GetSnapShotMode())
+	{
+	case ELyraSnapShotMode::BoxComponent:
+		return ServerSideRewindBoxComponent(CastChecked<ULyraSnapShotComponent_BoxComponent>(SnapShotComponent), Request);
+	case ELyraSnapShotMode::SkeletalMesh:
+		return ServerSideRewindSkeletalMesh(CastChecked<ULyraSnapShotComponent_SkeletalMesh>(SnapShotComponent), Request);
+	case ELyraSnapShotMode::AnimNode:
+		return ServerSideRewindAnimNode(CastChecked<ULyraSnapShotComponent_AnimNode>(SnapShotComponent), Request);
+	default:
+		return {};
+	}
 }
 
 ULyraSnapShotComponent* ULyraServerSideRewindComponent::ResolveSnapShotComponent(AActor* TargetActor) const
