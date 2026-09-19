@@ -134,6 +134,126 @@ ULyraSnapShotComponent* SelectUniqueActiveLyraSnapShotComponent(TConstArrayView<
 	return ActiveComponent;
 }
 
+ULyraServerSideRewindSubsystem::FBoxRewindState ULyraServerSideRewindSubsystem::CaptureBoxRewindState(
+	TConstArrayView<UBoxComponent*> HitBoxes,
+	TConstArrayView<UPrimitiveComponent*> NormalCollisionComponents)
+{
+	FBoxRewindState RewindState;
+	RewindState.BoxStates.Reserve(HitBoxes.Num());
+	for (UBoxComponent* HitBox : HitBoxes)
+	{
+		if (!IsValid(HitBox))
+		{
+			continue;
+		}
+
+		FBoxRestoreState& State = RewindState.BoxStates.AddDefaulted_GetRef();
+		State.Component = HitBox;
+		State.WorldTransform = HitBox->GetComponentTransform();
+		State.UnscaledBoxExtent = HitBox->GetUnscaledBoxExtent();
+		State.CollisionEnabled = HitBox->GetCollisionEnabled();
+		State.LagCompensationResponse = HitBox->GetCollisionResponseToChannel(Lyra_TraceChannel_LagCompensation_HitBox);
+	}
+
+	RewindState.PrimitiveStates.Reserve(NormalCollisionComponents.Num());
+	for (UPrimitiveComponent* Component : NormalCollisionComponents)
+	{
+		if (!IsValid(Component))
+		{
+			continue;
+		}
+
+		FPrimitiveCollisionRestoreState& State = RewindState.PrimitiveStates.AddDefaulted_GetRef();
+		State.Component = Component;
+		State.CollisionEnabled = Component->GetCollisionEnabled();
+	}
+
+	return RewindState;
+}
+
+void ULyraServerSideRewindSubsystem::SuspendBoxRewindCollision(const FBoxRewindState& RewindState)
+{
+	for (const FBoxRestoreState& State : RewindState.BoxStates)
+	{
+		if (UBoxComponent* HitBox = State.Component.Get(); IsValid(HitBox))
+		{
+			HitBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			HitBox->SetCollisionResponseToChannel(Lyra_TraceChannel_LagCompensation_HitBox, ECollisionResponse::ECR_Ignore);
+		}
+	}
+
+	for (const FPrimitiveCollisionRestoreState& State : RewindState.PrimitiveStates)
+	{
+		if (UPrimitiveComponent* Component = State.Component.Get(); IsValid(Component))
+		{
+			Component->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	}
+}
+
+void ULyraServerSideRewindSubsystem::EnableOnlyBoxesForTrace(
+	const FBoxRewindState& RewindState,
+	TConstArrayView<UBoxComponent*> BoxesToEnable)
+{
+	for (const FBoxRestoreState& State : RewindState.BoxStates)
+	{
+		if (UBoxComponent* HitBox = State.Component.Get(); IsValid(HitBox))
+		{
+			HitBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			HitBox->SetCollisionResponseToChannel(Lyra_TraceChannel_LagCompensation_HitBox, ECollisionResponse::ECR_Ignore);
+		}
+	}
+
+	for (UBoxComponent* HitBox : BoxesToEnable)
+	{
+		if (IsValid(HitBox))
+		{
+			HitBox->SetCollisionResponseToChannel(Lyra_TraceChannel_LagCompensation_HitBox, ECollisionResponse::ECR_Block);
+			HitBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		}
+	}
+}
+
+bool ULyraServerSideRewindSubsystem::RestoreBoxRewindState(const FBoxRewindState& RewindState)
+{
+	bool bSucceeded = true;
+	for (const FBoxRestoreState& State : RewindState.BoxStates)
+	{
+		UBoxComponent* HitBox = State.Component.Get();
+		if (!IsValid(HitBox))
+		{
+			bSucceeded = false;
+			continue;
+		}
+
+		HitBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		HitBox->SetWorldTransform(State.WorldTransform, false, nullptr, ETeleportType::TeleportPhysics);
+		HitBox->SetBoxExtent(State.UnscaledBoxExtent, false);
+		HitBox->SetCollisionResponseToChannel(Lyra_TraceChannel_LagCompensation_HitBox, State.LagCompensationResponse);
+		HitBox->SetCollisionEnabled(State.CollisionEnabled);
+
+		bSucceeded &= HitBox->GetComponentTransform().Equals(State.WorldTransform);
+		bSucceeded &= HitBox->GetUnscaledBoxExtent().Equals(State.UnscaledBoxExtent);
+		bSucceeded &= HitBox->GetCollisionEnabled() == State.CollisionEnabled;
+		bSucceeded &= HitBox->GetCollisionResponseToChannel(Lyra_TraceChannel_LagCompensation_HitBox) == State.LagCompensationResponse;
+	}
+
+	for (const FPrimitiveCollisionRestoreState& State : RewindState.PrimitiveStates)
+	{
+		UPrimitiveComponent* Component = State.Component.Get();
+		if (!IsValid(Component))
+		{
+			bSucceeded = false;
+			continue;
+		}
+
+		Component->SetCollisionEnabled(State.CollisionEnabled);
+		bSucceeded &= Component->GetCollisionEnabled() == State.CollisionEnabled;
+	}
+
+	return bSucceeded;
+}
+
 FServerSideRewindResult ULyraServerSideRewindSubsystem::ServerSideRewindBoxComponent(ULyraSnapShotComponent_BoxComponent* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const
 {
 	FServerSideRewindResult Result;
@@ -151,7 +271,8 @@ FServerSideRewindResult ULyraServerSideRewindSubsystem::ServerSideRewindBoxCompo
 
 	FrameToCheck.HitActor = Request.TargetActor.Get();
 	FServerSideRewindResult HitResult = ConfirmBoxHit(SnapShotComponent, FrameToCheck, Request);
-	HitResult.Diagnostics = Result.Diagnostics;
+	HitResult.Diagnostics.bSnapshotLookupSucceeded = Result.Diagnostics.bSnapshotLookupSucceeded;
+	HitResult.Diagnostics.bUsedInterpolation = Result.Diagnostics.bUsedInterpolation;
 	return HitResult;
 }
 
@@ -171,86 +292,101 @@ FServerSideRewindResult ULyraServerSideRewindSubsystem::ConfirmBoxHit(
 		return FServerSideRewindResult();
 	}
 
-	FLyraBoxSnapShotFrame CurrentFrame;
-	SnapShotComponent->CaptureCurrentSnapShot(TargetActor, CurrentFrame);
-	if (CurrentFrame.HitBoxInfo.IsEmpty())
+	const TMap<FName, TObjectPtr<UBoxComponent>>& HitBoxes = Target->GetHitCollisionBoxes();
+	TArray<UBoxComponent*> AllBoxes;
+	AllBoxes.Reserve(HitBoxes.Num());
+	for (const TPair<FName, TObjectPtr<UBoxComponent>>& Pair : HitBoxes)
+	{
+		if (IsValid(Pair.Value.Get()))
+		{
+			AllBoxes.Add(Pair.Value.Get());
+		}
+	}
+	if (AllBoxes.IsEmpty())
 	{
 		return FServerSideRewindResult();
 	}
 
-	bool bShouldRestore = false;
-	ON_SCOPE_EXIT
+	TArray<UPrimitiveComponent*> NormalCollisionComponents;
+	if (ACharacter* HitCharacter = Cast<ACharacter>(TargetActor); IsValid(HitCharacter))
 	{
-		if (bShouldRestore)
+		if (USkeletalMeshComponent* Mesh = HitCharacter->GetMesh(); IsValid(Mesh))
 		{
-			SnapShotComponent->RestoreSnapShot(TargetActor, CurrentFrame);
-			SetMeshCollisionEnabledType(TargetActor, ECollisionEnabled::QueryAndPhysics);
+			NormalCollisionComponents.Add(Mesh);
 		}
-	};
-
-	SnapShotComponent->ApplySnapShot(TargetActor, FrameToCheck);
-	SetMeshCollisionEnabledType(TargetActor, ECollisionEnabled::NoCollision);
-	bShouldRestore = true;
+		if (UCapsuleComponent* Capsule = HitCharacter->GetCapsuleComponent(); IsValid(Capsule))
+		{
+			NormalCollisionComponents.Add(Capsule);
+		}
+	}
 
 	FCollisionQueryParams TraceParams(SCENE_QUERY_STAT(LyraSSR_BoxConfirmHit), true);
 	const FVector TraceEnd = Request.TraceStart + (Request.HitLocation - Request.TraceStart) * 1.25f;
+	FServerSideRewindResult Result;
+	bool bRestoreSucceeded = true;
+	{
+		const FBoxRewindState RewindState = CaptureBoxRewindState(AllBoxes, NormalCollisionComponents);
+		ON_SCOPE_EXIT
+		{
+			bRestoreSucceeded = RestoreBoxRewindState(RewindState);
+		};
+
+		SuspendBoxRewindCollision(RewindState);
+		SnapShotComponent->ApplySnapShot(TargetActor, FrameToCheck);
 
 #if ENABLE_DRAW_DEBUG
-	if (ShouldDrawBoxLagCompensation())
-	{
-		const float DrawDuration = GetBoxLagCompensationDrawDuration();
-		DrawDebugLine(World, Request.TraceStart, TraceEnd, FColor::Red, false, DrawDuration, 0, 1.0f);
-		DrawDebugPoint(World, Request.HitLocation, 10.0f, FColor::Cyan, false, DrawDuration);
-	}
+		if (ShouldDrawBoxLagCompensation())
+		{
+			const float DrawDuration = GetBoxLagCompensationDrawDuration();
+			DrawDebugLine(World, Request.TraceStart, TraceEnd, FColor::Red, false, DrawDuration, 0, 1.0f);
+			DrawDebugPoint(World, Request.HitLocation, 10.0f, FColor::Cyan, false, DrawDuration);
+		}
 #endif
 
-	FHitResult ConfirmHitResult;
-	bool bHitSuccess = false;
-	bool bHeadShot = false;
+		FHitResult ConfirmHitResult;
+		bool bHitSuccess = false;
+		bool bHeadShot = false;
 
-	const TMap<FName, TObjectPtr<UBoxComponent>>& HitBoxes = Target->GetHitCollisionBoxes();
-	const TObjectPtr<UBoxComponent>* FoundBoxPtr = HitBoxes.Find(FName("head"));
-	if (FoundBoxPtr && IsValid(FoundBoxPtr->Get()))
-	{
-		TArray<UBoxComponent*> HeadBoxes;
-		HeadBoxes.Add(FoundBoxPtr->Get());
-
-		if (PerformBoxHitCheck(HeadBoxes, Request.TraceStart, TraceEnd, TraceParams, ConfirmHitResult))
+		const TObjectPtr<UBoxComponent>* FoundBoxPtr = HitBoxes.Find(FName("head"));
+		if (FoundBoxPtr && IsValid(FoundBoxPtr->Get()))
 		{
-			bHitSuccess = true;
-			bHeadShot = true;
-		}
-	}
+			TArray<UBoxComponent*> HeadBoxes;
+			HeadBoxes.Add(FoundBoxPtr->Get());
+			EnableOnlyBoxesForTrace(RewindState, HeadBoxes);
 
-	if (!bHitSuccess)
-	{
-		TArray<UBoxComponent*> AllBoxes;
-		for (const TPair<FName, TObjectPtr<UBoxComponent>>& Pair : HitBoxes)
-		{
-			if (IsValid(Pair.Value.Get()))
+			if (PerformBoxHitCheck(Request.TraceStart, TraceEnd, TraceParams, ConfirmHitResult))
 			{
-				AllBoxes.Add(Pair.Value.Get());
+				bHitSuccess = true;
+				bHeadShot = true;
 			}
 		}
 
-		if (PerformBoxHitCheck(AllBoxes, Request.TraceStart, TraceEnd, TraceParams, ConfirmHitResult))
+		if (!bHitSuccess)
 		{
-			bHitSuccess = true;
-			bHeadShot = false;
+			EnableOnlyBoxesForTrace(RewindState, AllBoxes);
+			if (PerformBoxHitCheck(Request.TraceStart, TraceEnd, TraceParams, ConfirmHitResult))
+			{
+				bHitSuccess = true;
+				bHeadShot = false;
+			}
 		}
-	}
 
 #if ENABLE_DRAW_DEBUG
-	if (ShouldDrawBoxLagCompensation())
-	{
-		VisualizeBoxConfirmHit(Request.TraceStart, TraceEnd, bHitSuccess, ConfirmHitResult, TargetActor);
-	}
+		if (ShouldDrawBoxLagCompensation())
+		{
+			VisualizeBoxConfirmHit(Request.TraceStart, TraceEnd, bHitSuccess, ConfirmHitResult, TargetActor);
+		}
 #endif
 
-	return FServerSideRewindResult{ bHitSuccess, bHeadShot };
+		Result.bHitConfirmed = bHitSuccess;
+		Result.bHeadShot = bHeadShot;
+	}
+
+	Result.Diagnostics.bStateRestoreSucceeded = bRestoreSucceeded;
+	return Result;
 }
 
-bool ULyraServerSideRewindSubsystem::PerformBoxHitCheck(const TArray<UBoxComponent*>& BoxesToCheck, const FVector& Start, const FVector& End, const FCollisionQueryParams& Params, FHitResult& OutHit) const
+bool ULyraServerSideRewindSubsystem::PerformBoxHitCheck(const FVector& Start, const FVector& End, const FCollisionQueryParams& Params, FHitResult& OutHit) const
 {
 	UWorld* World = GetWorld();
 	if (!IsValid(World))
@@ -258,47 +394,7 @@ bool ULyraServerSideRewindSubsystem::PerformBoxHitCheck(const TArray<UBoxCompone
 		return false;
 	}
 
-	for (UBoxComponent* Box : BoxesToCheck)
-	{
-		if (IsValid(Box))
-		{
-			Box->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-			Box->SetCollisionResponseToChannel(Lyra_TraceChannel_LagCompensation_HitBox, ECollisionResponse::ECR_Block);
-		}
-	}
-
-	const bool bHit = World->LineTraceSingleByChannel(OutHit, Start, End, Lyra_TraceChannel_LagCompensation_HitBox, Params);
-
-	for (UBoxComponent* Box : BoxesToCheck)
-	{
-		if (IsValid(Box))
-		{
-			Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			Box->SetCollisionResponseToChannel(Lyra_TraceChannel_LagCompensation_HitBox, ECollisionResponse::ECR_Ignore);
-		}
-	}
-
-	return bHit;
-}
-
-void ULyraServerSideRewindSubsystem::SetMeshCollisionEnabledType(AActor* TargetActor, ECollisionEnabled::Type CollisionEnabled) const
-{
-	ACharacter* HitCharacter = Cast<ACharacter>(TargetActor);
-	if (!IsValid(HitCharacter))
-	{
-		return;
-	}
-
-	USkeletalMeshComponent* Mesh = HitCharacter->GetMesh();
-	UCapsuleComponent* Capsule = HitCharacter->GetCapsuleComponent();
-	if (IsValid(Mesh))
-	{
-		Mesh->SetCollisionEnabled(CollisionEnabled);
-	}
-	if (IsValid(Capsule))
-	{
-		Capsule->SetCollisionEnabled(CollisionEnabled);
-	}
+	return World->LineTraceSingleByChannel(OutHit, Start, End, Lyra_TraceChannel_LagCompensation_HitBox, Params);
 }
 
 FServerSideRewindResult ULyraServerSideRewindSubsystem::ServerSideRewindSkeletalMesh(ULyraSnapShotComponent_SkeletalMesh* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const

@@ -13,6 +13,7 @@ class ULyraSnapShotComponent_AnimNode;
 class ULyraSnapShotComponent_BoxComponent;
 class ULyraSnapShotComponent_SkeletalMesh;
 class UBoxComponent;
+class UPrimitiveComponent;
 class USkeletalMeshComponent;
 
 struct FAnimSSRRewindPose;
@@ -42,6 +43,27 @@ public:
 	ULyraSnapShotComponent* ResolveSnapShotComponent(AActor* TargetActor) const;
 
 private:
+	struct FBoxRestoreState
+	{
+		TWeakObjectPtr<UBoxComponent> Component;
+		FTransform WorldTransform = FTransform::Identity;
+		FVector UnscaledBoxExtent = FVector::ZeroVector;
+		ECollisionEnabled::Type CollisionEnabled = ECollisionEnabled::NoCollision;
+		ECollisionResponse LagCompensationResponse = ECollisionResponse::ECR_Ignore;
+	};
+
+	struct FPrimitiveCollisionRestoreState
+	{
+		TWeakObjectPtr<UPrimitiveComponent> Component;
+		ECollisionEnabled::Type CollisionEnabled = ECollisionEnabled::NoCollision;
+	};
+
+	struct FBoxRewindState
+	{
+		TArray<FBoxRestoreState> BoxStates;
+		TArray<FPrimitiveCollisionRestoreState> PrimitiveStates;
+	};
+
 	FServerSideRewindResult ServerSideRewindBoxComponent(ULyraSnapShotComponent_BoxComponent* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const;
 	FServerSideRewindResult ServerSideRewindSkeletalMesh(ULyraSnapShotComponent_SkeletalMesh* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const;
 	FServerSideRewindResult ServerSideRewindAnimNode(ULyraSnapShotComponent_AnimNode* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const;
@@ -64,11 +86,15 @@ private:
 		const FLyraServerSideRewindRequest& Request
 		) const;
 
-	/** Box Snapshot 방식에서 실제 collision trace를 수행한다. */
-	bool PerformBoxHitCheck(const TArray<UBoxComponent*>& BoxesToCheck, const FVector& Start, const FVector& End, const FCollisionQueryParams& Params, FHitResult& OutHit) const;
+	/** Box Snapshot 방식에서 이미 활성화된 hitbox를 대상으로 collision trace를 수행한다. */
+	bool PerformBoxHitCheck(const FVector& Start, const FVector& End, const FCollisionQueryParams& Params, FHitResult& OutHit) const;
 
-	/** Box Snapshot 방식 판정 중 기존 mesh/capsule collision을 끄거나 복구한다. */
-	void SetMeshCollisionEnabledType(AActor* TargetActor, ECollisionEnabled::Type CollisionEnabled) const;
+	static FBoxRewindState CaptureBoxRewindState(
+		TConstArrayView<UBoxComponent*> HitBoxes,
+		TConstArrayView<UPrimitiveComponent*> NormalCollisionComponents);
+	static void SuspendBoxRewindCollision(const FBoxRewindState& RewindState);
+	static void EnableOnlyBoxesForTrace(const FBoxRewindState& RewindState, TConstArrayView<UBoxComponent*> BoxesToEnable);
+	static bool RestoreBoxRewindState(const FBoxRewindState& RewindState);
 
 	/** SkeletalMesh Snapshot 방식에서 PhysicsAsset primitive와 trace segment의 교차 여부를 계산한다. */
 	bool PerformPhysicsAssetCollision(
@@ -95,5 +121,11 @@ private:
 	void VisualizeBoxConfirmHit(const FVector& Start, const FVector& End, bool bSuccess, const FHitResult& HitResult, AActor* TargetActor) const;
 	void DrawDebugBoxHitResult(const FHitResult& HitResult, bool bConfirmHit) const;
 	void VisualizeMeshConfirmHit(const FVector& Start, const FVector& End, bool bSuccess, const FHitResult& HitResult, const AActor* TargetActor) const;
+#endif
+
+#if WITH_DEV_AUTOMATION_TESTS
+	friend class FLyraBoxSnapshotExactCollisionRestorationTest;
+	friend class FLyraBoxSnapshotTraceSelectionTest;
+	friend class FLyraBoxSnapshotEarlyExitRestorationTest;
 #endif
 };

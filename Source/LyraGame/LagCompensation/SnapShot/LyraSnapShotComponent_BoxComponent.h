@@ -19,13 +19,10 @@ struct FLyraBoxInformation
 	GENERATED_BODY()
 
 	UPROPERTY()
-	FVector Location = FVector::ZeroVector;
+	FTransform WorldTransform = FTransform::Identity;
 
 	UPROPERTY()
-	FRotator Rotation = FRotator::ZeroRotator;
-
-	UPROPERTY()
-	FVector BoxExtent = FVector::ZeroVector;
+	FVector UnscaledBoxExtent = FVector::ZeroVector;
 };
 
 /** 특정 서버 시간에 저장된 BoxComponent 기반 Snapshot frame. */
@@ -69,9 +66,6 @@ public:
 	/** hitbox 컴포넌트들을 Snapshot frame의 위치와 크기로 이동한다. */
 	void ApplySnapShot(AActor* HitActor, const FLyraBoxSnapShotFrame& Package) const;
 
-	/** hitbox 컴포넌트들을 저장된 현재 상태로 복구하고 trace collision을 끈다. */
-	void RestoreSnapShot(AActor* HitActor, const FLyraBoxSnapShotFrame& Package) const;
-
 	float GetDrawDebugHitBoxTime() const { return DrawDebugHitBoxTime; }
 
 #if ENABLE_DRAW_DEBUG
@@ -83,6 +77,9 @@ protected:
 	virtual void UpdateSnapShotHistory() override;
 
 private:
+	static FLyraBoxInformation CaptureBoxInformation(const UBoxComponent& BoxComponent);
+	static void ApplyBoxInformation(UBoxComponent& BoxComponent, const FLyraBoxInformation& BoxInformation);
+
 	FLyraBoxSnapShotFrame InterpolateBetweenTwoFrames(
 		const FLyraBoxSnapShotFrame& OlderFrame,
 		const FLyraBoxSnapShotFrame& YoungerFrame,
@@ -108,4 +105,8 @@ private:
 	float DrawDebugHitBoxTime = 4.0f;
 
 	int32 TickCounter = 0;
+
+#if WITH_DEV_AUTOMATION_TESTS
+	friend class FLyraBoxSnapshotGeometryRoundTripTest;
+#endif
 };

@@ -101,13 +101,24 @@ void ULyraSnapShotComponent_BoxComponent::CaptureCurrentSnapShot(AActor* HitActo
 			continue;
 		}
 
-		FLyraBoxInformation BoxInfo;
-		BoxInfo.Location = BoxComponent->GetComponentLocation();
-		BoxInfo.Rotation = BoxComponent->GetComponentRotation();
-		BoxInfo.BoxExtent = BoxComponent->GetScaledBoxExtent();
-
-		OutFramePackage.HitBoxInfo.Add(BoxPair.Key, BoxInfo);
+		OutFramePackage.HitBoxInfo.Add(BoxPair.Key, CaptureBoxInformation(*BoxComponent));
 	}
+}
+
+FLyraBoxInformation ULyraSnapShotComponent_BoxComponent::CaptureBoxInformation(const UBoxComponent& BoxComponent)
+{
+	FLyraBoxInformation BoxInformation;
+	BoxInformation.WorldTransform = BoxComponent.GetComponentTransform();
+	BoxInformation.UnscaledBoxExtent = BoxComponent.GetUnscaledBoxExtent();
+	return BoxInformation;
+}
+
+void ULyraSnapShotComponent_BoxComponent::ApplyBoxInformation(
+	UBoxComponent& BoxComponent,
+	const FLyraBoxInformation& BoxInformation)
+{
+	BoxComponent.SetWorldTransform(BoxInformation.WorldTransform, false, nullptr, ETeleportType::TeleportPhysics);
+	BoxComponent.SetBoxExtent(BoxInformation.UnscaledBoxExtent, false);
 }
 
 bool ULyraSnapShotComponent_BoxComponent::TryGetSnapShotAtTime(float HitTime, FLyraBoxSnapShotFrame& OutFramePackage) const
@@ -198,9 +209,8 @@ FLyraBoxSnapShotFrame ULyraSnapShotComponent_BoxComponent::InterpolateBetweenTwo
 		const FLyraBoxInformation& YoungerBox = YoungerPair.Value;
 
 		FLyraBoxInformation InterpBoxInfo;
-		InterpBoxInfo.Location = FMath::Lerp(OlderBox.Location, YoungerBox.Location, InterpolateFraction);
-		InterpBoxInfo.Rotation = FQuat::Slerp(FQuat(OlderBox.Rotation), FQuat(YoungerBox.Rotation), InterpolateFraction).Rotator();
-		InterpBoxInfo.BoxExtent = YoungerBox.BoxExtent;
+		InterpBoxInfo.WorldTransform.Blend(OlderBox.WorldTransform, YoungerBox.WorldTransform, InterpolateFraction);
+		InterpBoxInfo.UnscaledBoxExtent = FMath::Lerp(OlderBox.UnscaledBoxExtent, YoungerBox.UnscaledBoxExtent, InterpolateFraction);
 		InterpFramePackage.HitBoxInfo.Add(BoxInfoName, InterpBoxInfo);
 	}
 
@@ -238,9 +248,16 @@ FLyraBoxSnapShotFrame ULyraSnapShotComponent_BoxComponent::ExtrapolateByTwoFrame
 		const float Alpha = ExtrapolationTime / DeltaTime;
 
 		FLyraBoxInformation ExtrapolatedBoxInfo;
-		ExtrapolatedBoxInfo.Location = SecondHitBox.Location + Alpha * (FirstHitBox.Location - SecondHitBox.Location);
-		ExtrapolatedBoxInfo.Rotation = SecondHitBox.Rotation + Alpha * (FirstHitBox.Rotation - SecondHitBox.Rotation).GetNormalized();
-		ExtrapolatedBoxInfo.BoxExtent = FirstHitBox.BoxExtent;
+		const FVector ExtrapolatedLocation = SecondHitBox.WorldTransform.GetLocation()
+			+ Alpha * (FirstHitBox.WorldTransform.GetLocation() - SecondHitBox.WorldTransform.GetLocation());
+		const FRotator SecondRotation = SecondHitBox.WorldTransform.Rotator();
+		const FRotator FirstRotation = FirstHitBox.WorldTransform.Rotator();
+		const FRotator ExtrapolatedRotation = SecondRotation + Alpha * (FirstRotation - SecondRotation).GetNormalized();
+		ExtrapolatedBoxInfo.WorldTransform = FTransform(
+			ExtrapolatedRotation,
+			ExtrapolatedLocation,
+			FirstHitBox.WorldTransform.GetScale3D());
+		ExtrapolatedBoxInfo.UnscaledBoxExtent = FirstHitBox.UnscaledBoxExtent;
 
 		ExtrapolateFramePackage.HitBoxInfo.Add(BoxInfoName, ExtrapolatedBoxInfo);
 	}
@@ -267,28 +284,7 @@ void ULyraSnapShotComponent_BoxComponent::ApplySnapShot(AActor* HitActor, const 
 		const FLyraBoxInformation* BoxValue = Package.HitBoxInfo.Find(HitBoxPair.Key);
 		if (IsValid(BoxComponent) && BoxValue)
 		{
-			BoxComponent->SetWorldLocation(BoxValue->Location);
-			BoxComponent->SetWorldRotation(BoxValue->Rotation);
-			BoxComponent->SetBoxExtent(BoxValue->BoxExtent);
-		}
-	}
-}
-
-void ULyraSnapShotComponent_BoxComponent::RestoreSnapShot(AActor* HitActor, const FLyraBoxSnapShotFrame& Package) const
-{
-	ApplySnapShot(HitActor, Package);
-
-	ILagCompensationTarget* Target = IsValid(HitActor) ? Cast<ILagCompensationTarget>(HitActor) : nullptr;
-	if (!Target)
-	{
-		return;
-	}
-
-	for (const TPair<FName, TObjectPtr<UBoxComponent>>& HitBoxPair : Target->GetHitCollisionBoxes())
-	{
-		if (UBoxComponent* BoxComponent = HitBoxPair.Value.Get(); IsValid(BoxComponent))
-		{
-			BoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			ApplyBoxInformation(*BoxComponent, *BoxValue);
 		}
 	}
 }
@@ -298,7 +294,9 @@ void ULyraSnapShotComponent_BoxComponent::DrawDebugFramePackage(const FLyraBoxSn
 {
 	for (const TPair<FName, FLyraBoxInformation>& BoxInfo : FramePackage.HitBoxInfo)
 	{
-		DrawDebugBox(GetWorld(), BoxInfo.Value.Location, BoxInfo.Value.BoxExtent, FQuat(BoxInfo.Value.Rotation), FColor::Green, false, DrawDebugHitBoxTime);
+		const FTransform& WorldTransform = BoxInfo.Value.WorldTransform;
+		const FVector ScaledBoxExtent = BoxInfo.Value.UnscaledBoxExtent * WorldTransform.GetScale3D().GetAbs();
+		DrawDebugBox(GetWorld(), WorldTransform.GetLocation(), ScaledBoxExtent, WorldTransform.GetRotation(), FColor::Green, false, DrawDebugHitBoxTime);
 	}
 }
 #endif
