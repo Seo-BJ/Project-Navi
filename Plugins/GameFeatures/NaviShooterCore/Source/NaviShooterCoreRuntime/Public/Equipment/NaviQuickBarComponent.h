@@ -13,6 +13,7 @@ class ULyraEquipmentInstance;
 class ULyraEquipmentManagerComponent;
 class UObject;
 class ALyraDropAndPickupable;
+class USkeletalMesh;
 struct FFrame;
 
 
@@ -121,8 +122,20 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Navi|QuickBar")
 	ULyraInventoryItemInstance* RemoveItemFromSlot(int32 SlotIndex);
 
+	/**
+	 * 현재 들고 있는 아이템으로 픽업 액터만 생성한다(Dropped 태그 부착).
+	 * 슬롯·인벤토리에서는 제거하지 않으므로 호출하는 쪽(GA_DropEquipment)이 RemoveItemFromSlot, RemoveItemInstance를 이어서 호출해야 한다.
+	 */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Navi|QuickBar")
 	void SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPickupable> DroppedAndPickupableClass);
+
+	/**
+	 * 지정한 슬롯의 아이템을 바닥에 버린다: 픽업 액터 생성(Dropped 태그 부착) → 슬롯에서 제거 → 인벤토리에서 제거.
+	 * 들고 있지 않은 슬롯의 아이템도 버릴 수 있다 (예: 상점에서 주운 무기를 새 무기로 교체할 때).
+	 * 픽업 생성에 실패하면 아무것도 바꾸지 않고 false를 반환한다.
+	 */
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Navi|QuickBar")
+	bool DropItemInSlot(int32 SlotIndex, TSubclassOf<ALyraDropAndPickupable> DroppedAndPickupableClass);
 
 	UFUNCTION(BlueprintCallable, Category = "Navi|QuickBar")
 	FTransform GetAimPointTransform();
@@ -146,6 +159,15 @@ private:
 
 	/** Pawn에 부착된 EquipmentManagerComponent를 찾습니다. */
 	ULyraEquipmentManagerComponent* FindEquipmentManager() const;
+
+	/** 현재 장착 중인 무기 액터의 3인칭 메시. 장착된 무기가 없으면 nullptr. */
+	USkeletalMesh* GetEquippedWeaponMesh() const;
+
+	/**
+	 * 아이템으로 픽업 액터를 생성해 시선 방향으로 던진다(Dropped 태그 부착).
+	 * 슬롯·인벤토리는 건드리지 않는다. 생성하지 못하면 nullptr.
+	 */
+	ALyraDropAndPickupable* SpawnPickupForItem(ULyraInventoryItemInstance* Item, TSubclassOf<ALyraDropAndPickupable> DroppedAndPickupableClass, USkeletalMesh* PickupMesh);
 
 protected:
 	/** 퀵바의 총 슬롯 수. 발로란트 규칙에 따라 4개로 고정됩니다. */

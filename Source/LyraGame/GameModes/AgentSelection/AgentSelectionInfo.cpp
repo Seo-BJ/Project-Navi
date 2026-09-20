@@ -68,8 +68,8 @@ void FAgentSelectionInfoArray::AddAgentSelectionInfo(const FAgentSelectionInfo& 
 	{
 		return; 
 	}
-	Items.Add(AgentSelectionInfo);
-	MarkArrayDirty();
+	FAgentSelectionInfo& NewEntry = Items.Add_GetRef(AgentSelectionInfo);
+	MarkItemDirty(NewEntry);
 }
 void FAgentSelectionInfoArray::RemoveAgentSelectionInfo(const FString& UserName)
 {

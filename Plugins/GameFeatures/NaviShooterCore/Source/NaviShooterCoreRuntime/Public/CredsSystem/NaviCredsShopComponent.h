@@ -12,6 +12,7 @@ class ULyraWeaponPickupDefinition;
 class UDataTable;
 class AController;
 class ALyraDropAndPickupable;
+class ULyraAbilitySystemComponent;
 struct FNaviWeaponStatDefinition;
 struct FNaviArmorStatDefinition;
 
@@ -34,8 +35,10 @@ public:
 
     /**
      * 클라이언트가 서버에 무기 구매를 요청할 때 호출합니다.
+     * 구매 조건을 모두 판정한 뒤에만 크레드·슬롯·인벤토리를 바꿉니다. 실패하면 아무것도 바뀌지 않고 false를 반환합니다.
      * @param RequestingPlayerController 구매를 요청하는 플레이어의 컨트롤러입니다.
      * @param TargetEquipmentTag 구매하려는 무기의 고유 게임플레이 태그입니다.
+     * @return 구매에 성공했으면 true
      */
     UFUNCTION(BlueprintCallable, Category = "Navi|Shop")
     bool TryBuyEquipment(AController* RequestingPlayerController, FGameplayTag TargetEquipmentTag);
@@ -94,10 +97,20 @@ protected:
 
     /**
      * 플레이어에게 무기 아이템을 지급합니다.
+     * 슬롯에 넣지 못하면 인벤토리에 추가한 아이템을 되돌리고 false를 반환합니다.
      * @param WeaponItemClass 지급 대상 Weapon의 Item Definition Class
      * @param ReceivingController 지급 대상 Controller
      */
-    void GiveWeaponToPlayer(TSubclassOf<ULyraInventoryItemDefinition> WeaponItemClass, AController* ReceivingController);
+    bool GiveWeaponToPlayer(TSubclassOf<ULyraInventoryItemDefinition> WeaponItemClass, AController* ReceivingController);
+
+    /** 지금 구매할 수 있는 상태인지 (구매 페이즈 + 살아 있음). */
+    bool CanPurchaseNow(const ULyraAbilitySystemComponent* ASC) const;
+
+    /** 무기 구매: 판정(빈 슬롯 / 주운 무기 버리기 / 산 무기 자동 판매) 후 적용. */
+    bool TryBuyWeapon(AController* RequestingPlayerController, ULyraAbilitySystemComponent* ASC, const FGameplayTag& WeaponTag, int32 Cost, float CurrentCreds);
+
+    /** 방어구 구매: 사도 방어구가 늘지 않는 구매는 거부. */
+    bool TryBuyArmor(ULyraAbilitySystemComponent* ASC, const FGameplayTag& ArmorTag, int32 Cost, float CurrentCreds);
 
     UPROPERTY(EditDefaultsOnly, Category = "Navi|Shop")
     TSubclassOf<ALyraDropAndPickupable> DroppedWeaponClass;

@@ -74,7 +74,7 @@ struct FAgentSelectionInfoArray : public FFastArraySerializer
 };
 
 template<>
-struct TStructOpsTypeTraits<FAgentSelectionInfoArray> : public TStructOpsTypeTraitsBase2<FAgentSelectionInfo>
+struct TStructOpsTypeTraits<FAgentSelectionInfoArray> : public TStructOpsTypeTraitsBase2<FAgentSelectionInfoArray>
 {
 	enum
 	{

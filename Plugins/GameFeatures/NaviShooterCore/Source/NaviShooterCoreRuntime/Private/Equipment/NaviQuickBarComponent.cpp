@@ -20,6 +20,7 @@
 #include "Player/LyraPlayerController.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Inventory/InventoryFragment_PickupIcon.h"
+#include "Inventory/LyraInventoryManagerComponent.h"
 #include "Weapons/NaviDropAndPickupable_Weapon.h"
 #include "Inventory/ItemDropAndPickUp/LyraDropAndPickupable.h"
 #include "Weapons/LyraWeaponActor.h"
@@ -134,20 +135,29 @@ void UNaviQuickBarComponent::SetActiveSlotIndex_Implementation(int32 NewIndex)
 
 int UNaviQuickBarComponent::AddItemToSlot(ULyraInventoryItemInstance* Item)
 {
-	if (GetOwner()->HasAuthority() && Item != nullptr)
+	if (!GetOwner()->HasAuthority() || Item == nullptr)
 	{
-		if (ULyraInventoryItemDefinition* ItemDef = Item->GetItemDef()->GetDefaultObject<ULyraInventoryItemDefinition>())
-		{
-			int SlotIndex = GetSlotIndexForItemTag(ItemDef->ItemTag);
-			if (Slots[SlotIndex] == nullptr)
-			{
-				Slots[SlotIndex] = Item;
-				OnRep_Slots();
-				return SlotIndex;
-			}
-		}
+		return INDEX_NONE;
 	}
-	return INDEX_NONE;
+
+	// 아이템 정의가 없거나, 정의의 태그에 해당하는 슬롯이 없으면 추가하지 않는다.
+	// (예전에는 GetItemDef()가 null이거나 슬롯이 INDEX_NONE이면 Slots[-1] 접근으로 크래시했다)
+	const TSubclassOf<ULyraInventoryItemDefinition> ItemDefClass = Item->GetItemDef();
+	const ULyraInventoryItemDefinition* ItemDef = ItemDefClass ? ItemDefClass->GetDefaultObject<ULyraInventoryItemDefinition>() : nullptr;
+	if (ItemDef == nullptr)
+	{
+		return INDEX_NONE;
+	}
+
+	const int32 SlotIndex = GetSlotIndexForItemTag(ItemDef->ItemTag);
+	if (!Slots.IsValidIndex(SlotIndex) || Slots[SlotIndex] != nullptr)
+	{
+		return INDEX_NONE;
+	}
+
+	Slots[SlotIndex] = Item;
+	OnRep_Slots();
+	return SlotIndex;
 }
 
 
@@ -208,19 +218,80 @@ void UNaviQuickBarComponent::SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPicku
 		return;
 	}
 
+	// 동작은 기존과 같다: 들고 있는 아이템으로 픽업만 생성한다. (슬롯·인벤토리 제거는 GA_DropEquipment가 이어서 호출)
+	SpawnPickupForItem(GetActiveSlotItem(), DroppedAndPickupableClass, GetEquippedWeaponMesh());
+}
+
+bool UNaviQuickBarComponent::DropItemInSlot(int32 SlotIndex, TSubclassOf<ALyraDropAndPickupable> DroppedAndPickupableClass)
+{
+	if (!GetOwner()->HasAuthority() || DroppedAndPickupableClass == nullptr || !Slots.IsValidIndex(SlotIndex))
+	{
+		return false;
+	}
+
+	ULyraInventoryItemInstance* Item = Slots[SlotIndex];
+	if (Item == nullptr)
+	{
+		return false;
+	}
+
+	// 픽업 메시: 들고 있는 슬롯이면 장착된 무기 액터의 메시, 아니면(무기 액터가 없음) 아이템 정의의 PickupIcon 메시
+	USkeletalMesh* PickupMesh = (SlotIndex == ActiveSlotIndex) ? GetEquippedWeaponMesh() : nullptr;
+	if (PickupMesh == nullptr)
+	{
+		if (const UInventoryFragment_PickupIcon* PickupIcon = Item->FindFragmentByClass<UInventoryFragment_PickupIcon>())
+		{
+			PickupMesh = PickupIcon->SkeletalMesh;
+		}
+	}
+
+	// 픽업을 만들지 못하면 슬롯·인벤토리를 바꾸지 않는다.
+	if (SpawnPickupForItem(Item, DroppedAndPickupableClass, PickupMesh) == nullptr)
+	{
+		return false;
+	}
+
+	// 일반 드롭(GA_DropEquipment)과 같은 순서: 슬롯에서 제거(들고 있었다면 다른 슬롯으로 전환) → 인벤토리에서 제거
+	RemoveItemFromSlot(SlotIndex);
+	if (ULyraInventoryManagerComponent* InventoryManager = GetOwner()->FindComponentByClass<ULyraInventoryManagerComponent>())
+	{
+		InventoryManager->RemoveItemInstance(Item);
+	}
+	return true;
+}
+
+USkeletalMesh* UNaviQuickBarComponent::GetEquippedWeaponMesh() const
+{
+	USkeletalMesh* EquippedItemMesh = nullptr;
+	if (const ULyraWeaponInstance* EquippedWeapon = Cast<ULyraWeaponInstance>(EquippedItem))
+	{
+		for (AActor* SpawnedActor : EquippedWeapon->GetSpawnedActors())
+		{
+			if (ALyraWeaponActor* WeaponActor = Cast<ALyraWeaponActor>(SpawnedActor))
+			{
+				EquippedItemMesh = WeaponActor->GetThirdPersonPerspectiveMesh()->GetSkeletalMeshAsset();
+			}
+		}
+	}
+	return EquippedItemMesh;
+}
+
+ALyraDropAndPickupable* UNaviQuickBarComponent::SpawnPickupForItem(ULyraInventoryItemInstance* Item, TSubclassOf<ALyraDropAndPickupable> DroppedAndPickupableClass, USkeletalMesh* PickupMesh)
+{
+	if (Item == nullptr || DroppedAndPickupableClass == nullptr)
+	{
+		return nullptr;
+	}
+
 	AController* OwnerController = GetOwner<AController>();
-	if (OwnerController == nullptr) return;
+	if (OwnerController == nullptr) return nullptr;
 	APawn* OwnerPawn = OwnerController->GetPawn();
-	if (OwnerPawn == nullptr) return;
-	
-	FVector CameraLocation;
-	FRotator CameraRotation;
-	OwnerController->GetPlayerViewPoint(CameraLocation, CameraRotation);
+	if (OwnerPawn == nullptr) return nullptr;
 
 	const FRotator ControlRotation = OwnerController->GetControlRotation();
 	const FVector SpawnLocation = OwnerPawn->GetActorLocation() + (ControlRotation.Vector() * 100.0f);
 	const FTransform SpawnTransform(FRotator::ZeroRotator, SpawnLocation);
-    
+
 	ALyraDropAndPickupable* SpawnedItem = GetWorld()->SpawnActorDeferred<ALyraDropAndPickupable>(
 		DroppedAndPickupableClass,
 		SpawnTransform,
@@ -228,49 +299,36 @@ void UNaviQuickBarComponent::SpawnAndDropEquipment(TSubclassOf<ALyraDropAndPicku
 		nullptr,
 		ESpawnActorCollisionHandlingMethod::AlwaysSpawn
 	);
-
-
-	USkeletalMesh* EquippetItemMesh = nullptr;
-	
-	if (ULyraWeaponInstance* EquippedWeapon = Cast<ULyraWeaponInstance>(EquippedItem))
+	if (SpawnedItem == nullptr)
 	{
-		for (AActor* SpawnedActor :EquippedWeapon->GetSpawnedActors())
+		return nullptr;
+	}
+
+	FPickupInstance PickupInstance;
+	PickupInstance.Item = Item;
+	// Drop된 Item임을 표시 (주운 무기는 상점에서 환불 대상이 아니다)
+	PickupInstance.Item->AddStatTagStack(LyraGameplayTags::Lyra_Item_Dropped, 1);
+	SpawnedItem->StaticInventory.Instances.Add(PickupInstance);
+
+	if (ANaviDropAndPickupable_Weapon* SpawnedWeapon = Cast<ANaviDropAndPickupable_Weapon>(SpawnedItem))
+	{
+		if (PickupMesh)
 		{
-			if (ALyraWeaponActor* WeaponActor = Cast<ALyraWeaponActor>(SpawnedActor))
-			{
-				EquippetItemMesh = WeaponActor->GetThirdPersonPerspectiveMesh()->GetSkeletalMeshAsset();
-			}
+			SpawnedWeapon->SetSkeletalMesh(PickupMesh);
 		}
 	}
-	
-	if (SpawnedItem)
-	{
-		FPickupInstance PickupInstance;
-		PickupInstance.Item = GetActiveSlotItem();
-		// Drop된 Item임을 표시
-		PickupInstance.Item->AddStatTagStack(LyraGameplayTags::Lyra_Item_Dropped, 1);
-		SpawnedItem->StaticInventory.Instances.Add(PickupInstance);
 
-		if (SpawnedItem->IsA(ANaviDropAndPickupable_Weapon::StaticClass()))
-		{
-			ANaviDropAndPickupable_Weapon* SpawnedWeapon = Cast<ANaviDropAndPickupable_Weapon>(SpawnedItem);
-			if (SpawnedWeapon && EquippetItemMesh)
-			{
-				SpawnedWeapon->SetSkeletalMesh(EquippetItemMesh);
-			}
-		}
-		
-		const FVector LaunchVelocity = ControlRotation.Vector() * 450;
-		if (UProjectileMovementComponent* ProjMovement = SpawnedItem->GetProjectileMovementComponent())
-		{
-			ProjMovement->Velocity = LaunchVelocity;
-		}
-		UGameplayStatics::FinishSpawningActor(SpawnedItem, SpawnTransform);
-		if (UProjectileMovementComponent* ProjMovement = SpawnedItem->GetProjectileMovementComponent())
-		{
-			ProjMovement->Activate();
-		}
+	const FVector LaunchVelocity = ControlRotation.Vector() * 450;
+	if (UProjectileMovementComponent* ProjMovement = SpawnedItem->GetProjectileMovementComponent())
+	{
+		ProjMovement->Velocity = LaunchVelocity;
 	}
+	UGameplayStatics::FinishSpawningActor(SpawnedItem, SpawnTransform);
+	if (UProjectileMovementComponent* ProjMovement = SpawnedItem->GetProjectileMovementComponent())
+	{
+		ProjMovement->Activate();
+	}
+	return SpawnedItem;
 }
 
 FTransform UNaviQuickBarComponent::GetAimPointTransform()
