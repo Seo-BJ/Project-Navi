@@ -561,6 +561,14 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 					TEXT("%s: client sent %d target data entries, validating only the first %d."),
 					*GetName(), LocalTargetDataHandle.Num(), MaxEntries);
 
+				// 한 발의 판정 시각(HitTime) 검사. SSR을 쓸 때만 의미가 있다.
+				// (SSR을 끄면 클라가 HitTime을 서버 시각 기준으로 채우지 않는다)
+				const bool bCheckShotHitTime = IsValid(RewindEvaluator);
+				const ULyraLagCompensationSettings* LagCompensationSettings = GetDefault<ULyraLagCompensationSettings>();
+				const float ServerNow = GetWorld()->GetTimeSeconds();
+				bool bHasShotHitTime = false;
+				float ShotHitTime = 0.0f;
+
 				{
 					TRACE_CPUPROFILER_EVENT_SCOPE(ServerRewind_HitValidationLoop);
 
@@ -578,6 +586,34 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 
 						const FLyraGameplayAbilityTargetData_SingleTargetHit& ClientHit = static_cast<const FLyraGameplayAbilityTargetData_SingleTargetHit&>(*TargetData);
 						const FHitResult& ClientHitResult = ClientHit.HitResult;
+
+						if (bCheckShotHitTime)
+						{
+							if (!bHasShotHitTime)
+							{
+								// 첫 항목의 시각을 이 발의 판정 시각으로 정하고 범위를 검사한다.
+								// - 너무 오래된 시각: 이미 숨은 적을 과거 위치로 맞히는 백트랙
+								// - 미래 시각: 정상 클라의 HitTime은 항상 서버 현재 시각보다 과거다
+								const float RewindAmount = ServerNow - ClientHit.HitTime;
+								if (RewindAmount > LagCompensationSettings->MaxRewindTime || RewindAmount < -LagCompensationSettings->FutureHitTimeTolerance)
+								{
+									UE_LOG(LogLyraAbilitySystem, Warning, TEXT("%s: rejected shot. HitTime %.4f is out of range (server now %.4f, rewind %.4fs, allowed -%.3fs ~ %.3fs)."),
+										*GetName(), ClientHit.HitTime, ServerNow, RewindAmount,
+										LagCompensationSettings->FutureHitTimeTolerance, LagCompensationSettings->MaxRewindTime);
+									break;	// 이 발의 히트를 모두 거부한다
+								}
+								ShotHitTime = ClientHit.HitTime;
+								bHasShotHitTime = true;
+							}
+							else if (ClientHit.HitTime != ShotHitTime)
+							{
+								// 한 발의 펠릿은 같은 프레임에 쏘므로 HitTime이 모두 같다.
+								// 펠릿마다 다른 시각을 보내 유리한 과거 포즈를 고르는 것을 막는다.
+								UE_LOG(LogLyraAbilitySystem, Warning, TEXT("%s: rejected target data [%d]. HitTime %.4f differs from the shot HitTime %.4f."),
+									*GetName(), Index, ClientHit.HitTime, ShotHitTime);
+								continue;
+							}
+						}
 
 						// 같은 히트(대상, 시작점, 명중점)를 반복해 넣은 항목은 한 번만 인정한다.
 						// 산탄은 같은 대상을 여러 번 맞히는 게 정상이므로 대상만으로는 거르지 않는다.
@@ -855,7 +891,7 @@ void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
 					{
 						const float CurrentServerTime = TimeSyncComponent->GetServerTime();
 						const float SingleTripTime = TimeSyncComponent->GetSingleTripTime();
-						const float HitTime = CurrentServerTime - SingleTripTime - InterpDelay;
+						const float HitTime = CurrentServerTime - SingleTripTime;
 						NewTargetData->HitTime = HitTime;
 					}
 					else

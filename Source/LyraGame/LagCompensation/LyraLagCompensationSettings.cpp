@@ -18,6 +18,18 @@ namespace LyraLagCompensationCVars
 		Settings->bUseLagCompensation = Var->GetBool();
 	}
 
+	static void SyncMaxRewindTimeToCDO(IConsoleVariable* Var)
+	{
+		ULyraLagCompensationSettings* Settings = GetMutableDefault<ULyraLagCompensationSettings>();
+		Settings->MaxRewindTime = Var->GetFloat();
+	}
+
+	static void SyncFutureHitTimeToleranceToCDO(IConsoleVariable* Var)
+	{
+		ULyraLagCompensationSettings* Settings = GetMutableDefault<ULyraLagCompensationSettings>();
+		Settings->FutureHitTimeTolerance = Var->GetFloat();
+	}
+
 	static void SyncDrawMeshToCDO(IConsoleVariable* Var)
 	{
 		ULyraLagCompensationDeveloperSettings* Settings = GetMutableDefault<ULyraLagCompensationDeveloperSettings>();
@@ -49,6 +61,22 @@ namespace LyraLagCompensationCVars
 		TEXT("Lag Compensation(Server-Side Rewind) 사용 여부. ")
 		TEXT("OFF 시 서버는 현재 시점 LineTrace로 폴백 검증한다."),
 		FConsoleVariableDelegate::CreateStatic(&SyncUseLagCompensationToCDO),
+		ECVF_Default);
+
+	static float MaxRewindTime = 0.25f;
+	static FAutoConsoleVariableRef CVarMaxRewindTime(
+		TEXT("lyra.LagComp.MaxRewindTime"),
+		MaxRewindTime,
+		TEXT("서버가 되감아 줄 최대 시간 (초). 이보다 오래된 HitTime의 사격은 거부한다."),
+		FConsoleVariableDelegate::CreateStatic(&SyncMaxRewindTimeToCDO),
+		ECVF_Default);
+
+	static float FutureHitTimeTolerance = 0.02f;
+	static FAutoConsoleVariableRef CVarFutureHitTimeTolerance(
+		TEXT("lyra.LagComp.FutureHitTimeTolerance"),
+		FutureHitTimeTolerance,
+		TEXT("미래 HitTime 허용 오차 (초). 서버 현재 시각보다 이만큼 넘게 미래인 HitTime의 사격은 거부한다."),
+		FConsoleVariableDelegate::CreateStatic(&SyncFutureHitTimeToleranceToCDO),
 		ECVF_Default);
 
 	static bool bDrawMeshLagCompensation = false;
@@ -86,6 +114,8 @@ namespace LyraLagCompensationCVars
 
 ULyraLagCompensationSettings::ULyraLagCompensationSettings()
 	: bUseLagCompensation(true)
+	, MaxRewindTime(0.25f)
+	, FutureHitTimeTolerance(0.02f)
 {
 	CategoryName = TEXT("Game");
 }
