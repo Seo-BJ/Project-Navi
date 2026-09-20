@@ -252,6 +252,8 @@ public:
 	//~ILyraAbilitySourceInterface interface
 	virtual float GetDistanceAttenuation(float Distance, const FGameplayTagContainer* SourceTags = nullptr, const FGameplayTagContainer* TargetTags = nullptr) const override;
 	virtual float GetPhysicalMaterialAttenuation(const UPhysicalMaterial* PhysicalMaterial, const FGameplayTagContainer* SourceTags = nullptr, const FGameplayTagContainer* TargetTags = nullptr) const override;
+	/** DamageFalloffs에서 거리 구간을 고른 뒤 부위(WeakSpot → Head, Leg → Leg, 그 외 → Body) 데미지를 반환한다. 스탯이 없으면 -1. */
+	virtual float GetDamageForHitZone(float Distance, const FGameplayTag& HitZone, const FGameplayTagContainer* SourceTags = nullptr, const FGameplayTagContainer* TargetTags = nullptr) const override;
 	//~End of ILyraAbilitySourceInterface interface
 
 private:

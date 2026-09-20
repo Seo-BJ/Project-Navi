@@ -96,7 +96,10 @@ private:
 	static void EnableOnlyBoxesForTrace(const FBoxRewindState& RewindState, TConstArrayView<UBoxComponent*> BoxesToEnable);
 	static bool RestoreBoxRewindState(const FBoxRewindState& RewindState);
 
-	/** SkeletalMesh Snapshot 방식에서 PhysicsAsset primitive와 trace segment의 교차 여부를 계산한다. */
+	/**
+	 * SkeletalMesh Snapshot 방식에서 PhysicsAsset primitive와 trace segment의 교차 여부를 계산한다.
+	 * 교차하는 바디 중 시작점에서 가장 가까운 것을 OutHit에 채운다(Actor/Component, BoneName, 바디의 PhysMaterial 포함).
+	 */
 	bool PerformPhysicsAssetCollision(
 		ULyraSnapShotComponent_SkeletalMesh* SnapShotComponent,
 		AActor* TargetActor,

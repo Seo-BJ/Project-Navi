@@ -84,8 +84,11 @@ namespace LyraGameplayTags
 
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Lyra_Item_Dropped);
 
-	
-	
+	// Hit Zone (피직스 에셋 바디의 물리 재질(UPhysicalMaterialWithTags) 태그로 지정한다. 태그가 없으면 바디샷)
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Gameplay_Zone);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Gameplay_Zone_WeakSpot);
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Gameplay_Zone_Leg);
+
 };
 
 namespace NaviGameplayTags

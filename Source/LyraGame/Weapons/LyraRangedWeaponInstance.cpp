@@ -5,6 +5,7 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/LyraCameraComponent.h"
+#include "LyraGameplayTags.h"
 #include "Physics/PhysicalMaterialWithTags.h"
 #include "Weapons/LyraWeaponInstance.h"
 #include "Weapons/NaviWeaponStatDefinition.h"
@@ -153,28 +154,53 @@ void ULyraRangedWeaponInstance::AddSpread()
 #endif
 }
 
-float ULyraRangedWeaponInstance::GetDistanceAttenuation(float Distance, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags) const
+namespace
 {
-	// 언리얼 엔진은 거리를 cm 단위로 전달하므로 m 단위로 변환
-	float LocalDistance = Distance / 100.0f;
-	if (CachedNaviWeaponStats)
+	/** 거리(cm)가 속하는 DamageFalloff 구간. 모든 구간을 벗어나면 마지막 구간(최대 사거리 이후 값). 구간이 없으면 nullptr. */
+	const FDamageFalloff* FindDamageFalloff(const FNaviWeaponStatDefinition* WeaponStats, float DistanceCm)
 	{
-		// DamageFalloffs 배열을 순회하여 현재 거리가 속하는 구간의 데미지 반환
-		for (const FDamageFalloff& DamageFalloff : CachedNaviWeaponStats->DamageFalloffs)
+		if (WeaponStats == nullptr || WeaponStats->DamageFalloffs.IsEmpty())
 		{
-			float Start = DamageFalloff.RangeStart;
-			float End = DamageFalloff.RangeEnd;
-			if (Start <= LocalDistance && LocalDistance < End)
+			return nullptr;
+		}
+
+		// 언리얼 엔진은 거리를 cm 단위로 전달하므로 m 단위로 변환
+		const float LocalDistance = DistanceCm / 100.0f;
+		for (const FDamageFalloff& DamageFalloff : WeaponStats->DamageFalloffs)
+		{
+			if (DamageFalloff.RangeStart <= LocalDistance && LocalDistance < DamageFalloff.RangeEnd)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("LocalDistance : %f, Damage : %f"), LocalDistance,  DamageFalloff.BodyShotDamage);
-				return DamageFalloff.BodyShotDamage;
+				return &DamageFalloff;
 			}
 		}
-		// 모든 구간을 벗어난 경우 마지막 구간의 데미지(최대 사거리 이후 감쇠값) 반환
-		UE_LOG(LogTemp, Warning, TEXT("50+ LocalDistance : %f, Damage : %f"), LocalDistance, CachedNaviWeaponStats->DamageFalloffs.Last().BodyShotDamage);
-		return CachedNaviWeaponStats->DamageFalloffs.Last().BodyShotDamage;
+		return &WeaponStats->DamageFalloffs.Last();
 	}
-	return -1.0f;
+}
+
+float ULyraRangedWeaponInstance::GetDistanceAttenuation(float Distance, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags) const
+{
+	// 거리 구간의 바디샷 데미지를 반환한다 (배율이 아니라 데미지 값)
+	const FDamageFalloff* DamageFalloff = FindDamageFalloff(CachedNaviWeaponStats, Distance);
+	return DamageFalloff ? DamageFalloff->BodyShotDamage : -1.0f;
+}
+
+float ULyraRangedWeaponInstance::GetDamageForHitZone(float Distance, const FGameplayTag& HitZone, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags) const
+{
+	const FDamageFalloff* DamageFalloff = FindDamageFalloff(CachedNaviWeaponStats, Distance);
+	if (DamageFalloff == nullptr)
+	{
+		return -1.0f;
+	}
+
+	if (HitZone.MatchesTagExact(LyraGameplayTags::Gameplay_Zone_WeakSpot))
+	{
+		return DamageFalloff->HeadShotDamage;
+	}
+	if (HitZone.MatchesTagExact(LyraGameplayTags::Gameplay_Zone_Leg))
+	{
+		return DamageFalloff->LegShotDamage;
+	}
+	return DamageFalloff->BodyShotDamage;
 }
 
 float ULyraRangedWeaponInstance::GetPhysicalMaterialAttenuation(const UPhysicalMaterial* PhysicalMaterial, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags) const

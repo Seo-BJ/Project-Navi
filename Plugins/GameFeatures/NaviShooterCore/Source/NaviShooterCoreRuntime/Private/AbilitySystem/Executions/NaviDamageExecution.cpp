@@ -9,6 +9,7 @@
 #include "Engine/World.h"
 #include "LyraLogChannels.h"
 #include "AbilitySystem/Attributes/LyraCombatSet.h"
+#include "Physics/PhysicalMaterialWithTags.h"
 
 #include "Teams/LyraTeamSubsystem.h"
 
@@ -118,16 +119,29 @@ void UNaviDamageExecution::Execute_Implementation(const FGameplayEffectCustomExe
 	}
 
 	// Apply ability source modifiers
+	// 무기 사격의 HitResult는 서버가 판정해 만든 값이다(RangedWeapon 어빌리티가 확정 항목의 HitResult를 서버 결과로 교체).
+	// 따라서 Origin(TraceStart)·명중점·물리 재질 모두 서버 기준이다.
 	float PhysicalMaterialAttenuation = 1.0f;
 	float BaseDamageWithDistanceAttenuation = 1.0f;
 	if (const ILyraAbilitySourceInterface* AbilitySource = TypedContext->GetAbilitySource())
 	{
-		if (const UPhysicalMaterial* PhysMat = TypedContext->GetPhysicalMaterial())
-		{
-			PhysicalMaterialAttenuation = AbilitySource->GetPhysicalMaterialAttenuation(PhysMat, SourceTags, TargetTags);
-		}
+		const UPhysicalMaterial* PhysMat = TypedContext->GetPhysicalMaterial();
 
-		BaseDamageWithDistanceAttenuation = AbilitySource->GetDistanceAttenuation(Distance, SourceTags, TargetTags);
+		// 부위별 데미지 테이블을 가진 무기는 거리 구간 × 피격 부위(물리 재질의 Gameplay.Zone 태그) 값을 그대로 쓴다.
+		// 이 경우 부위가 이미 반영됐으므로 물리 재질 배율(MaterialDamageMultiplier)은 곱하지 않는다.
+		const float ZoneDamage = AbilitySource->GetDamageForHitZone(Distance, UPhysicalMaterialWithTags::FindZoneTag(PhysMat), SourceTags, TargetTags);
+		if (ZoneDamage >= 0.0f)
+		{
+			BaseDamageWithDistanceAttenuation = ZoneDamage;
+		}
+		else
+		{
+			if (PhysMat)
+			{
+				PhysicalMaterialAttenuation = AbilitySource->GetPhysicalMaterialAttenuation(PhysMat, SourceTags, TargetTags);
+			}
+			BaseDamageWithDistanceAttenuation = AbilitySource->GetDistanceAttenuation(Distance, SourceTags, TargetTags);
+		}
 	}
 	BaseDamageWithDistanceAttenuation = FMath::Max(BaseDamageWithDistanceAttenuation, 0.0f);
 

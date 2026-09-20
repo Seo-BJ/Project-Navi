@@ -32,6 +32,39 @@ DECLARE_CYCLE_STAT(TEXT("SSR - MeshPhysicsAssetCollision"), STAT_LyraSSR_MeshPhy
 
 namespace
 {
+	/**
+	 * 바디가 실제로 쓰는 단순 충돌 물리 재질.
+	 * 엔진 우선순위(바디 인스턴스 오버라이드 > 컴포넌트 오버라이드 > BodySetup)를 따르는 BodyInstance 값을 우선 쓰고,
+	 * 바디 인스턴스가 없을 때(물리 상태 미생성 등)만 PA의 BodySetup 재질을 쓴다. 클라 트레이스의 HitResult.PhysMaterial과 같은 기준이다.
+	 */
+	UPhysicalMaterial* ResolveBodyPhysicalMaterial(USkeletalMeshComponent* SkeletalMeshComp, const USkeletalBodySetup* BodySetup)
+	{
+		if (!IsValid(BodySetup))
+		{
+			return nullptr;
+		}
+		if (IsValid(SkeletalMeshComp))
+		{
+			if (const FBodyInstance* BodyInstance = SkeletalMeshComp->GetBodyInstance(BodySetup->BoneName))
+			{
+				return BodyInstance->GetSimplePhysicalMaterial();
+			}
+		}
+		return BodySetup->GetPhysMaterial();
+	}
+
+	/** PhysicsAsset 해석 판정(Mesh/AnimNode 방식) 결과를 SSR 결과로 옮긴다. */
+	FServerSideRewindResult MakeServerSideRewindResultFromPhysicsHit(bool bHit, const FHitResult& Hit)
+	{
+		FServerSideRewindResult Result;
+		Result.bHitConfirmed = bHit;
+		if (bHit)
+		{
+			Result.ConfirmedHit = Hit;
+		}
+		return Result;
+	}
+
 	bool ShouldDrawBoxLagCompensation()
 	{
 		const ULyraLagCompensationDeveloperSettings* Settings = GetDefault<ULyraLagCompensationDeveloperSettings>();
@@ -321,6 +354,15 @@ FServerSideRewindResult ULyraServerSideRewindSubsystem::ConfirmBoxHit(
 	}
 
 	FCollisionQueryParams TraceParams(SCENE_QUERY_STAT(LyraSSR_BoxConfirmHit), true);
+	TraceParams.bReturnPhysicalMaterial = true;
+	if (AActor* InstigatorActor = Request.InstigatorActor.Get(); IsValid(InstigatorActor))
+	{
+		// 사격 시작점이 쏜 사람 몸 안쪽일 수 있으므로 자기 자신과 부착 액터(무기 등)는 무시한다. (클라 WeaponTrace와 같은 조건)
+		TraceParams.AddIgnoredActor(InstigatorActor);
+		TArray<AActor*> AttachedActors;
+		InstigatorActor->GetAttachedActors(AttachedActors);
+		TraceParams.AddIgnoredActors(AttachedActors);
+	}
 	const FVector TraceEnd = Request.TraceStart + (Request.HitLocation - Request.TraceStart) * 1.25f;
 	FServerSideRewindResult Result;
 	bool bRestoreSucceeded = true;
@@ -345,29 +387,29 @@ FServerSideRewindResult ULyraServerSideRewindSubsystem::ConfirmBoxHit(
 
 		FHitResult ConfirmHitResult;
 		bool bHitSuccess = false;
-		bool bHeadShot = false;
 
-		const TObjectPtr<UBoxComponent>* FoundBoxPtr = HitBoxes.Find(FName("head"));
-		if (FoundBoxPtr && IsValid(FoundBoxPtr->Get()))
+		// 대상의 히트 박스를 모두 켜고 한 번만 트레이스해, 선분이 가장 먼저 닿은 박스를 피격 부위로 쓴다.
+		// (head 박스만 먼저 보던 방식은 몸을 지나 머리에 닿아도 헤드샷이 되는 편향이 있었다)
+		EnableOnlyBoxesForTrace(RewindState, AllBoxes);
+		if (PerformBoxHitCheck(Request.TraceStart, TraceEnd, TraceParams, ConfirmHitResult))
 		{
-			TArray<UBoxComponent*> HeadBoxes;
-			HeadBoxes.Add(FoundBoxPtr->Get());
-			EnableOnlyBoxesForTrace(RewindState, HeadBoxes);
-
-			if (PerformBoxHitCheck(Request.TraceStart, TraceEnd, TraceParams, ConfirmHitResult))
+			// HitBox 채널은 다른 캐릭터 메시 등도 Block하므로, 가장 먼저 맞은 것이 대상의 박스일 때만 인정한다.
+			UBoxComponent* HitBox = Cast<UBoxComponent>(ConfirmHitResult.GetComponent());
+			if (IsValid(HitBox) && AllBoxes.Contains(HitBox))
 			{
 				bHitSuccess = true;
-				bHeadShot = true;
-			}
-		}
 
-		if (!bHitSuccess)
-		{
-			EnableOnlyBoxesForTrace(RewindState, AllBoxes);
-			if (PerformBoxHitCheck(Request.TraceStart, TraceEnd, TraceParams, ConfirmHitResult))
-			{
-				bHitSuccess = true;
-				bHeadShot = false;
+				// 트레이스 결과를 그대로 서버 HitResult로 쓴다. 부위는 박스의 물리 재질 태그로 정해진다(TraceParams.bReturnPhysicalMaterial).
+				// 박스 트레이스는 BoneName이 비어 있으므로 디버깅용으로 히트 박스 이름을 넣는다.
+				Result.ConfirmedHit = ConfirmHitResult;
+				for (const TPair<FName, TObjectPtr<UBoxComponent>>& Pair : HitBoxes)
+				{
+					if (Pair.Value.Get() == HitBox)
+					{
+						Result.ConfirmedHit.BoneName = Pair.Key;
+						break;
+					}
+				}
 			}
 		}
 
@@ -379,7 +421,6 @@ FServerSideRewindResult ULyraServerSideRewindSubsystem::ConfirmBoxHit(
 #endif
 
 		Result.bHitConfirmed = bHitSuccess;
-		Result.bHeadShot = bHeadShot;
 	}
 
 	Result.Diagnostics.bStateRestoreSucceeded = bRestoreSucceeded;
@@ -434,15 +475,9 @@ FServerSideRewindResult ULyraServerSideRewindSubsystem::ConfirmMeshHit(
 	const FVector TraceEnd = Request.TraceStart + (Request.HitLocation - Request.TraceStart) * 1.25f;
 	FHitResult OutHit;
 
-	static const TSet<FName> HeadFilter = { FName("head") };
-	bool bHit = PerformPhysicsAssetCollision(SnapShotComponent, TargetActor, FrameToCheck, Request.TraceStart, TraceEnd, HeadFilter, OutHit);
-	bool bHeadShot = bHit;
-
-	if (!bHit)
-	{
-		static const TSet<FName> EmptyFilter;
-		bHit = PerformPhysicsAssetCollision(SnapShotComponent, TargetActor, FrameToCheck, Request.TraceStart, TraceEnd, EmptyFilter, OutHit);
-	}
+	// 모든 바디를 한 번에 검사해 가장 가까운 바디를 피격 부위로 쓴다.
+	static const TSet<FName> NoBoneFilter;
+	const bool bHit = PerformPhysicsAssetCollision(SnapShotComponent, TargetActor, FrameToCheck, Request.TraceStart, TraceEnd, NoBoneFilter, OutHit);
 
 #if ENABLE_DRAW_DEBUG
 	const ULyraLagCompensationDeveloperSettings* LagCompSettings = GetDefault<ULyraLagCompensationDeveloperSettings>();
@@ -457,7 +492,7 @@ FServerSideRewindResult ULyraServerSideRewindSubsystem::ConfirmMeshHit(
 	}
 #endif
 
-	return FServerSideRewindResult{ bHit, bHeadShot };
+	return MakeServerSideRewindResultFromPhysicsHit(bHit, OutHit);
 }
 
 FServerSideRewindResult ULyraServerSideRewindSubsystem::ServerSideRewindAnimNode(ULyraSnapShotComponent_AnimNode* SnapShotComponent, const FLyraServerSideRewindRequest& Request) const
@@ -502,15 +537,9 @@ FServerSideRewindResult ULyraServerSideRewindSubsystem::ConfirmAnimNodeHit(
 	const FVector TraceEnd = Request.TraceStart + (Request.HitLocation - Request.TraceStart) * 1.25f;
 	FHitResult OutHit;
 
-	static const TSet<FName> HeadFilter = { FName("head") };
-	bool bHit = PerformPhysicsAssetCollision(SkeletalMeshComp, RewindPose.MeshComponentTransform, RewindPose.ComponentSpaceTransforms, Request.TraceStart, TraceEnd, HeadFilter, OutHit);
-	bool bHeadShot = bHit;
-
-	if (!bHit)
-	{
-		static const TSet<FName> EmptyFilter;
-		bHit = PerformPhysicsAssetCollision(SkeletalMeshComp, RewindPose.MeshComponentTransform, RewindPose.ComponentSpaceTransforms, Request.TraceStart, TraceEnd, EmptyFilter, OutHit);
-	}
+	// 모든 바디를 한 번에 검사해 가장 가까운 바디를 피격 부위로 쓴다.
+	static const TSet<FName> NoBoneFilter;
+	const bool bHit = PerformPhysicsAssetCollision(SkeletalMeshComp, RewindPose.MeshComponentTransform, RewindPose.ComponentSpaceTransforms, Request.TraceStart, TraceEnd, NoBoneFilter, OutHit);
 
 #if ENABLE_DRAW_DEBUG
 	const ULyraLagCompensationDeveloperSettings* LagCompSettings = GetDefault<ULyraLagCompensationDeveloperSettings>();
@@ -522,7 +551,7 @@ FServerSideRewindResult ULyraServerSideRewindSubsystem::ConfirmAnimNodeHit(
 	}
 #endif
 
-	return FServerSideRewindResult{ bHit, bHeadShot };
+	return MakeServerSideRewindResultFromPhysicsHit(bHit, OutHit);
 }
 
 bool ULyraServerSideRewindSubsystem::PerformPhysicsAssetCollision(
@@ -579,16 +608,27 @@ bool ULyraServerSideRewindSubsystem::PerformPhysicsAssetCollision(
 		return false;
 	}
 
-	auto FillHitAndReturn = [&](const FVector& ImpactPoint, const FVector& Normal, float Distance, FName BoneName) -> bool
+	const FVector TraceDir = (TraceEnd - TraceStart) / TraceLength;
+
+	// 처음 교차한 바디에서 멈추지 않고, 시작점에서 가장 가까운 교차를 고른다.
+	// (PhysicsAsset의 바디 순서는 선분 방향과 무관하므로 첫 교차가 실제로 먼저 맞은 바디라는 보장이 없다)
+	const USkeletalBodySetup* NearestBodySetup = nullptr;
+	float NearestDistance = TNumericLimits<float>::Max();
+	auto ConsiderHit = [&](const FVector& ImpactPoint, const FVector& Normal, float Distance, const USkeletalBodySetup* HitBodySetup)
 	{
+		if (Distance >= NearestDistance)
+		{
+			return;
+		}
+		NearestDistance = Distance;
+		NearestBodySetup = HitBodySetup;
 		OutHit.Location = ImpactPoint;
 		OutHit.ImpactPoint = ImpactPoint;
 		OutHit.Normal = Normal;
 		OutHit.ImpactNormal = Normal;
 		OutHit.Distance = Distance;
-		OutHit.BoneName = BoneName;
+		OutHit.BoneName = HitBodySetup->BoneName;
 		OutHit.Component = SkeletalMeshComp;
-		return true;
 	};
 
 	for (const USkeletalBodySetup* BodySetup : PhysicsAsset->SkeletalBodySetups)
@@ -614,13 +654,24 @@ bool ULyraServerSideRewindSubsystem::PerformPhysicsAssetCollision(
 		{
 			const FVector SphereCenter = BoneWorldTransform.TransformPosition(SphereElem.Center);
 			const float SphereRadius = SphereElem.Radius * BoneWorldTransform.GetScale3D().GetMax();
-			const FVector ClosestPoint = FMath::ClosestPointOnSegment(SphereCenter, TraceStart, TraceEnd);
 
-			if (FVector::DistSquared(SphereCenter, ClosestPoint) <= FMath::Square(SphereRadius))
+			// 선분-구 교차: 구에 들어가는 지점(Entry)을 명중점으로 쓴다. 시작점이 구 안이면 시작점.
+			const FVector ToCenter = SphereCenter - TraceStart;
+			const float Projection = FVector::DotProduct(ToCenter, TraceDir);
+			const float DistSqToLine = ToCenter.SizeSquared() - FMath::Square(Projection);
+			const float RadiusSq = FMath::Square(SphereRadius);
+			if (DistSqToLine > RadiusSq)
 			{
-				const float Distance = FVector::Dist(TraceStart, ClosestPoint);
-				return FillHitAndReturn(ClosestPoint, (ClosestPoint - SphereCenter).GetSafeNormal(), Distance, BodySetup->BoneName);
+				continue;
 			}
+			const float HalfChord = FMath::Sqrt(RadiusSq - DistSqToLine);
+			if (Projection + HalfChord < 0.0f || Projection - HalfChord > TraceLength)
+			{
+				continue;
+			}
+			const float EntryDistance = FMath::Max(Projection - HalfChord, 0.0f);
+			const FVector EntryPoint = TraceStart + TraceDir * EntryDistance;
+			ConsiderHit(EntryPoint, (EntryPoint - SphereCenter).GetSafeNormal(), EntryDistance, BodySetup);
 		}
 
 		for (const FKBoxElem& BoxElem : BodySetup->AggGeom.BoxElems)
@@ -640,7 +691,7 @@ bool ULyraServerSideRewindSubsystem::PerformPhysicsAssetCollision(
 			{
 				const FVector WorldImpact = BoxTransform.TransformPosition(HitLocal);
 				const FVector WorldNormal = BoxTransform.TransformVector(HitNormalLocal).GetSafeNormal();
-				return FillHitAndReturn(WorldImpact, WorldNormal, HitT * TraceLength, BodySetup->BoneName);
+				ConsiderHit(WorldImpact, WorldNormal, HitT * TraceLength, BodySetup);
 			}
 		}
 
@@ -669,14 +720,28 @@ bool ULyraServerSideRewindSubsystem::PerformPhysicsAssetCollision(
 					SurfaceNormal = -((TraceEnd - TraceStart).GetSafeNormal());
 				}
 
+				// 캡슐은 진입점 대신 최근접점 기준 표면점으로 근사한다(가장 가까운 바디 비교용으로 충분).
 				const FVector ImpactPointOnSurface = ClosestPointOnCapsule + SurfaceNormal * Radius;
 				const float Distance = FVector::Dist(TraceStart, ImpactPointOnSurface);
-				return FillHitAndReturn(ImpactPointOnSurface, SurfaceNormal, Distance, BodySetup->BoneName);
+				ConsiderHit(ImpactPointOnSurface, SurfaceNormal, Distance, BodySetup);
 			}
 		}
 	}
 
-	return false;
+	if (NearestBodySetup == nullptr)
+	{
+		return false;
+	}
+
+	// 서버 HitResult로 그대로 쓸 수 있도록 나머지 필드를 채운다.
+	// (Component만 넣으면 GetActor()가 비어 있으므로 HitObjectHandle도 지정한다)
+	OutHit.bBlockingHit = true;
+	OutHit.HitObjectHandle = FActorInstanceHandle(SkeletalMeshComp->GetOwner());
+	OutHit.TraceStart = TraceStart;
+	OutHit.TraceEnd = TraceEnd;
+	OutHit.Time = NearestDistance / TraceLength;
+	OutHit.PhysMaterial = ResolveBodyPhysicalMaterial(SkeletalMeshComp, NearestBodySetup);
+	return true;
 }
 
 #if ENABLE_DRAW_DEBUG

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/NetSerialization.h"
+#include "Engine/HitResult.h"
 #include "GameFramework/Actor.h"
 #include "LyraLagCompensationTypes.generated.h"
 
@@ -29,8 +30,13 @@ struct FServerSideRewindResult
 	UPROPERTY()
 	bool bHitConfirmed = false;
 
+	/**
+	 * 서버 판정 HitResult. bHitConfirmed일 때만 유효하다.
+	 * 되감은 포즈 기준으로, 선분이 가장 먼저 닿은 바디(또는 히트 박스)의 Actor/Component, ImpactPoint/Normal, BoneName,
+	 * PhysMaterial(부위 태그 포함)을 담는다. TraceStart/TraceEnd는 판정에 쓴 선분이다.
+	 */
 	UPROPERTY()
-	bool bHeadShot = false;
+	FHitResult ConfirmedHit;
 
 	/** C++ 진단/프로파일링용 요청 단위 부가 정보. Blueprint 판정 계약에는 포함하지 않는다. */
 	FLyraSSRRewindDiagnostics Diagnostics;
@@ -47,6 +53,13 @@ struct FLyraServerSideRewindRequest
 
 	UPROPERTY()
 	TObjectPtr<AActor> TargetActor = nullptr;
+
+	/**
+	 * 쏜 액터. Box 방식의 콜리전 트레이스에서 자기 자신과 부착 액터를 무시하는 데 쓴다.
+	 * (사격 시작점이 쏜 사람의 몸 안쪽에 있어 자기 메시가 먼저 맞을 수 있다)
+	 */
+	UPROPERTY()
+	TObjectPtr<AActor> InstigatorActor = nullptr;
 
 	UPROPERTY()
 	FVector_NetQuantize TraceStart = FVector::ZeroVector;

@@ -118,6 +118,11 @@ namespace LyraGameplayTags
 
 		return Tag;
 	}
+
+	// Hit Zone
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Gameplay_Zone, "Gameplay.Zone", "Hit zone root. Put a child tag on a UPhysicalMaterialWithTags to mark a body zone.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Gameplay_Zone_WeakSpot, "Gameplay.Zone.WeakSpot", "Head shot zone (neck/head bodies).");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Gameplay_Zone_Leg, "Gameplay.Zone.Leg", "Leg shot zone (thigh/calf/foot bodies).");
 }
 
 namespace NaviGameplayTags
@@ -287,6 +292,7 @@ namespace NaviGameplayTags
 
 	UE_DEFINE_GAMEPLAY_TAG(TAG_Navi_Team_Role_Attacker, "Navi.Team.Role.Attacker");
 	UE_DEFINE_GAMEPLAY_TAG(TAG_Navi_Team_Role_Defender, "Navi.Team.Role.Defender");
+
 
 
 	

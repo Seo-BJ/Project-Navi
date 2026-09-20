@@ -14,7 +14,6 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraWeaponStateComponent)
 
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Gameplay_Zone, "Gameplay.Zone");
 
 ULyraWeaponStateComponent::ULyraWeaponStateComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -63,34 +62,36 @@ bool ULyraWeaponStateComponent::ShouldUpdateDamageInstigatedTime(const FGameplay
 	return EffectContext.GetEffectCauser() != nullptr;
 }
 
-void ULyraWeaponStateComponent::ClientConfirmTargetData_Implementation(uint16 UniqueId, bool bSuccess, const TArray<uint8>& HitReplaces)
+void ULyraWeaponStateComponent::ClientConfirmTargetData_Implementation(uint8 UniqueId, const TArray<FLyraConfirmedHit>& ConfirmedHits)
 {
 	for (int i = 0; i < UnconfirmedServerSideHitMarkers.Num(); i++)
 	{
 		FLyraServerSideHitMarkerBatch& Batch = UnconfirmedServerSideHitMarkers[i];
 		if (Batch.UniqueId == UniqueId)
 		{
-			if (bSuccess && (HitReplaces.Num() != Batch.Markers.Num()))
+			bool bFoundShowAsSuccessHit = false;
+
+			// 서버가 확인한 타깃 데이터 항목에서 나온 마커만 확정한다.
+			// 마커는 화면 투영에 성공한 히트만 만들어지므로, 배열 위치가 아니라 TargetDataIndex로 대조한다.
+			for (const FLyraScreenSpaceHitLocation& Entry : Batch.Markers)
 			{
-				UWorld* World = GetWorld();
-				bool bFoundShowAsSuccessHit = false;
+				const FLyraConfirmedHit* ConfirmedHit = (Entry.TargetDataIndex >= 0)
+					? ConfirmedHits.FindByPredicate([&Entry](const FLyraConfirmedHit& Hit) { return Hit.TargetDataIndex == Entry.TargetDataIndex; })
+					: nullptr;
 
-				int32 HitLocationIndex = 0;
-				for (const FLyraScreenSpaceHitLocation& Entry : Batch.Markers)
+				if (ConfirmedHit && Entry.bShowAsSuccess)
 				{
-					if (!HitReplaces.Contains(HitLocationIndex) && Entry.bShowAsSuccess)
+					// Only need to do this once
+					if (!bFoundShowAsSuccessHit)
 					{
-						// Only need to do this once
-						if (!bFoundShowAsSuccessHit)
-						{
-							ActuallyUpdateDamageInstigatedTime();
-						}
-
-						bFoundShowAsSuccessHit = true;
-
-						LastWeaponDamageScreenLocations.Add(Entry);
+						ActuallyUpdateDamageInstigatedTime();
 					}
-					++HitLocationIndex;
+
+					bFoundShowAsSuccessHit = true;
+
+					// 마커 모양(헤드샷 등)은 클라 트레이스가 아니라 서버가 판정한 부위로 정한다.
+					FLyraScreenSpaceHitLocation& ConfirmedEntry = LastWeaponDamageScreenLocations.Add_GetRef(Entry);
+					ConfirmedEntry.HitZone = ConfirmedHit->HitZone;
 				}
 			}
 
@@ -106,28 +107,18 @@ void ULyraWeaponStateComponent::AddUnconfirmedServerSideHitMarkers(const FGamepl
 
 	if (APlayerController* OwnerPC = GetController<APlayerController>())
 	{
-		for (const FHitResult& Hit : FoundHits)
+		// StartRangedWeaponTargeting은 FoundHits를 같은 순서로 타깃 데이터 항목에 넣으므로, HitIndex가 곧 타깃 데이터 인덱스다.
+		for (int32 HitIndex = 0; HitIndex < FoundHits.Num(); ++HitIndex)
 		{
+			const FHitResult& Hit = FoundHits[HitIndex];
 			FVector2D HitScreenLocation;
 			if (UGameplayStatics::ProjectWorldToScreen(OwnerPC, Hit.Location, /*out*/ HitScreenLocation, /*bPlayerViewportRelative=*/ false))
 			{
 				FLyraScreenSpaceHitLocation& Entry = NewUnconfirmedHitMarker.Markers.AddDefaulted_GetRef();
 				Entry.Location = HitScreenLocation;
+				Entry.TargetDataIndex = HitIndex;
 				Entry.bShowAsSuccess = ShouldShowHitAsSuccess(Hit);
-
-				// Determine the hit zone
-				FGameplayTag HitZone;
-				if (const UPhysicalMaterialWithTags* PhysMatWithTags = Cast<const UPhysicalMaterialWithTags>(Hit.PhysMaterial.Get()))
-				{
-					for (const FGameplayTag MaterialTag : PhysMatWithTags->Tags)
-					{
-						if (MaterialTag.MatchesTag(TAG_Gameplay_Zone))
-						{
-							Entry.HitZone = MaterialTag;
-							break;
-						}
-					}
-				}
+				// 부위(HitZone)는 여기서 정하지 않는다. 서버 확정(ClientConfirmTargetData) 때 서버 판정 값으로 채운다.
 			}
 		}
 	}

@@ -11,6 +11,9 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystem/LyraGameplayAbilityTargetData_SingleTargetHit.h"
 #include "DrawDebugHelpers.h"
+#include "GameplayCueFunctionLibrary.h"
+#include "GameplayPrediction.h"
+#include "Physics/PhysicalMaterialWithTags.h"
 #include "LyraWeaponDebugSettings.h"
 
 #include "TimerManager.h"
@@ -514,128 +517,145 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 		}
 
 #if WITH_SERVER_CODE
-		
-		if (AController* Controller = GetControllerFromActorInfo(); IsValid(Controller) &&  Controller->GetLocalRole() == ROLE_Authority)
+
+		if (AController* Controller = GetControllerFromActorInfo(); IsValid(Controller) && Controller->GetLocalRole() == ROLE_Authority)
 		{
-			bool bOverallHitSuccess = false; // 이번 발사가 최소 1회 유효한 Hit가 발생했는지
-			TArray<uint8> HitReplaces; // 대체된 Hit 배열
+			ULyraWeaponStateComponent* WeaponStateComponent = Controller->FindComponentByClass<ULyraWeaponStateComponent>();
 
-			if (GetDefault<ULyraLagCompensationSettings>()->bUseLagCompensation)
+			// 탄약 등 비용을 먼저 확정한다.
+			// 실패하면 히트 검증(SSR) 비용을 쓰지 않고, 클라 히트 마커도 확정하지 않는다.
+			if (!CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
 			{
-				TRACE_CPUPROFILER_EVENT_SCOPE(ServerRewind_HitValidationLoop);
-				UWorld* World = GetWorld();
-				ULyraServerSideRewindSubsystem* RewindEvaluator = IsValid(World)
-					? World->GetSubsystem<ULyraServerSideRewindSubsystem>()
-					: nullptr;
-				ensureMsgf(IsValid(RewindEvaluator), TEXT("ServerSideRewindSubsystem is required in an authority World."));
-
-				for (uint8 i = 0; (i < LocalTargetDataHandle.Num()) && (i < 255); ++i)
+				if (IsValid(WeaponStateComponent))
 				{
-					if (FLyraGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<FLyraGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
-					{
-						const float LocalHitTime = SingleTargetHit->HitTime;
-						const FHitResult& LocalHitResult = SingleTargetHit->HitResult;
-
-						AActor* TargetActor = LocalHitResult.GetActor();
-
-						FServerSideRewindResult RewindResult;
-						if (IsValid(RewindEvaluator) && IsValid(TargetActor))
-						{
-							FLyraServerSideRewindRequest RewindRequest;
-							RewindRequest.TargetActor = TargetActor;
-							RewindRequest.TraceStart = LocalHitResult.TraceStart;
-							RewindRequest.HitLocation = LocalHitResult.ImpactPoint;
-							RewindRequest.HitTime = LocalHitTime;
-							RewindResult = RewindEvaluator->ServerSideRewind(RewindRequest);
-						}
-						
-						if (SingleTargetHit->bHitReplaced)
-						{
-							HitReplaces.Add(i);
-						}
-
-						if (RewindResult.bHitConfirmed)
-						{
-							// 동일하다면, 이 피격은 유효하다고 간주
-							bOverallHitSuccess = true;
-						}
-					}
+					WeaponStateComponent->ClientConfirmTargetData(LocalTargetDataHandle.UniqueId, TArray<FLyraConfirmedHit>());
 				}
+
+				K2_EndAbility();
 			}
 			else
-			{
-				// 클라이언트가 보낸 모든 피격 데이터를 하나씩 검증
-				for (uint8 i = 0; i < LocalTargetDataHandle.Num(); ++i)
-				{
-					if (const FGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<const FGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
-					{
-						const FHitResult& ClientHitResult = SingleTargetHit->HitResult;
-						if (AActor* ClientHitActor = ClientHitResult.GetActor())
-						{
-							// 서버가 '현재 시간' 기준으로 직접 트레이스를 수행
-							FHitResult ServerHitResult;
-							FCollisionQueryParams TraceParams;
-							const FVector TraceEnd = ClientHitResult.TraceStart + (ClientHitResult.Location - ClientHitResult.TraceStart) * 1.25f; // 클라이언트가 쏜 위치보다 약간 더 길게 트레이스 설정
-							TraceParams.AddIgnoredActor(GetAvatarActorFromActorInfo()); // 자기 자신 외에 피격 대상의 캡슐도 무시하고 히트박스만 보도록로 검사
-							GetWorld()->LineTraceSingleByChannel(ServerHitResult, ClientHitResult.TraceStart, TraceEnd, Lyra_TraceChannel_Weapon, TraceParams);
-							
-							// 서버의 트레이스 결과와 클라이언트가 맞췄다고 주장하는 액터가 동일한지 확인
-							if (ServerHitResult.bBlockingHit && (ServerHitResult.GetActor() == ClientHitActor))
-							{
-								// 동일하다면, 이 피격은 유효하다고 간주
-								bOverallHitSuccess = true;
-							}
-
-							// @Todo: 서버 권위적인 로직을 통해 Hit Replaced 시스템을 사용
-							if (SingleTargetHit->bHitReplaced)
-							{
-								HitReplaces.Add(i);
-							}
-						}
-					}
-				}
-			}
-
-			// 검증 결과를 바탕으로 클라이언트에 통보
-
-			if (ULyraWeaponStateComponent* WeaponStateComponent = Controller->FindComponentByClass<ULyraWeaponStateComponent>())
-			{
-				WeaponStateComponent->ClientConfirmTargetData(LocalTargetDataHandle.UniqueId, bOverallHitSuccess, HitReplaces);
-			}
-			
-			// 서버 사이드 리와인드 Hit 결과 확인. Ammo 확인. 
-			if (CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
 			{
 				ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
 				check(WeaponData);
 				WeaponData->AddSpread();
 				WeaponData->StartRecoil();
-				if (bOverallHitSuccess)
+
+				ULyraServerSideRewindSubsystem* RewindEvaluator = nullptr;
+				if (GetDefault<ULyraLagCompensationSettings>()->bUseLagCompensation)
 				{
-					// Handle interaction with ILyraWeaponInteractable
-					for (uint8 i = 0; i < LocalTargetDataHandle.Num(); ++i)
+					UWorld* World = GetWorld();
+					RewindEvaluator = IsValid(World) ? World->GetSubsystem<ULyraServerSideRewindSubsystem>() : nullptr;
+					ensureMsgf(IsValid(RewindEvaluator), TEXT("ServerSideRewindSubsystem is required in an authority World."));
+				}
+
+				// 클라가 보낸 핸들은 '주장'일 뿐이다. 항목마다 검증해서 확인된 것만 서버가 만든 핸들에 담는다.
+				FGameplayAbilityTargetDataHandle ConfirmedTargetDataHandle;
+				ConfirmedTargetDataHandle.UniqueId = LocalTargetDataHandle.UniqueId;
+				TArray<FLyraConfirmedHit> ConfirmedHits;
+				const FVector ServerShotOrigin = GetServerShotOrigin();
+
+				// 한 발에서 나올 수 있는 히트 수를 넘는 항목은 검증하지 않는다 (SSR 비용 공격, 같은 히트 반복 방지).
+				// 핸들 직렬화가 항목 수를 uint8로 보내므로 인덱스도 uint8 범위로 제한한다.
+				const int32 MaxEntries = FMath::Min3(LocalTargetDataHandle.Num(),FMath::Max(1, BulletsPerCartridge) * FMath::Max(1, MaxHitsPerBullet),static_cast<int32>(MAX_uint8));
+				UE_CLOG(LocalTargetDataHandle.Num() > MaxEntries, LogLyraAbilitySystem, Warning,
+					TEXT("%s: client sent %d target data entries, validating only the first %d."),
+					*GetName(), LocalTargetDataHandle.Num(), MaxEntries);
+
+				{
+					TRACE_CPUPROFILER_EVENT_SCOPE(ServerRewind_HitValidationLoop);
+
+					TArray<const FHitResult*, TInlineAllocator<16>> SeenHitResults;
+					for (int32 Index = 0; Index < MaxEntries; ++Index)
 					{
-						if (const FLyraGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<const FLyraGameplayAbilityTargetData_SingleTargetHit*>(LocalTargetDataHandle.Get(i)))
+						// 핸들 직렬화는 항목마다 ScriptStruct를 함께 보내므로, 클라가 다른 타입을 넣었을 수 있다.
+						const FGameplayAbilityTargetData* TargetData = LocalTargetDataHandle.Get(Index);
+						if (TargetData == nullptr || TargetData->GetScriptStruct() != FLyraGameplayAbilityTargetData_SingleTargetHit::StaticStruct())
 						{
-							if (AActor* HitActor = SingleTargetHit->HitResult.GetActor())
+							UE_LOG(LogLyraAbilitySystem, Warning, TEXT("%s: rejected target data [%d] with unexpected type %s."),
+								*GetName(), Index, TargetData ? *GetNameSafe(TargetData->GetScriptStruct()) : TEXT("null"));
+							continue;
+						}
+
+						const FLyraGameplayAbilityTargetData_SingleTargetHit& ClientHit = static_cast<const FLyraGameplayAbilityTargetData_SingleTargetHit&>(*TargetData);
+						const FHitResult& ClientHitResult = ClientHit.HitResult;
+
+						// 같은 히트(대상, 시작점, 명중점)를 반복해 넣은 항목은 한 번만 인정한다.
+						// 산탄은 같은 대상을 여러 번 맞히는 게 정상이므로 대상만으로는 거르지 않는다.
+						const bool bDuplicate = SeenHitResults.ContainsByPredicate([&ClientHitResult](const FHitResult* Seen)
+						{
+							return Seen->HitObjectHandle == ClientHitResult.HitObjectHandle
+								&& Seen->TraceStart.Equals(ClientHitResult.TraceStart)
+								&& Seen->ImpactPoint.Equals(ClientHitResult.ImpactPoint);
+						});
+						if (bDuplicate)
+						{
+							UE_LOG(LogLyraAbilitySystem, Verbose, TEXT("%s: rejected duplicate target data [%d]."), *GetName(), Index);
+							continue;
+						}
+						SeenHitResults.Add(&ClientHitResult);
+
+						const FServerHitValidationResult Validation = ValidateClientHitOnServer(ClientHit, RewindEvaluator);
+						UE_LOG(LogLyraAbilitySystem, Verbose, TEXT("%s: target data [%d] actor=%s confirmed=%d zone(client=%s, server=%s) bone(client=%s, server=%s)"),
+							*GetName(), Index, *GetNameSafe(ClientHitResult.GetActor()), Validation.bConfirmed ? 1 : 0,
+							*UPhysicalMaterialWithTags::FindZoneTag(ClientHitResult.PhysMaterial.Get()).ToString(),
+							*UPhysicalMaterialWithTags::FindZoneTag(Validation.ServerHit.PhysMaterial.Get()).ToString(),
+							*ClientHitResult.BoneName.ToString(), *Validation.ServerHit.BoneName.ToString());
+						if (!Validation.bConfirmed)
+						{
+							continue;
+						}
+
+						// 판정은 클라의 주장(대상, 사격 선분, 시각)으로 하고, 이후 처리(데미지 GE, Cue, 히트 마커)는 서버가 만든 HitResult만 쓴다.
+						// 클라 항목은 건드리지 않고 복사본의 HitResult를 서버 판정 결과로 교체한다.
+						FHitResult ServerHitResult = Validation.ServerHit;
+						// 데미지 거리 계산의 Origin(Context.AddHitResult가 TraceStart로 채움)이 서버 위치가 되도록 한다.
+						ServerHitResult.TraceStart = ServerShotOrigin;
+						ServerHitResult.TraceEnd = ServerHitResult.ImpactPoint;
+						ServerHitResult.Distance = FVector::Dist(ServerShotOrigin, ServerHitResult.ImpactPoint);
+
+						FLyraGameplayAbilityTargetData_SingleTargetHit* ServerTargetData = new FLyraGameplayAbilityTargetData_SingleTargetHit(ClientHit);
+						ServerTargetData->HitResult = ServerHitResult;
+						ConfirmedTargetDataHandle.Add(ServerTargetData);
+
+						FLyraConfirmedHit& ConfirmedHit = ConfirmedHits.AddDefaulted_GetRef();
+						ConfirmedHit.TargetDataIndex = static_cast<uint8>(Index);
+						ConfirmedHit.HitZone = UPhysicalMaterialWithTags::FindZoneTag(ServerHitResult.PhysMaterial.Get());
+					}
+				}
+
+				// 확인된 항목의 인덱스와 서버 판정 부위를 클라에 알려 해당 히트 마커만 확정한다.
+				if (IsValid(WeaponStateComponent))
+				{
+					WeaponStateComponent->ClientConfirmTargetData(LocalTargetDataHandle.UniqueId, ConfirmedHits);
+				}
+
+				// 피격 VFX는 클라가 예측하지 않고, 서버 판정 결과로 모든 클라(쏜 사람 포함)에 재생한다.
+				ExecuteServerImpactCues(ConfirmedTargetDataHandle);
+
+				// Handle interaction with ILyraWeaponInteractable (확인된 항목만)
+				for (int32 Index = 0; Index < ConfirmedTargetDataHandle.Num(); ++Index)
+				{
+					if (const FLyraGameplayAbilityTargetData_SingleTargetHit* SingleTargetHit = static_cast<const FLyraGameplayAbilityTargetData_SingleTargetHit*>(ConfirmedTargetDataHandle.Get(Index)))
+					{
+						if (AActor* HitActor = SingleTargetHit->HitResult.GetActor())
+						{
+							if (ILyraWeaponInteractable* Interactable = Cast<ILyraWeaponInteractable>(HitActor))
 							{
-								if (ILyraWeaponInteractable* Interactable = Cast<ILyraWeaponInteractable>(HitActor))
-								{
-									// 순수 가상 함수를 직접 호출합니다.
-									Interactable->OnWeaponHit(SingleTargetHit->HitResult, GetAvatarActorFromActorInfo());
-								}
+								// 순수 가상 함수를 직접 호출합니다.
+								Interactable->OnWeaponHit(SingleTargetHit->HitResult, GetAvatarActorFromActorInfo());
 							}
 						}
 					}
+				}
 
-					OnRangedWeaponTargetDataReady(LocalTargetDataHandle); 
+				// 확인된 항목만 담긴 핸들로 데미지 GE와 서버 연출을 처리한다.
+				// 빈 핸들은 넘기지 않는다: BP가 항목 수를 확인하지 않고 0번 HitResult를 읽으면 원점 기준 Cue가 나갈 수 있다.
+				// (기존에도 확인된 히트가 없으면 서버 BP를 호출하지 않았다)
+				if (ConfirmedTargetDataHandle.Num() > 0)
+				{
+					OnRangedWeaponTargetDataReady(ConfirmedTargetDataHandle);
 				}
 			}
-			else
-			{
-				K2_EndAbility();
-			}
-			
 		}
 #endif //WITH_SERVER_CODE
 		
@@ -643,7 +663,7 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 		{
 			if (Controller->GetLocalRole() != ROLE_Authority)
 			{
-				if ( CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
+				if (CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
 				{
 					ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
 					check(WeaponData);
@@ -661,6 +681,135 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 		}
 	}
 	MyAbilityComponent->ConsumeClientReplicatedTargetData(CurrentSpecHandle, CurrentActivationInfo.GetActivationPredictionKey());
+}
+
+ULyraGameplayAbility_RangedWeapon::FServerHitValidationResult ULyraGameplayAbility_RangedWeapon::ValidateClientHitOnServer(const FLyraGameplayAbilityTargetData_SingleTargetHit& ClientHit, ULyraServerSideRewindSubsystem* RewindEvaluator)
+{
+	const FHitResult& ClientHitResult = ClientHit.HitResult;
+	AActor* TargetActor = ClientHitResult.GetActor();
+	if (!IsValid(TargetActor))
+	{
+		// 빗나간 사격의 트레이서용 항목 (맞은 액터 없음)
+		return FServerHitValidationResult();
+	}
+
+	// 움직이는 대상(스냅샷 기록 중인 캐릭터)은 클라가 본 시각으로 되감아 판정한다.
+	if (IsValid(RewindEvaluator) && IsValid(RewindEvaluator->ResolveSnapShotComponent(TargetActor)))
+	{
+		FLyraServerSideRewindRequest RewindRequest;
+		RewindRequest.TargetActor = TargetActor;
+		RewindRequest.InstigatorActor = GetAvatarActorFromActorInfo();
+		RewindRequest.TraceStart = ClientHitResult.TraceStart;
+		RewindRequest.HitLocation = ClientHitResult.ImpactPoint;
+		RewindRequest.HitTime = ClientHit.HitTime;
+		const FServerSideRewindResult RewindResult = RewindEvaluator->ServerSideRewind(RewindRequest);
+
+		FServerHitValidationResult Result;
+		Result.bConfirmed = RewindResult.bHitConfirmed;
+		if (Result.bConfirmed)
+		{
+			// 되감은 포즈 기준의 서버 HitResult (가장 가까운 바디의 명중점, 법선, 본, 물리 재질)
+			Result.ServerHit = RewindResult.ConfirmedHit;
+		}
+		return Result;
+	}
+
+	// 스냅샷이 없는 대상(벽, 상호작용 액터 등)이나 SSR이 꺼진 경우는 현재 시각 기준으로 판정한다.
+	return ValidateHitAtCurrentTime(ClientHitResult);
+}
+
+ULyraGameplayAbility_RangedWeapon::FServerHitValidationResult ULyraGameplayAbility_RangedWeapon::ValidateHitAtCurrentTime(const FHitResult& ClientHitResult) const
+{
+	FServerHitValidationResult Result;
+
+	const AActor* ClientHitActor = ClientHitResult.GetActor();
+	UWorld* World = GetWorld();
+	if (!IsValid(ClientHitActor) || !IsValid(World))
+	{
+		return Result;
+	}
+
+	// 클라 트레이스(WeaponTrace)와 같은 조건: 복잡 충돌, 자기 자신과 부착 액터 무시, 같은 무기 채널, 물리 재질 반환(부위 판정용)
+	FCollisionQueryParams TraceParams(SCENE_QUERY_STAT(LyraServerHitValidation), /*bTraceComplex=*/ true, GetAvatarActorFromActorInfo());
+	TraceParams.bReturnPhysicalMaterial = true;
+	AddAdditionalTraceIgnoreActors(TraceParams);
+	const ECollisionChannel TraceChannel = DetermineTraceChannel(TraceParams, /*bIsSimulated=*/ false, /*bTraceForServerSideRewind=*/ false);
+
+	// 클라 명중점보다 조금 더 길게 트레이스한다.
+	const FVector TraceStart = ClientHitResult.TraceStart;
+	const FVector TraceEnd = TraceStart + (FVector(ClientHitResult.Location) - TraceStart) * 1.25f;
+
+	FHitResult ServerHitResult;
+	bool bConfirmed = World->LineTraceSingleByChannel(ServerHitResult, TraceStart, TraceEnd, TraceChannel, TraceParams)
+		&& ServerHitResult.GetActor() == ClientHitActor;
+
+	// 클라는 라인으로 못 맞히면 Sweep으로 다시 찾으므로(DoSingleBulletTrace), 같은 반지름으로 한 번 더 확인한다.
+	if (!bConfirmed)
+	{
+		const ULyraRangedWeaponInstance* WeaponData = GetWeaponInstance();
+		const float SweepRadius = WeaponData ? WeaponData->GetBulletTraceSweepRadius() : 0.0f;
+		if (SweepRadius > 0.0f)
+		{
+			ServerHitResult = FHitResult();
+			bConfirmed = World->SweepSingleByChannel(ServerHitResult, TraceStart, TraceEnd, FQuat::Identity, TraceChannel, FCollisionShape::MakeSphere(SweepRadius), TraceParams)
+				&& ServerHitResult.GetActor() == ClientHitActor;
+		}
+	}
+
+	if (bConfirmed)
+	{
+		// 서버 트레이스 결과를 그대로 서버 HitResult로 쓴다. (부위는 맞은 바디의 물리 재질 태그)
+		Result.bConfirmed = true;
+		Result.ServerHit = ServerHitResult;
+	}
+	return Result;
+}
+
+FVector ULyraGameplayAbility_RangedWeapon::GetServerShotOrigin() const
+{
+	// 서버 권위 위치인 폰 시점(액터 위치 + BaseEyeHeight)을 쓴다.
+	// 카메라 위치(GetPlayerViewPoint)는 원격 플레이어의 경우 클라가 보내 준 값이라 쓰지 않는다.
+	if (const APawn* AvatarPawn = Cast<APawn>(GetAvatarActorFromActorInfo()))
+	{
+		return AvatarPawn->GetPawnViewLocation();
+	}
+	const AActor* AvatarActor = GetAvatarActorFromActorInfo();
+	return IsValid(AvatarActor) ? AvatarActor->GetActorLocation() : FVector::ZeroVector;
+}
+
+void ULyraGameplayAbility_RangedWeapon::ExecuteServerImpactCues(const FGameplayAbilityTargetDataHandle& ConfirmedTargetDataHandle)
+{
+	if (!ImpactCueTag.IsValid() || ConfirmedTargetDataHandle.Num() == 0)
+	{
+		return;
+	}
+
+	UAbilitySystemComponent* AbilitySystemComponent = GetAbilitySystemComponentFromActorInfo();
+	if (!IsValid(AbilitySystemComponent))
+	{
+		return;
+	}
+
+	// 이 함수는 서버가 타깃 데이터를 처리하는 동안, 즉 쏜 사람 클라의 예측 키가 걸린 범위 안에서 불린다.
+	// 그 키를 단 채 Cue를 실행하면 GAS가 "예측한 클라는 이미 재생했다"고 보고 쏜 사람에게는 재생하지 않는다
+	// (UAbilitySystemComponent::NetMulticast_InvokeGameplayCueExecuted_WithParams의 IsLocalClientKey 검사).
+	// 클라는 Impact Cue를 예측하지 않으므로, 예측 키를 비워 쏜 사람을 포함한 모든 클라가 재생하게 한다.
+	FScopedPredictionWindow NoPredictionWindow(AbilitySystemComponent, FPredictionKey(), /*InSetReplicatedPredictionKey=*/ false);
+
+	AActor* AvatarActor = GetAvatarActorFromActorInfo();
+	for (int32 Index = 0; Index < ConfirmedTargetDataHandle.Num(); ++Index)
+	{
+		if (const FLyraGameplayAbilityTargetData_SingleTargetHit* ServerTargetData = static_cast<const FLyraGameplayAbilityTargetData_SingleTargetHit*>(ConfirmedTargetDataHandle.Get(Index)))
+		{
+			// 위치, 법선, 물리 재질(Surface Type)은 서버 HitResult(되감은 포즈 기준 월드 좌표)에서 온다.
+			FGameplayCueParameters CueParameters = UGameplayCueFunctionLibrary::MakeGameplayCueParametersFromHitResult(ServerTargetData->HitResult);
+			CueParameters.Instigator = AvatarActor;
+			CueParameters.EffectCauser = AvatarActor;
+			CueParameters.SourceObject = GetWeaponInstance();
+			CueParameters.AbilityLevel = GetAbilityLevel();
+			AbilitySystemComponent->ExecuteGameplayCue(ImpactCueTag, CueParameters);
+		}
+	}
 }
 
 void ULyraGameplayAbility_RangedWeapon::StartRangedWeaponTargeting()
