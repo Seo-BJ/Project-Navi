@@ -152,9 +152,10 @@ bool ULyraSnapShotComponent_BoxComponent::TryGetSnapShotAtTime(float HitTime, FL
 
 	if (NewestHistoryTime < HitTime)
 	{
-		OutFramePackage = SnapShotHistory.Num() >= 2
-			? ExtrapolateByTwoFrames(SnapShotHistory[1], SnapShotHistory[0], HitTime)
-			: SnapShotHistory.First();
+		// 최신 스냅샷보다 뒤의 시각은 외삽하지 않고 최신 스냅샷을 쓴다 (Mesh/AnimNode 방식과 같은 규칙).
+		// 외삽은 존재한 적 없는 위치를 만들어 내므로 판정 근거로 쓰지 않는다.
+		// 최신 스냅샷과 서버 현재 시각 사이(1 Tick 이내)는 정상 요청에서도 생기고, 그보다 큰 미래 시각은 호출자가 거부한다.
+		OutFramePackage = SnapShotHistory.First();
 		return !OutFramePackage.HitBoxInfo.IsEmpty();
 	}
 
@@ -215,54 +216,6 @@ FLyraBoxSnapShotFrame ULyraSnapShotComponent_BoxComponent::InterpolateBetweenTwo
 	}
 
 	return InterpFramePackage;
-}
-
-FLyraBoxSnapShotFrame ULyraSnapShotComponent_BoxComponent::ExtrapolateByTwoFrames(
-	const FLyraBoxSnapShotFrame& SecondNewestFrame,
-	const FLyraBoxSnapShotFrame& FirstNewestFrame,
-	float HitTime
-	) const
-{
-	FLyraBoxSnapShotFrame ExtrapolateFramePackage;
-	ExtrapolateFramePackage.Time = HitTime;
-	ExtrapolateFramePackage.HitActor = FirstNewestFrame.HitActor;
-
-	const float ExtrapolationTime = HitTime - SecondNewestFrame.Time;
-	const float DeltaTime = FirstNewestFrame.Time - SecondNewestFrame.Time;
-	if (FMath::IsNearlyZero(DeltaTime))
-	{
-		return FirstNewestFrame;
-	}
-
-	for (const TPair<FName, FLyraBoxInformation>& FirstPair : FirstNewestFrame.HitBoxInfo)
-	{
-		const FName& BoxInfoName = FirstPair.Key;
-		const FLyraBoxInformation* SecondBoxPtr = SecondNewestFrame.HitBoxInfo.Find(BoxInfoName);
-		if (!SecondBoxPtr)
-		{
-			continue;
-		}
-
-		const FLyraBoxInformation& SecondHitBox = *SecondBoxPtr;
-		const FLyraBoxInformation& FirstHitBox = FirstPair.Value;
-		const float Alpha = ExtrapolationTime / DeltaTime;
-
-		FLyraBoxInformation ExtrapolatedBoxInfo;
-		const FVector ExtrapolatedLocation = SecondHitBox.WorldTransform.GetLocation()
-			+ Alpha * (FirstHitBox.WorldTransform.GetLocation() - SecondHitBox.WorldTransform.GetLocation());
-		const FRotator SecondRotation = SecondHitBox.WorldTransform.Rotator();
-		const FRotator FirstRotation = FirstHitBox.WorldTransform.Rotator();
-		const FRotator ExtrapolatedRotation = SecondRotation + Alpha * (FirstRotation - SecondRotation).GetNormalized();
-		ExtrapolatedBoxInfo.WorldTransform = FTransform(
-			ExtrapolatedRotation,
-			ExtrapolatedLocation,
-			FirstHitBox.WorldTransform.GetScale3D());
-		ExtrapolatedBoxInfo.UnscaledBoxExtent = FirstHitBox.UnscaledBoxExtent;
-
-		ExtrapolateFramePackage.HitBoxInfo.Add(BoxInfoName, ExtrapolatedBoxInfo);
-	}
-
-	return ExtrapolateFramePackage;
 }
 
 void ULyraSnapShotComponent_BoxComponent::ApplySnapShot(AActor* HitActor, const FLyraBoxSnapShotFrame& Package) const

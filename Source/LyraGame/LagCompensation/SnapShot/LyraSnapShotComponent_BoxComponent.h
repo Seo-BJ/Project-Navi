@@ -86,12 +86,6 @@ private:
 		float HitTime
 		) const;
 
-	FLyraBoxSnapShotFrame ExtrapolateByTwoFrames(
-		const FLyraBoxSnapShotFrame& SecondNewestFrame,
-		const FLyraBoxSnapShotFrame& FirstNewestFrame,
-		float HitTime
-		) const;
-
 	/** 최신 frame이 앞쪽에 오도록 저장되는 Box Snapshot history. */
 	TDeque<FLyraBoxSnapShotFrame> SnapShotHistory;
 
