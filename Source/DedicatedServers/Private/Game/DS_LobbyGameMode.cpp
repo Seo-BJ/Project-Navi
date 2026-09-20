@@ -202,7 +202,8 @@ void ADS_LobbyGameMode::SetServerParameters(FServerParameters& OutServerParamete
 	//AuthToken returned from the "aws gamelift get-compute-auth-token" API. Note this will expire and require a new call to the API after 15 minutes.
 	if (FParse::Value(FCommandLine::Get(), TEXT("-authtoken="), OutServerParameters.m_authToken))
 	{
-		UE_LOG(LogDedicatedServers, Log, TEXT("AUTH_TOKEN: %s"), *OutServerParameters.m_authToken)
+		// 서버 인증 토큰 값은 로그에 남기지 않는다 (받았는지와 길이만)
+		UE_LOG(LogDedicatedServers, Log, TEXT("AUTH_TOKEN: <redacted, %d chars>"), OutServerParameters.m_authToken.Len());
 	}
 
 	//The Host/compute-name of the GameLift Anywhere instance.

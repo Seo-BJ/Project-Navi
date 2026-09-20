@@ -6,6 +6,15 @@ namespace HTTPStatusMessages
 	const FString SomethingWentWrong{TEXT("Something went wrong!")};
 }
 
+namespace
+{
+	/** 인증 토큰 같은 비밀 값은 로그에 남기지 않고, 있는지와 길이만 남긴다. (로그 파일, 크래시 리포트, 서버 로그 수집으로 유출되는 것을 막는다) */
+	FString RedactSecret(const FString& Secret)
+	{
+		return Secret.IsEmpty() ? FString(TEXT("<empty>")) : FString::Printf(TEXT("<redacted, %d chars>"), Secret.Len());
+	}
+}
+
 void FDSMetaData::Dump() const
 {
 	UE_LOG(LogDedicatedServers, Log, TEXT("MetaData:"));
@@ -102,11 +111,11 @@ void FDSNewDeviceMetaData::Dump() const
 void FDSAuthenticationResult::Dump() const
 {
 	UE_LOG(LogDedicatedServers, Log, TEXT("AuthenticationResult:"));
-	UE_LOG(LogDedicatedServers, Log, TEXT("   AccessToken: %s"), *AccessToken);
+	UE_LOG(LogDedicatedServers, Log, TEXT("   AccessToken: %s"), *RedactSecret(AccessToken));
 	UE_LOG(LogDedicatedServers, Log, TEXT("   ExpiresIn: %d"), ExpiresIn);
-	UE_LOG(LogDedicatedServers, Log, TEXT("   IdToken: %s"), *IdToken);
+	UE_LOG(LogDedicatedServers, Log, TEXT("   IdToken: %s"), *RedactSecret(IdToken));
 	NewDeviceMetadata.Dump();
-	UE_LOG(LogDedicatedServers, Log, TEXT("   RefreshToken: %s"), *RefreshToken);
+	UE_LOG(LogDedicatedServers, Log, TEXT("   RefreshToken: %s"), *RedactSecret(RefreshToken));
 	UE_LOG(LogDedicatedServers, Log, TEXT("   TokenType: %s"), *TokenType);
 }
 
